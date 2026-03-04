@@ -1,0 +1,51 @@
+/* Layout Elements for the viewer area */
+#fp360-loader {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-family: sans-serif;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px 20px;
+    border-radius: 4px;
+    z-index: 10;
+}
+
+#fp360-placeholder {
+    padding: 40px;
+    text-align: center;
+    opacity: 0.7;
+    font-family: sans-serif;
+}
+
+#fp360-viewer-frame {
+    width: 100%;
+    height: 500px;
+    border: none;
+    display: none; /* Hidden until loaded */
+    background: #000;
+}
+
+/* Floorplan Overlay Styles */
+#fp360-svg-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+    z-index: 5;
+}
+
+/* Transitions for polygons interaction */
+#fp360-svg-overlay polygon {
+    transition: fill 0.2s ease, stroke 0.2s ease;
+    outline: none; /* Remove focus outline on click */
+}
+
+/* Active State for polygons (handled by JS logic mostly, but good defaults here) */
+#fp360-svg-overlay polygon:focus {
+    outline: none;
+}

@@ -1,6 +1,6 @@
 # Floorplan 360 Viewer
 
-A lightweight WordPress plugin that allows site owners to upload architectural floorplans, draw polygonal hotspot areas on them, and link each hotspot to a 360\u00b0 room image. When visitors click a hotspot the corresponding panoramic image opens in an embedded iframe powered by [A‑Frame](https://aframe.io).
+A lightweight WordPress plugin that allows site owners to upload architectural floorplans, draw polygonal hotspot areas on them, and link each hotspot to a 360° room image. When visitors click a hotspot the corresponding panoramic image opens in an embedded iframe powered by [A‑Frame](https://aframe.io).
 
 ---
 
