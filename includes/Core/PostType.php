@@ -3,6 +3,7 @@ namespace Floorplan360\Core;
 
 class PostType {
     public function register() {
+        // Register the CPT on init
         add_action( 'init', [ $this, 'register_cpt' ] );
     }
 
@@ -16,13 +17,23 @@ class PostType {
             'menu_name'     => 'Floorplans',
         ];
 
-        register_post_type( FP360_CPT, [
-            'labels'       => $labels,
-            'public'       => true,
-            'show_in_menu' => true,
-            'supports'     => [ 'title' ],
-            'menu_icon'    => 'dashicons-admin-home',
-            'rewrite'      => [ 'slug' => 'floorplan' ],
-        ] );
+        $args = [
+            'labels'             => $labels,
+            'public'             => true,
+            'publicly_queryable' => true, // Ensure it can be viewed on frontend
+            'show_ui'            => true,
+            'show_in_menu'       => true,
+            'query_var'          => true,
+            'rewrite'            => [ 'slug' => 'floorplan' ],
+            'capability_type'    => 'post',
+            'has_archive'        => true,
+            'hierarchical'       => false,
+            'menu_position'      => 20,
+            'supports'           => [ 'title' ],
+            'menu_icon'          => 'dashicons-admin-home',
+            'show_in_rest'       => true, // Enable Block Editor support
+        ];
+
+        register_post_type( FP360_CPT, $args );
     }
 }
