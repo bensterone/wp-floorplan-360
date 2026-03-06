@@ -11,18 +11,25 @@
         drawing: false,
         currentPoints: [],
         selectedId: null,
-        mousePos: { x: 0, y: 0 } // Track mouse for live feedback
+        mousePos: { x: 0, y: 0 }
     };
 
     try {
         state.hotspots = JSON.parse($dataField.val() || '[]');
     } catch (e) { state.hotspots = []; }
 
+    // Helper to sync state to hidden input
+    function saveHotspots() {
+        $dataField.val(JSON.stringify(state.hotspots));
+    }
+
     // --- 1. IMAGE SELECTION ---
     $('#fp360_pick_image').on('click', function (e) {
         e.preventDefault();
         if (typeof wp === 'undefined' || !wp.media) return;
+        
         const frame = wp.media({ title: 'Select Floorplan Image', multiple: false });
+        
         frame.on('select', function () {
             const attachment = frame.state().get('selection').first().toJSON();
             const url = attachment.url;
@@ -30,7 +37,7 @@
             $imageUrlInput.val(url);
             
             let img = document.getElementById('fp360-floorplan-img');
-            let container = document.getElementById('fp360-canvas-container'); // NEW
+            let container = document.getElementById('fp360-canvas-container');
             
             if (img) {
                 img.src = url;
@@ -38,13 +45,15 @@
             }
             if (svg) $(svg).show();
             
-            // REMOVE the placeholder state
             if (container) {
                 container.classList.remove('is-empty');
             }
 
             setTimeout(renderSVG, 100);
         });
+
+        frame.open();
+    });
 
     if (!svg) return;
 
@@ -63,7 +72,6 @@
         state.mousePos = pos;
 
         if (state.drawing) {
-            // Visual feedback: Check if we are hovering over the start point to close
             if (state.currentPoints.length >= 3) {
                 const first = state.currentPoints[0];
                 const dist = Math.hypot(pos.x - first.x, pos.y - first.y);
@@ -73,7 +81,7 @@
                     svg.classList.remove('snap-active');
                 }
             }
-            renderSVG(); // Redraw to show the "ghost line"
+            renderSVG();
         }
     });
 
@@ -83,7 +91,6 @@
         svg.setAttribute('viewBox', '0 0 100 100');
         svg.setAttribute('preserveAspectRatio', 'none');
 
-        // Render Existing Hotspots
         state.hotspots.forEach(hs => {
             if (!hs.points || hs.points.length < 2) return;
             const pts = hs.points.map(p => `${p.x * 100},${p.y * 100}`).join(' ');
@@ -102,7 +109,6 @@
             svg.appendChild(poly);
         });
 
-        // Render Current Drawing
         if (state.currentPoints.length > 0) {
             const pointsWithMouse = [...state.currentPoints];
             if (state.drawing) pointsWithMouse.push(state.mousePos);
@@ -120,10 +126,7 @@
                 const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                 c.setAttribute('cx', p.x * 100); 
                 c.setAttribute('cy', p.y * 100);
-    
-                // Change radius from 2 to 1.5 for a more professional look
                 c.setAttribute('r', i === 0 ? 1.5 : 0.8); 
-    
                 c.setAttribute('fill', i === 0 ? '#00e04b' : '#ffcc00');
                 c.setAttribute('stroke', '#000');
                 c.setAttribute('stroke-width', '0.2');
@@ -139,7 +142,7 @@
         if (state.drawing && state.currentPoints.length >= 3) {
             const first = state.currentPoints[0];
             const dist = Math.hypot(pos.x - first.x, pos.y - first.y);
-            if (dist < 0.025) { // Close shape
+            if (dist < 0.025) { 
                 const id = 'hs_' + Math.random().toString(36).substr(2, 9);
                 state.hotspots.push({ id, points: [...state.currentPoints], label: 'New Room', image360: '' });
                 state.currentPoints = [];
