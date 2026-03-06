@@ -11,6 +11,12 @@
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             color: white; font-family: sans-serif; z-index: 1; pointer-events: none;
         }
+        #room-label {
+            position: fixed; bottom: 20px; left: 20px;
+            background: rgba(0,0,0,0.6); color: white;
+            padding: 5px 15px; border-radius: 20px;
+            font-family: sans-serif; z-index: 10;
+        }
     </style>
 </head>
 <body>
