@@ -2,7 +2,7 @@
 namespace Floorplan360\Core;
 
 use Floorplan360\Admin;
-use Floorplan360\Public;
+use Floorplan360\Frontend;
 
 class Plugin {
     public function run() {
@@ -16,8 +16,8 @@ class Plugin {
             ( new Admin\Editor() )->register();
             ( new Admin\Assets() )->register();
         } else {
-            ( new Public\Viewer() )->register();
-            ( new Public\Assets() )->register();
+            ( new Frontend\Viewer() )->register();
+            ( new Frontend\Assets() )->register();
         }
     }
 }
