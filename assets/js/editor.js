@@ -26,13 +26,25 @@
         frame.on('select', function () {
             const attachment = frame.state().get('selection').first().toJSON();
             const url = attachment.url;
+            
             $imageUrlInput.val(url);
-            if (imgEl) { imgEl.src = url; $(imgEl).show(); }
+            
+            let img = document.getElementById('fp360-floorplan-img');
+            let container = document.getElementById('fp360-canvas-container'); // NEW
+            
+            if (img) {
+                img.src = url;
+                $(img).show();
+            }
             if (svg) $(svg).show();
+            
+            // REMOVE the placeholder state
+            if (container) {
+                container.classList.remove('is-empty');
+            }
+
             setTimeout(renderSVG, 100);
         });
-        frame.open();
-    });
 
     if (!svg) return;
 
