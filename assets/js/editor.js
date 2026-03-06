@@ -135,6 +135,16 @@
         }
     }
 
+function closeShape() {
+        if (state.currentPoints.length < 3) return;
+        const id = 'hs_' + Math.random().toString(36).substr(2, 9);
+        state.hotspots.push({ id, points: [...state.currentPoints], label: 'New Room', image360: '' });
+        state.currentPoints = [];
+        state.drawing = false;
+        svg.classList.remove('snap-active');
+        saveHotspots(); renderSVG(); renderHotspotList();
+    }
+
     svg.addEventListener('click', function (e) {
         if (!imgEl.src || imgEl.style.display === 'none') return;
         const pos = getNormalizedPos(e);
@@ -143,12 +153,7 @@
             const first = state.currentPoints[0];
             const dist = Math.hypot(pos.x - first.x, pos.y - first.y);
             if (dist < 0.025) { 
-                const id = 'hs_' + Math.random().toString(36).substr(2, 9);
-                state.hotspots.push({ id, points: [...state.currentPoints], label: 'New Room', image360: '' });
-                state.currentPoints = [];
-                state.drawing = false;
-                svg.classList.remove('snap-active');
-                saveHotspots(); renderSVG(); renderHotspotList();
+                closeShape();
                 return;
             }
         }
@@ -157,6 +162,13 @@
         renderSVG();
     });
 
+    // IMPLEMENTED: Double click to close
+    svg.addEventListener('dblclick', function(e) {
+        e.preventDefault();
+        if (state.drawing && state.currentPoints.length >= 3) {
+            closeShape();
+        }
+    });
     function renderHotspotList() {
         const ul = $('#fp360-hotspot-items').empty();
         state.hotspots.forEach(hs => {
