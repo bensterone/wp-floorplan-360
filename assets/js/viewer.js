@@ -10,16 +10,21 @@
 
     // Check availability
     if (!svgEl || !imgEl || !frame) {
-        // Elements might not exist if no floorplan image is set
         return;
     }
 
-    // Config injected via wp_localize_script in includes/Public/Assets.php
+    // Config injected via wp_localize_script
     // fp360Config.ajaxUrl
-    // fp360Config.nonce
 
-    const hotspots   = JSON.parse(svgEl.dataset.hotspots || '[]');
-    const viewerUrl  = fp360Config.ajaxUrl + '?action=fp360_viewer&nonce=' + fp360Config.nonce;
+    let hotspots = [];
+    try {
+        hotspots = JSON.parse(svgEl.dataset.hotspots || '[]');
+    } catch (e) {
+        console.error('FP360: Failed to parse hotspots JSON', e);
+    }
+
+    // We removed the nonce requirement for the viewer as it's public read-only content
+    const viewerUrl = fp360Config.ajaxUrl + '?action=fp360_viewer';
 
     let iframeReady   = false;
     let iframeQueue   = null;
@@ -59,7 +64,6 @@
             poly.setAttribute('stroke', 'rgba(255,255,255,0.0)');
             poly.setAttribute('stroke-width', '0.5');
             poly.setAttribute('vector-effect', 'non-scaling-stroke');
-            poly.style.cursor = 'pointer';
             
             // Accessibility
             poly.setAttribute('role', 'button');
@@ -131,12 +135,10 @@
         else if (!iframeReady) {
             iframeQueue = image360url;
         } 
-        // Case 3: Iframe is ready, just swap image via postMessage/JS interaction
+        // Case 3: Iframe is ready, just swap image via postMessage
         else {
             sendImageToIframe(image360url);
         }
-
-        frame.focus();
     }
 
     function initIframe(initialImageUrl) {
@@ -162,18 +164,21 @@
     }
 
     function sendImageToIframe(imageUrl) {
-        try {
-            const win = frame.contentWindow;
-            // Access function defined in iframe-viewer.php
-            if (win && typeof win.fp360LoadImage === 'function') {
-                if (loader) loader.style.display = 'none';
-                win.fp360LoadImage(imageUrl);
-            } else {
-                iframeQueue = imageUrl;
-            }
-        } catch (e) {
-            console.error('FP360: iframe access error', e);
-        }
+        if (!frame.contentWindow) return;
+
+        if (loader) loader.style.display = 'block';
+        
+        // Use postMessage for Cross-Origin safety
+        frame.contentWindow.postMessage({
+            type: 'FP360_LOAD_IMAGE',
+            url: imageUrl
+        }, '*');
+
+        // Hide loader after a short delay to allow visual transition, 
+        // or listen for a message back from iframe if you want to be precise.
+        setTimeout(() => {
+            if (loader) loader.style.display = 'none';
+        }, 500);
     }
 
     // Init on load and resize

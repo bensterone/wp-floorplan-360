@@ -8,10 +8,8 @@ class Ajax {
     }
 
     public function render_viewer() {
-        $nonce = isset( $_GET['nonce'] ) ? $_GET['nonce'] : '';
-        if ( ! wp_verify_nonce( $nonce, 'fp360_viewer_nonce' ) ) {
-            wp_die( 'Access denied.' );
-        }
+        // No nonce check here because this is a public, cached read-only view.
+        // Adding a nonce would break the viewer for cached pages after 12-24 hours.
 
         $img = isset( $_GET['img'] ) ? esc_url_raw( wp_unslash( $_GET['img'] ) ) : '';
         

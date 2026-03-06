@@ -44,8 +44,31 @@ class Editor {
         if ( isset( $_POST['fp360_hotspots'] ) ) {
             $raw = wp_unslash( $_POST['fp360_hotspots'] );
             $decoded = json_decode( $raw, true );
+            
             if ( is_array( $decoded ) ) {
-                update_post_meta( $post_id, '_fp360_hotspots', wp_json_encode( $decoded ) );
+                $clean_hotspots = [];
+                foreach ( $decoded as $hotspot ) {
+                    // Sanitize individual hotspot fields
+                    $clean_points = [];
+                    if ( isset( $hotspot['points'] ) && is_array( $hotspot['points'] ) ) {
+                        foreach ( $hotspot['points'] as $point ) {
+                            if ( isset( $point['x'], $point['y'] ) ) {
+                                $clean_points[] = [
+                                    'x' => floatval( $point['x'] ),
+                                    'y' => floatval( $point['y'] )
+                                ];
+                            }
+                        }
+                    }
+
+                    $clean_hotspots[] = [
+                        'id'       => sanitize_text_field( $hotspot['id'] ?? '' ),
+                        'label'    => sanitize_text_field( $hotspot['label'] ?? '' ),
+                        'image360' => esc_url_raw( $hotspot['image360'] ?? '' ),
+                        'points'   => $clean_points
+                    ];
+                }
+                update_post_meta( $post_id, '_fp360_hotspots', wp_json_encode( $clean_hotspots ) );
             }
         }
     }

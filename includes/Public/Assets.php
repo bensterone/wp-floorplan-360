@@ -14,7 +14,7 @@ class Assets {
             
             wp_localize_script( 'fp360-viewer', 'fp360Config', [
                 'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-                'nonce'   => wp_create_nonce( 'fp360_viewer_nonce' ),
+                // Nonce removed for frontend viewer to allow caching compatibility
             ] );
         }
     }

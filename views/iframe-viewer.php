@@ -12,12 +12,15 @@
     <!-- A-Frame loaded from assets -->
     <script src="<?php echo esc_url( FP360_URL . 'assets/js/aframe.min.js' ); ?>"></script>
     <script>
-        // Called from parent window to change the 360° image without recreating the scene.
-        window.fp360LoadImage = function (url) {
-            var img = document.getElementById('fp360-room-img');
-            if (!img) return;
-            img.setAttribute('src', url);
-        };
+        // Listen for messages from parent window
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'FP360_LOAD_IMAGE' && event.data.url) {
+                var img = document.getElementById('fp360-room-img');
+                if (img) {
+                    img.setAttribute('src', event.data.url);
+                }
+            }
+        });
     </script>
 
     <a-scene embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
