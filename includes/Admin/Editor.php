@@ -4,7 +4,8 @@ namespace Floorplan360\Admin;
 class Editor {
     public function register() {
         add_action( 'add_meta_boxes', [ $this, 'add_meta_box' ] );
-        add_action( 'save_post_' . FP360_CPT, [ $this, 'save_meta' ] );
+        // Verwende den allgemeinen save_post Hook für bessere Kompatibilität
+        add_action( 'save_post', [ $this, 'save_meta' ], 10, 2 );
     }
 
     public function add_meta_box() {
@@ -19,7 +20,8 @@ class Editor {
     }
 
     public function render_ui( $post ) {
-        wp_nonce_field( 'fp360_save', 'fp360_nonce' );
+        // Nonce für Sicherheit
+        wp_nonce_field( 'fp360_save_action', 'fp360_nonce_field' );
         
         $floorplan_img = get_post_meta( $post->ID, '_fp360_image', true );
         $hotspots_json = get_post_meta( $post->ID, '_fp360_hotspots', true );
@@ -31,20 +33,21 @@ class Editor {
         require FP360_PATH . 'views/meta-box.php';
     }
 
-    public function save_meta( $post_id ) {
-        // 1. Security checks
-        if ( ! isset( $_POST['fp360_nonce'] ) || ! wp_verify_nonce( $_POST['fp360_nonce'], 'fp360_save' ) ) {
+    public function save_meta( $post_id, $post ) {
+        // Sicherheitsprüfungen
+        if ( ! isset( $_POST['fp360_nonce_field'] ) || ! wp_verify_nonce( $_POST['fp360_nonce_field'], 'fp360_save_action' ) ) {
             return;
         }
         if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
+        if ( $post->post_type !== FP360_CPT ) return;
         if ( ! current_user_can( 'edit_post', $post_id ) ) return;
 
-        // 2. Save the floorplan image URL
+        // Bild-URL speichern
         if ( isset( $_POST['fp360_image'] ) ) {
-            update_post_meta( $post_id, '_fp360_image', esc_url_raw( wp_unslash( $_POST['fp360_image'] ) ) );
+            update_post_meta( $post_id, '_fp360_image', esc_url_raw( $_POST['fp360_image'] ) );
         }
 
-        // 3. Save the hotspots JSON
+        // Hotspots speichern
         if ( isset( $_POST['fp360_hotspots'] ) ) {
             $raw = wp_unslash( $_POST['fp360_hotspots'] );
             $decoded = json_decode( $raw, true );
@@ -61,7 +64,6 @@ class Editor {
                             ];
                         }
                     }
-
                     $clean_hotspots[] = [
                         'id'       => sanitize_text_field( $hotspot['id'] ?? '' ),
                         'label'    => sanitize_text_field( $hotspot['label'] ?? '' ),
