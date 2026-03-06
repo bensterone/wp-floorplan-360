@@ -17,57 +17,82 @@
     <div id="loading" style="display:none;">Loading Panorama...</div>
 
     <script src="<?php echo esc_url( FP360_URL . 'assets/js/aframe.min.js' ); ?>"></script>
-    
-    <script>
-        const allowedOrigin = "<?php echo (is_ssl() ? 'https://' : 'http://') . $_SERVER['HTTP_HOST']; ?>";
 
-        function signalReady() {
-            window.parent.postMessage({ type: 'FP360_VIEWER_READY' }, allowedOrigin);
+    <script>
+        const allowedOrigin = <?php echo wp_json_encode( \Floorplan360\Frontend\fp360_get_allowed_origin() ); ?>;
+
+        function postToParent(message) {
+            if (!allowedOrigin) return;
+            window.parent.postMessage(message, allowedOrigin);
         }
 
-        // Helper to check if URL is from our domain (Basic check)
+        function signalReady() {
+            postToParent({ type: 'FP360_VIEWER_READY' });
+        }
+
         function isUrlSafe(url) {
-            if (url.indexOf('/') === 0) return true; // Relative path
+            if (!url) return false;
+
             try {
-                const u = new URL(url);
-                return u.hostname === window.location.hostname;
-            } catch(e) { return false; }
+                const parsed = new URL(url, window.location.href);
+
+                if (parsed.origin !== allowedOrigin) {
+                    return false;
+                }
+
+                return /^https?:$/i.test(parsed.protocol);
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function loadSkyImage(url) {
+            const sky = document.getElementById('fp360-sky');
+            const loaderHint = document.getElementById('loading');
+
+            if (!sky || !isUrlSafe(url)) {
+                postToParent({ type: 'FP360_IMAGE_ERROR' });
+                return;
+            }
+
+            loaderHint.style.display = 'block';
+
+            const onLoaded = function () {
+                loaderHint.style.display = 'none';
+                postToParent({ type: 'FP360_IMAGE_LOADED' });
+            };
+
+            const onError = function () {
+                loaderHint.style.display = 'none';
+                postToParent({ type: 'FP360_IMAGE_ERROR' });
+            };
+
+            sky.addEventListener('materialtextureloaded', onLoaded, { once: true });
+            sky.addEventListener('error', onError, { once: true });
+
+            sky.setAttribute('src', url);
         }
 
         window.addEventListener('message', function(event) {
-            // SECURITY: Origin check
             if (event.origin !== allowedOrigin) return;
 
             if (event.data && event.data.type === 'FP360_LOAD_IMAGE' && event.data.url) {
-                // SECURITY: Internal URL validation
-                if (!isUrlSafe(event.data.url)) {
-                    console.error("Blocked external image load attempt.");
-                    return;
-                }
-
-                var sky = document.getElementById('fp360-sky');
-                var loaderHint = document.getElementById('loading');
-                
-                if (sky) {
-                    loaderHint.style.display = 'block';
-                    sky.addEventListener('materialtextureloaded', function() {
-                        loaderHint.style.display = 'none';
-                    }, { once: true });
-                    
-                    sky.setAttribute('src', event.data.url);
-                }
+                loadSkyImage(event.data.url);
             }
         });
 
         window.addEventListener('DOMContentLoaded', function() {
             const scene = document.querySelector('a-scene');
-            if (scene.hasLoaded) signalReady();
-            else scene.addEventListener('loaded', signalReady);
+            if (scene.hasLoaded) {
+                signalReady();
+            } else {
+                scene.addEventListener('loaded', signalReady, { once: true });
+            }
         });
     </script>
 
-    <a-scene embedded 
-             vr-mode-ui="enabled: false" 
+    <a-scene embedded
+             vr-mode-ui="enabled: false"
              device-orientation-permission-ui="enabled: false"
              renderer="antialias: true; colorManagement: true;">
         <a-assets>
