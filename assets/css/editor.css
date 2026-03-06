@@ -1,31 +1,72 @@
+#fp360-editor-wrap {
+    padding: 12px 0;
+}
+
 #fp360-canvas-container {
-    line-height: 0; /* Important: Removes the 4px whitespace gap under images */
+    border: 2px dashed #ccc;
+    margin: 12px 0;
+    cursor: crosshair;
+    background: #fafafa;
+    position: relative;
+    overflow: hidden;
+    /* FIX: Ensure it doesn't collapse to 0px width */
+    display: block; 
+    width: fit-content;
+    min-width: 300px;
+    min-height: 200px;
+    line-height: 0;
 }
 
-/* Make the SVG behave like a layer */
-#fp360-svg-overlay {
-    pointer-events: all;
+/* Add a helper for the 'No Image' state */
+#fp360-canvas-container.is-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f9f9f9;
 }
 
-/* Styling the Snap indicator */
+#fp360-canvas-container.is-empty::after {
+    content: 'Floorplan preview will appear here';
+    color: #aaa;
+    font-size: 13px;
+    font-style: italic;
+}
+
+#fp360-floorplan-img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+#fp360-hotspot-items {
+    list-style: none;
+    margin: 20px 0;
+    padding: 0;
+}
+
+.hs-item {
+    transition: background 0.2s ease;
+    border: 1px solid #ddd;
+    border-left: 4px solid #2271b1;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #fff;
+}
+
+/* Snap indicator class for the editor SVG */
+.snap-active {
+    cursor: pointer !important;
+}
+
 .snap-active circle:first-of-type {
     stroke: #fff !important;
     stroke-width: 0.5 !important;
-    r: 3 !important; /* Make it even larger when snapping */
-    transition: all 0.2s ease;
+    r: 3 !important;
+    animation: fp360-pulse 1s infinite;
 }
 
-.snap-active {
-    cursor: copy !important;
-}
-
-/* Optional: Pulse effect for the first point */
 @keyframes fp360-pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
-
-#fp360-svg-overlay circle:first-of-type {
-    animation: fp360-pulse 1.5s infinite;
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+    100% { opacity: 1; transform: scale(1); }
 }
