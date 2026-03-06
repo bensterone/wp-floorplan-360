@@ -1,6 +1,12 @@
 (function ($) {
     'use strict';
 
+    // 1. SELECTORS & STATE
+    const $dataField = $('#fp360_hotspots_data');
+    const svg        = document.getElementById('fp360-svg-overlay');
+    const imgEl      = document.getElementById('fp360-floorplan-img');
+    const $imageUrl  = $('#fp360_image_url');
+
     const state = {
         hotspots: [],
         drawing: false,
@@ -8,25 +14,65 @@
         selectedId: null,
     };
 
-    const $dataField = $('#fp360_hotspots_data');
-    const svg   = document.getElementById('fp360-svg-overlay');
-    const imgEl = document.getElementById('fp360-floorplan-img');
-
-    if (!svg) return;
-
     // Initialize State
     try {
         state.hotspots = JSON.parse($dataField.val() || '[]');
-    } catch (e) { state.hotspots = []; }
+    } catch (e) { 
+        state.hotspots = []; 
+    }
 
+    // --- LOGIC: MAIN IMAGE SELECTION ---
+    // This MUST be before any 'return' statements so it works even when no image is set.
+    $('#fp360_pick_image').on('click', function (e) {
+        e.preventDefault();
+        
+        if (typeof wp === 'undefined' || !wp.media) {
+            alert('WordPress media library not loaded.');
+            return;
+        }
+
+        const frame = wp.media({
+            title: 'Select Floorplan Image',
+            button: { text: 'Use this image' },
+            multiple: false
+        });
+
+        frame.on('select', function () {
+            const attachment = frame.state().get('selection').first().toJSON();
+            const url = attachment.url;
+            
+            $imageUrl.val(url);
+
+            // Update UI
+            let img = document.getElementById('fp360-floorplan-img');
+            if (img) {
+                img.src = url;
+            } else {
+                // If the image tag doesn't exist yet (first upload)
+                const newImg = document.createElement('img');
+                newImg.id = 'fp360-floorplan-img';
+                newImg.src = url;
+                newImg.style = 'max-width:100%;display:block;';
+                document.getElementById('fp360-canvas-container').prepend(newImg);
+            }
+            
+            // Reload the page or trigger a re-render
+            location.reload(); 
+        });
+
+        frame.open();
+    });
+
+    // 2. CHECK IF EDITOR CAN PROCEED
+    if (!svg) return;
+
+    // --- LOGIC: HOTSPOTS ---
     function saveHotspots() {
         $dataField.val(JSON.stringify(state.hotspots));
     }
 
     function generateId() {
-        return typeof crypto.randomUUID === 'function' 
-            ? crypto.randomUUID() 
-            : 'hs_' + Math.random().toString(36).substr(2, 9);
+        return 'hs_' + Math.random().toString(36).substr(2, 9);
     }
 
     function renderSVG() {
@@ -95,7 +141,6 @@
     }
 
     svg.addEventListener('click', function (e) {
-        if (!imgEl?.src) return alert('Select a floorplan image first.');
         const rect = svg.getBoundingClientRect();
         const pos = {
             x: parseFloat(((e.clientX - rect.left) / rect.width).toFixed(4)),
@@ -114,40 +159,55 @@
         renderSVG();
     });
 
-    svg.addEventListener('dblclick', (e) => {
-        e.preventDefault();
-        if (state.drawing && state.currentPoints.length >= 3) closePolygon();
-    });
-
     function renderHotspotList() {
         const ul = $('#fp360-hotspot-items').empty();
         state.hotspots.forEach(hs => {
             const isSelected = hs.id === state.selectedId;
             const li = $(`
                 <li class="hs-item" data-id="${hs.id}" style="border:1px solid ${isSelected ? '#2271b1' : '#ddd'}; padding:10px; margin-bottom:5px; background:${isSelected ? '#f0f6fc' : '#fff'};">
-                    <input type="text" class="hs-label" data-id="${hs.id}" value="${hs.label}" placeholder="Label">
-                    <input type="text" class="hs-img360" data-id="${hs.id}" value="${hs.image360}" placeholder="360 URL">
-                    <button type="button" class="button hs-pick-360" data-id="${hs.id}">Pick</button>
-                    <button type="button" class="button hs-select-btn" data-id="${hs.id}">Focus</button>
+                    <div style="display:flex; flex-direction:column; gap:5px;">
+                        <input type="text" class="hs-label" data-id="${hs.id}" value="${hs.label}" placeholder="Room Name">
+                        <div style="display:flex; gap:5px;">
+                            <input type="text" class="hs-img360" data-id="${hs.id}" value="${hs.image360}" placeholder="360 Image URL" style="flex:1;">
+                            <button type="button" class="button hs-pick-360" data-id="${hs.id}">Pick</button>
+                        </div>
+                    </div>
+                    <button type="button" class="button hs-select-btn" data-id="${hs.id}" style="margin-top:5px;">Select Area</button>
                 </li>
             `);
             ul.append(li);
         });
     }
 
-    // Hover effect from list to SVG
-    $(document).on('mouseenter', '.hs-item', function() {
+    $(document).on('click', '.hs-pick-360', function (e) {
         const id = $(this).data('id');
-        $(`polygon[data-id="${id}"]`).attr('fill', 'rgba(0,120,255,0.8)');
-    }).on('mouseleave', '.hs-item', function() {
-        renderSVG(); // Reset colors
+        const frame = wp.media({
+            title: 'Select 360° Image',
+            multiple: false
+        });
+        frame.on('select', function () {
+            const url = frame.state().get('selection').first().toJSON().url;
+            const hs = state.hotspots.find(h => h.id === id);
+            if (hs) { hs.image360 = url; saveHotspots(); }
+            renderHotspotList();
+        });
+        frame.open();
+    });
+
+    $(document).on('click', '.hs-select-btn', function () {
+        state.selectedId = $(this).data('id');
+        renderSVG();
+        renderHotspotList();
     });
 
     $(document).on('input', '.hs-label, .hs-img360', function () {
         const id = $(this).data('id');
-        const key = $(this).hasClass('hs-label') ? 'label' : 'image360';
         const hs = state.hotspots.find(h => h.id === id);
-        if (hs) { hs[key] = $(this).val(); saveHotspots(); }
+        if (hs) {
+            hs.label = $(`.hs-label[data-id="${id}"]`).val();
+            hs.image360 = $(`.hs-img360[data-id="${id}"]`).val();
+            saveHotspots();
+        }
     });
 
     $('#fp360-delete-selected').on('click', function () {
@@ -157,10 +217,20 @@
         saveHotspots(); renderSVG(); renderHotspotList();
     });
 
+    $('#fp360-undo-point').on('click', function() {
+        state.currentPoints.pop();
+        if (state.currentPoints.length === 0) state.drawing = false;
+        renderSVG();
+    });
+
+    $('#fp360-clear-drawing').on('click', function () {
+        state.currentPoints = [];
+        state.drawing = false;
+        renderSVG();
+    });
+
     // Initial render
-    if (imgEl) {
-        imgEl.onload = () => { renderSVG(); renderHotspotList(); };
-        if (imgEl.complete) imgEl.onload();
-    }
+    renderSVG();
+    renderHotspotList();
 
 })(jQuery);
