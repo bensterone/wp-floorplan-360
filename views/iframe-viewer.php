@@ -9,7 +9,7 @@
         #loading {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             color: white; font-family: sans-serif; z-index: 100; pointer-events: none;
-            background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 5px;
+            background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 5px;
         }
     </style>
 </head>
@@ -19,13 +19,32 @@
     <script src="<?php echo esc_url( FP360_URL . 'assets/js/aframe.min.js' ); ?>"></script>
     
     <script>
-        // Handshake with parent
+        const allowedOrigin = "<?php echo (is_ssl() ? 'https://' : 'http://') . $_SERVER['HTTP_HOST']; ?>";
+
         function signalReady() {
-            window.parent.postMessage({ type: 'FP360_VIEWER_READY' }, '*');
+            window.parent.postMessage({ type: 'FP360_VIEWER_READY' }, allowedOrigin);
+        }
+
+        // Helper to check if URL is from our domain (Basic check)
+        function isUrlSafe(url) {
+            if (url.indexOf('/') === 0) return true; // Relative path
+            try {
+                const u = new URL(url);
+                return u.hostname === window.location.hostname;
+            } catch(e) { return false; }
         }
 
         window.addEventListener('message', function(event) {
+            // SECURITY: Origin check
+            if (event.origin !== allowedOrigin) return;
+
             if (event.data && event.data.type === 'FP360_LOAD_IMAGE' && event.data.url) {
+                // SECURITY: Internal URL validation
+                if (!isUrlSafe(event.data.url)) {
+                    console.error("Blocked external image load attempt.");
+                    return;
+                }
+
                 var sky = document.getElementById('fp360-sky');
                 var loaderHint = document.getElementById('loading');
                 
@@ -40,14 +59,10 @@
             }
         });
 
-        // Detect when A-Frame is actually ready
         window.addEventListener('DOMContentLoaded', function() {
             const scene = document.querySelector('a-scene');
-            if (scene.hasLoaded) {
-                signalReady();
-            } else {
-                scene.addEventListener('loaded', signalReady);
-            }
+            if (scene.hasLoaded) signalReady();
+            else scene.addEventListener('loaded', signalReady);
         });
     </script>
 
@@ -58,7 +73,6 @@
         <a-assets>
             <img id="fp360-room-img" src="<?php echo esc_url( $img ); ?>" crossorigin="anonymous">
         </a-assets>
-
         <a-sky id="fp360-sky" src="#fp360-room-img" rotation="0 -130 0"></a-sky>
         <a-entity camera look-controls="magicWindowTrackingEnabled: false; touchEnabled: true;"></a-entity>
     </a-scene>
