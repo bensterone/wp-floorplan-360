@@ -66,7 +66,31 @@
 }
 
 @keyframes fp360-pulse {
-    0% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(1.2); }
-    100% { opacity: 1; transform: scale(1); }
+    0% { 
+        opacity: 1; 
+        fill: #00e04b; 
+    }
+    50% { 
+        opacity: 0.5; 
+        fill: #55ff8b; /* Slightly brighter in the middle of the pulse */
+    }
+    100% { 
+        opacity: 1; 
+        fill: #00e04b; 
+    }
+}
+
+/* Apply to the first point of the currently drawing polygon */
+#fp360-svg-overlay circle:first-of-type {
+    animation: fp360-pulse 2s infinite ease-in-out;
+    transform: none !important; /* Force no movement */
+}
+
+/* When the mouse is close enough to snap/close the shape */
+.snap-active circle:first-of-type {
+    stroke: #fff !important;
+    stroke-width: 0.8 !important;
+    opacity: 1 !important;
+    animation: none; /* Stop pulsing when user is about to click */
+    fill: #00ff55 !important;
 }
