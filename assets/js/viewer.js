@@ -45,7 +45,7 @@
                 // 3. Load the 360 image
                 if (frame.src === '' || frame.src === 'about:blank') {
                     frame.style.display = 'block';
-                    frame.src = viewerUrl + '&img=' + encodeURIComponent(hs.image360);
+                    frame.src = viewerUrl + '&img=' + encodeURIComponent(hs.image360) + '&title=' + encodeURIComponent(hs.label);
                 } else {
                     frame.contentWindow.postMessage({ type: 'FP360_LOAD_IMAGE', url: hs.image360 }, '*');
                 }
