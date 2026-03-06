@@ -5,9 +5,11 @@
     const imgEl = document.getElementById('fp360-floorplan-img');
     const frame = document.getElementById('fp360-viewer-frame');
     const placeholder = document.getElementById('fp360-placeholder');
+    const loader = document.getElementById('fp360-loader');
 
     if (!svgEl || !imgEl || !frame) return;
 
+    const allowedOrigin = fp360Config.origin;
     let hotspots = [];
     let isIframeReady = false;
     let pendingImage = null;
@@ -18,16 +20,43 @@
 
     const viewerBaseUrl = fp360Config.ajaxUrl + '?action=fp360_viewer';
 
-    // Listen for the "READY" signal from the iframe
     window.addEventListener('message', function(event) {
+        // SECURITY: Reject messages from unknown origins
+        if (event.origin !== allowedOrigin) return;
+
         if (event.data && event.data.type === 'FP360_VIEWER_READY') {
             isIframeReady = true;
+            if (loader) loader.style.display = 'none';
             if (pendingImage) {
-                frame.contentWindow.postMessage({ type: 'FP360_LOAD_IMAGE', url: pendingImage }, '*');
+                frame.contentWindow.postMessage({ type: 'FP360_LOAD_IMAGE', url: pendingImage }, allowedOrigin);
                 pendingImage = null;
             }
         }
     });
+
+    function loadRoom(hs, poly) {
+        if (!hs.image360) {
+            alert('No 360° image assigned to this room.');
+            return;
+        }
+
+        document.querySelectorAll('#fp360-svg-overlay polygon').forEach(p => p.classList.remove('is-active'));
+        poly.classList.add('is-active');
+        
+        if (placeholder) placeholder.style.display = 'none';
+        if (loader) loader.style.display = 'block';
+
+        if (frame.src === '' || frame.src === 'about:blank') {
+            frame.style.display = 'block';
+            frame.src = viewerBaseUrl + '&img=' + encodeURIComponent(hs.image360);
+        } else {
+            if (isIframeReady) {
+                frame.contentWindow.postMessage({ type: 'FP360_LOAD_IMAGE', url: hs.image360 }, allowedOrigin);
+            } else {
+                pendingImage = hs.image360;
+            }
+        }
+    }
 
     function renderPolygons() {
         if (imgEl.offsetWidth === 0) {
@@ -45,24 +74,17 @@
             const ptsString = hs.points.map(p => `${p.x * 100},${p.y * 100}`).join(' ');
             const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
             poly.setAttribute('points', ptsString);
+            
+            // ACCESSIBILITY: Make keyboard navigable
+            poly.setAttribute('tabindex', '0');
+            poly.setAttribute('role', 'button');
+            poly.setAttribute('aria-label', hs.label || 'View Room');
 
-            poly.addEventListener('click', () => {
-                document.querySelectorAll('#fp360-svg-overlay polygon').forEach(p => p.classList.remove('is-active'));
-                poly.classList.add('is-active');
-                
-                if (placeholder) placeholder.style.display = 'none';
-
-                if (frame.src === '' || frame.src === 'about:blank') {
-                    // First load: Use URL parameters
-                    frame.style.display = 'block';
-                    frame.src = viewerBaseUrl + '&img=' + encodeURIComponent(hs.image360) + '&title=' + encodeURIComponent(hs.label);
-                } else {
-                    // Subsequent loads: Use postMessage
-                    if (isIframeReady) {
-                        frame.contentWindow.postMessage({ type: 'FP360_LOAD_IMAGE', url: hs.image360 }, '*');
-                    } else {
-                        pendingImage = hs.image360;
-                    }
+            poly.addEventListener('click', () => loadRoom(hs, poly));
+            poly.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    loadRoom(hs, poly);
                 }
             });
 
