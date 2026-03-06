@@ -120,8 +120,10 @@
                 const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                 c.setAttribute('cx', p.x * 100); 
                 c.setAttribute('cy', p.y * 100);
-                // Make the start point much bigger and prominent
-                c.setAttribute('r', i === 0 ? 2 : 1);
+    
+                // Change radius from 2 to 1.5 for a more professional look
+                c.setAttribute('r', i === 0 ? 1.5 : 0.8); 
+    
                 c.setAttribute('fill', i === 0 ? '#00e04b' : '#ffcc00');
                 c.setAttribute('stroke', '#000');
                 c.setAttribute('stroke-width', '0.2');
