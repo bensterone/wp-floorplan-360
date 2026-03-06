@@ -15,7 +15,6 @@
     const viewerUrl = fp360Config.ajaxUrl + '?action=fp360_viewer';
 
     function renderPolygons() {
-        // Essential: If image isn't loaded yet, wait for it
         if (imgEl.offsetWidth === 0) {
             imgEl.addEventListener('load', renderPolygons, { once: true });
             return;
@@ -32,16 +31,18 @@
             const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
             
             poly.setAttribute('points', ptsString);
-            poly.setAttribute('fill', 'rgba(255,255,255,0.01)');
-            poly.setAttribute('stroke-width', '0.5');
-            poly.setAttribute('vector-effect', 'non-scaling-stroke');
-            poly.style.cursor = 'pointer';
-            poly.style.transition = 'fill 0.3s';
+            // No need to set fill/stroke here, CSS handles the default now.
 
             poly.addEventListener('click', () => {
-                document.querySelectorAll('#fp360-svg-overlay polygon').forEach(p => p.setAttribute('fill', 'rgba(255,255,255,0.01)'));
-                poly.setAttribute('fill', 'rgba(0,120,255,0.4)');
+                // 1. Clear active class from all
+                document.querySelectorAll('#fp360-svg-overlay polygon').forEach(p => {
+                    p.classList.remove('is-active');
+                });
+
+                // 2. Add active class to clicked
+                poly.classList.add('is-active');
                 
+                // 3. Load the 360 image
                 if (frame.src === '' || frame.src === 'about:blank') {
                     frame.style.display = 'block';
                     frame.src = viewerUrl + '&img=' + encodeURIComponent(hs.image360);
@@ -56,6 +57,7 @@
         });
     }
 
+    // Initial check and listeners
     window.addEventListener('load', renderPolygons);
     window.addEventListener('resize', renderPolygons);
 })();
