@@ -20,7 +20,7 @@ define( 'FP360_URL', plugin_dir_url( __FILE__ ) );
 define( 'FP360_CPT', 'floorplan' );
 
 // Require Autoloader
-require_once FP360_PATH . 'includes/Autoloader.php';
+require_once FP360_PATH . 'includes/AutoLoader.php';
 
 // Initialize
 function init() {
