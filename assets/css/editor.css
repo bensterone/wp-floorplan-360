@@ -1,37 +1,31 @@
-#fp360-editor-wrap {
-    padding: 12px 0;
-}
-
 #fp360-canvas-container {
-    border: 2px dashed #ccc;
-    margin: 12px 0;
-    cursor: crosshair;
-    background: #fafafa;
-    position: relative;
-    overflow: hidden;
+    line-height: 0; /* Important: Removes the 4px whitespace gap under images */
 }
 
-#fp360-hotspot-items {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+/* Make the SVG behave like a layer */
+#fp360-svg-overlay {
+    pointer-events: all;
 }
 
-.hs-item {
-    transition: background 0.2s ease;
+/* Styling the Snap indicator */
+.snap-active circle:first-of-type {
+    stroke: #fff !important;
+    stroke-width: 0.5 !important;
+    r: 3 !important; /* Make it even larger when snapping */
+    transition: all 0.2s ease;
 }
 
-.hs-item:hover {
-    background: #fcfcfc;
-}
-
-/* Snap indicator class for the editor SVG */
 .snap-active {
-    cursor: pointer !important;
+    cursor: copy !important;
 }
 
-/* Green feedback when snapping to close a polygon */
-.snap-active polyline {
-    stroke: #00e04b !important;
-    stroke-width: 2 !important;
+/* Optional: Pulse effect for the first point */
+@keyframes fp360-pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+#fp360-svg-overlay circle:first-of-type {
+    animation: fp360-pulse 1.5s infinite;
 }
