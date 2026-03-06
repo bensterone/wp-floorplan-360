@@ -1,5 +1,6 @@
 <?php
 namespace Floorplan360\Frontend;
+use Floorplan360\Core\Ajax;
 
 class Assets {
     public function register() {
@@ -13,7 +14,7 @@ class Assets {
 
             wp_localize_script( 'fp360-viewer', 'fp360Config', [
                 'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-                'origin'  => fp360_get_allowed_origin(),
+                'origin'  => Ajax::get_allowed_origin(),
             ] );
         }
     }
