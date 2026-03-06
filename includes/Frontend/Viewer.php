@@ -1,5 +1,5 @@
 <?php
-namespace Floorplan360\Public;
+namespace Floorplan360\Frontend;
 
 class Viewer {
     public function register() {
