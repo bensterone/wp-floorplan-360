@@ -23,6 +23,7 @@ class Editor {
         
         $floorplan_img = get_post_meta( $post->ID, '_fp360_image', true );
         $hotspots_json = get_post_meta( $post->ID, '_fp360_hotspots', true );
+        
         if ( ! $hotspots_json ) {
             $hotspots_json = '[]';
         }
@@ -31,16 +32,19 @@ class Editor {
     }
 
     public function save_meta( $post_id ) {
+        // 1. Security checks
         if ( ! isset( $_POST['fp360_nonce'] ) || ! wp_verify_nonce( $_POST['fp360_nonce'], 'fp360_save' ) ) {
             return;
         }
         if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
         if ( ! current_user_can( 'edit_post', $post_id ) ) return;
 
+        // 2. Save the floorplan image URL
         if ( isset( $_POST['fp360_image'] ) ) {
             update_post_meta( $post_id, '_fp360_image', esc_url_raw( wp_unslash( $_POST['fp360_image'] ) ) );
         }
 
+        // 3. Save the hotspots JSON
         if ( isset( $_POST['fp360_hotspots'] ) ) {
             $raw = wp_unslash( $_POST['fp360_hotspots'] );
             $decoded = json_decode( $raw, true );
@@ -48,16 +52,13 @@ class Editor {
             if ( is_array( $decoded ) ) {
                 $clean_hotspots = [];
                 foreach ( $decoded as $hotspot ) {
-                    // Sanitize individual hotspot fields
                     $clean_points = [];
                     if ( isset( $hotspot['points'] ) && is_array( $hotspot['points'] ) ) {
                         foreach ( $hotspot['points'] as $point ) {
-                            if ( isset( $point['x'], $point['y'] ) ) {
-                                $clean_points[] = [
-                                    'x' => floatval( $point['x'] ),
-                                    'y' => floatval( $point['y'] )
-                                ];
-                            }
+                            $clean_points[] = [
+                                'x' => floatval( $point['x'] ?? 0 ),
+                                'y' => floatval( $point['y'] ?? 0 )
+                            ];
                         }
                     }
 
