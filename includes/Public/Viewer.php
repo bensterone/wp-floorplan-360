@@ -8,10 +8,15 @@ class Viewer {
 
     public function load_template( $template ) {
         if ( is_singular( FP360_CPT ) ) {
-            $custom = FP360_PATH . 'templates/floorplan-template.php';
-            if ( file_exists( $custom ) ) {
-                return $custom;
+            // Check if theme has an override: your-theme/floorplan-360/floorplan-template.php
+            $located = locate_template( 'floorplan-360/floorplan-template.php' );
+            
+            if ( $located ) {
+                return $located;
             }
+
+            // Fallback to plugin template
+            return FP360_PATH . 'templates/floorplan-template.php';
         }
         return $template;
     }
