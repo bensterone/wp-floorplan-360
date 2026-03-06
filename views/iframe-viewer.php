@@ -46,6 +46,28 @@
             }
         }
 
+        function notifyInitialImageState() {
+            const roomImg = document.getElementById('fp360-room-img');
+            if (!roomImg) return;
+
+            if (roomImg.complete) {
+                if (roomImg.naturalWidth > 0) {
+                    postToParent({ type: 'FP360_IMAGE_LOADED' });
+                } else {
+                    postToParent({ type: 'FP360_IMAGE_ERROR' });
+                }
+                return;
+            }
+
+            roomImg.addEventListener('load', function () {
+                postToParent({ type: 'FP360_IMAGE_LOADED' });
+            }, { once: true });
+
+            roomImg.addEventListener('error', function () {
+                postToParent({ type: 'FP360_IMAGE_ERROR' });
+            }, { once: true });
+        }
+
         function loadSkyImage(url) {
             const sky = document.getElementById('fp360-sky');
             const loaderHint = document.getElementById('loading');
@@ -82,6 +104,8 @@
         });
 
         window.addEventListener('DOMContentLoaded', function() {
+            notifyInitialImageState();
+
             const scene = document.querySelector('a-scene');
             if (scene.hasLoaded) {
                 signalReady();
