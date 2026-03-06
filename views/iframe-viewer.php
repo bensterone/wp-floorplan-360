@@ -19,12 +19,12 @@
     <script src="<?php echo esc_url( FP360_URL . 'assets/js/aframe.min.js' ); ?>"></script>
 
     <script>
-        const allowedOrigin = <?php echo wp_json_encode( \Floorplan360\Frontend\fp360_get_allowed_origin() ); ?>;
+            const allowedOrigin = <?php echo wp_json_encode( \Floorplan360\Core\Ajax::get_allowed_origin() ); ?>;
 
-        function postToParent(message) {
-            if (!allowedOrigin) return;
-            window.parent.postMessage(message, allowedOrigin);
-        }
+    function postToParent(message) {
+        if (!allowedOrigin) return;
+        window.parent.postMessage(message, allowedOrigin);
+    }
 
         function signalReady() {
             postToParent({ type: 'FP360_VIEWER_READY' });
