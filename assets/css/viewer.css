@@ -89,3 +89,26 @@
 #fp360-svg-overlay polygon:focus {
     outline: none;
 }
+
+/* Default state for polygons (Shown on load) */
+#fp360-svg-overlay polygon {
+    fill: rgba(0, 180, 100, 0.15); /* Subtle green hint */
+    stroke: rgba(255, 255, 255, 0.5); /* Light white border */
+    stroke-width: 0.3;
+    vector-effect: non-scaling-stroke;
+    transition: fill 0.3s ease, stroke 0.3s ease;
+    cursor: pointer;
+}
+
+/* Hover state */
+#fp360-svg-overlay polygon:hover {
+    fill: rgba(0, 180, 100, 0.35); /* Stronger green on hover */
+    stroke: rgba(255, 255, 255, 1);
+}
+
+/* Active/Selected state (Set via JS) */
+#fp360-svg-overlay polygon.is-active {
+    fill: rgba(0, 120, 255, 0.4) !important; /* Distinct blue for selected room */
+    stroke: #fff !important;
+    stroke-width: 0.6;
+}
