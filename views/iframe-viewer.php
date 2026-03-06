@@ -6,25 +6,24 @@
     <style>
         * { margin:0; padding:0; }
         html, body { width:100%; height:100%; overflow:hidden; background:#000; }
-        /* Simple CSS loader while A-Frame initializes */
         #loading {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: white; font-family: sans-serif; z-index: 1; pointer-events: none;
-        }
-        #room-label {
-            position: fixed; bottom: 20px; left: 20px;
-            background: rgba(0,0,0,0.6); color: white;
-            padding: 5px 15px; border-radius: 20px;
-            font-family: sans-serif; z-index: 10;
+            color: white; font-family: sans-serif; z-index: 100; pointer-events: none;
+            background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <div id="loading" style="display:none;">Updating View...</div>
+    <div id="loading" style="display:none;">Loading Panorama...</div>
 
     <script src="<?php echo esc_url( FP360_URL . 'assets/js/aframe.min.js' ); ?>"></script>
     
     <script>
+        // Handshake with parent
+        function signalReady() {
+            window.parent.postMessage({ type: 'FP360_VIEWER_READY' }, '*');
+        }
+
         window.addEventListener('message', function(event) {
             if (event.data && event.data.type === 'FP360_LOAD_IMAGE' && event.data.url) {
                 var sky = document.getElementById('fp360-sky');
@@ -32,13 +31,22 @@
                 
                 if (sky) {
                     loaderHint.style.display = 'block';
-                    // The 'materialtextureloaded' is a specific A-Frame event
                     sky.addEventListener('materialtextureloaded', function() {
                         loaderHint.style.display = 'none';
                     }, { once: true });
                     
                     sky.setAttribute('src', event.data.url);
                 }
+            }
+        });
+
+        // Detect when A-Frame is actually ready
+        window.addEventListener('DOMContentLoaded', function() {
+            const scene = document.querySelector('a-scene');
+            if (scene.hasLoaded) {
+                signalReady();
+            } else {
+                scene.addEventListener('loaded', signalReady);
             }
         });
     </script>
@@ -48,13 +56,10 @@
              device-orientation-permission-ui="enabled: false"
              renderer="antialias: true; colorManagement: true;">
         <a-assets>
-            <!-- Preload initial image with crossorigin to prevent canvas taint -->
             <img id="fp360-room-img" src="<?php echo esc_url( $img ); ?>" crossorigin="anonymous">
         </a-assets>
 
         <a-sky id="fp360-sky" src="#fp360-room-img" rotation="0 -130 0"></a-sky>
-        
-        <!-- Standardized camera for best desktop/mobile pan experience -->
         <a-entity camera look-controls="magicWindowTrackingEnabled: false; touchEnabled: true;"></a-entity>
     </a-scene>
 </body>
