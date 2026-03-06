@@ -7,13 +7,23 @@ class Assets {
     }
 
     public function enqueue( $hook ) {
-        global $post;
-        if ( ( $hook === 'post.php' || $hook === 'post-new.php' ) && $post->post_type === FP360_CPT ) {
+        // Get current post type reliably
+        $post_type = get_post_type();
+        
+        if ( ( $hook === 'post.php' || $hook === 'post-new.php' ) && $post_type === FP360_CPT ) {
+            // Load WordPress Media Uploader
             wp_enqueue_media();
             
             wp_enqueue_style( 'fp360-admin', FP360_URL . 'assets/css/editor.css', [], FP360_VERSION );
             
-            wp_enqueue_script( 'fp360-admin', FP360_URL . 'assets/js/editor.js', [ 'jquery' ], FP360_VERSION, true );
+            // Added 'media-views' as a dependency to ensure 'wp.media' exists
+            wp_enqueue_script( 
+                'fp360-admin', 
+                FP360_URL . 'assets/js/editor.js', 
+                [ 'jquery', 'media-views' ], 
+                FP360_VERSION, 
+                true 
+            );
         }
     }
 }
