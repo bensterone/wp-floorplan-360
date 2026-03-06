@@ -1,12 +1,10 @@
 (function ($) {
     'use strict';
 
-    // 1. SELECTORS & STATE
     const $dataField = $('#fp360_hotspots_data');
-    const svg        = document.getElementById('fp360-svg-overlay');
-    const imgEl      = document.getElementById('fp360-floorplan-img');
-    const $imageUrl  = $('#fp360_image_url');
-
+    const $imageUrlInput = $('#fp360_image_url');
+    const svg = document.getElementById('fp360-svg-overlay');
+    
     const state = {
         hotspots: [],
         drawing: false,
@@ -21,15 +19,11 @@
         state.hotspots = []; 
     }
 
-    // --- LOGIC: MAIN IMAGE SELECTION ---
-    // This MUST be before any 'return' statements so it works even when no image is set.
+    // --- 1. IMAGE SELECTION LOGIC ---
     $('#fp360_pick_image').on('click', function (e) {
         e.preventDefault();
         
-        if (typeof wp === 'undefined' || !wp.media) {
-            alert('WordPress media library not loaded.');
-            return;
-        }
+        if (typeof wp === 'undefined' || !wp.media) return;
 
         const frame = wp.media({
             title: 'Select Floorplan Image',
@@ -41,32 +35,31 @@
             const attachment = frame.state().get('selection').first().toJSON();
             const url = attachment.url;
             
-            $imageUrl.val(url);
+            // Update the hidden input that PHP saves
+            $imageUrlInput.val(url);
 
-            // Update UI
+            // Update the preview image
             let img = document.getElementById('fp360-floorplan-img');
             if (img) {
                 img.src = url;
-            } else {
-                // If the image tag doesn't exist yet (first upload)
-                const newImg = document.createElement('img');
-                newImg.id = 'fp360-floorplan-img';
-                newImg.src = url;
-                newImg.style = 'max-width:100%;display:block;';
-                document.getElementById('fp360-canvas-container').prepend(newImg);
+                img.style.display = 'block'; // Make sure it's visible
             }
             
-            // Reload the page or trigger a re-render
-            location.reload(); 
+            // Show the SVG overlay now that we have an image
+            if (svg) svg.style.display = 'block';
+
+            // Alert the user they need to save the post to keep changes
+            $('#publish, #save-post').addClass('button-primary-disabled');
+            console.log('Image updated in UI. Remember to click Save/Update in WordPress.');
         });
 
         frame.open();
     });
 
-    // 2. CHECK IF EDITOR CAN PROCEED
+    // Exit if no SVG exists (though we keep it in DOM now)
     if (!svg) return;
 
-    // --- LOGIC: HOTSPOTS ---
+    // --- 2. DRAWING & RENDERING ---
     function saveHotspots() {
         $dataField.val(JSON.stringify(state.hotspots));
     }
@@ -91,16 +84,13 @@
             poly.setAttribute('stroke', '#fff');
             poly.setAttribute('stroke-width', '0.5');
             poly.setAttribute('vector-effect', 'non-scaling-stroke');
-            poly.style.cursor = 'pointer';
 
             poly.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (state.drawing) return;
                 state.selectedId = hs.id;
                 renderSVG();
                 renderHotspotList();
             });
-
             svg.appendChild(poly);
         });
 
@@ -165,14 +155,11 @@
             const isSelected = hs.id === state.selectedId;
             const li = $(`
                 <li class="hs-item" data-id="${hs.id}" style="border:1px solid ${isSelected ? '#2271b1' : '#ddd'}; padding:10px; margin-bottom:5px; background:${isSelected ? '#f0f6fc' : '#fff'};">
-                    <div style="display:flex; flex-direction:column; gap:5px;">
-                        <input type="text" class="hs-label" data-id="${hs.id}" value="${hs.label}" placeholder="Room Name">
-                        <div style="display:flex; gap:5px;">
-                            <input type="text" class="hs-img360" data-id="${hs.id}" value="${hs.image360}" placeholder="360 Image URL" style="flex:1;">
-                            <button type="button" class="button hs-pick-360" data-id="${hs.id}">Pick</button>
-                        </div>
+                    <input type="text" class="hs-label" data-id="${hs.id}" value="${hs.label}" style="width:100%; margin-bottom:5px;">
+                    <div style="display:flex; gap:5px;">
+                        <input type="text" class="hs-img360" data-id="${hs.id}" value="${hs.image360}" style="flex:1;">
+                        <button type="button" class="button hs-pick-360" data-id="${hs.id}">Pick 360</button>
                     </div>
-                    <button type="button" class="button hs-select-btn" data-id="${hs.id}" style="margin-top:5px;">Select Area</button>
                 </li>
             `);
             ul.append(li);
@@ -181,10 +168,7 @@
 
     $(document).on('click', '.hs-pick-360', function (e) {
         const id = $(this).data('id');
-        const frame = wp.media({
-            title: 'Select 360° Image',
-            multiple: false
-        });
+        const frame = wp.media({ title: 'Select 360° Image', multiple: false });
         frame.on('select', function () {
             const url = frame.state().get('selection').first().toJSON().url;
             const hs = state.hotspots.find(h => h.id === id);
@@ -192,12 +176,6 @@
             renderHotspotList();
         });
         frame.open();
-    });
-
-    $(document).on('click', '.hs-select-btn', function () {
-        state.selectedId = $(this).data('id');
-        renderSVG();
-        renderHotspotList();
     });
 
     $(document).on('input', '.hs-label, .hs-img360', function () {
@@ -220,12 +198,6 @@
     $('#fp360-undo-point').on('click', function() {
         state.currentPoints.pop();
         if (state.currentPoints.length === 0) state.drawing = false;
-        renderSVG();
-    });
-
-    $('#fp360-clear-drawing').on('click', function () {
-        state.currentPoints = [];
-        state.drawing = false;
         renderSVG();
     });
 
