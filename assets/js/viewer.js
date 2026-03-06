@@ -35,7 +35,10 @@
                     allowedOrigin
                 );
                 pendingImage = null;
+            } else {
+                if (loader) loader.style.display = 'none';
             }
+
             return;
         }
 
