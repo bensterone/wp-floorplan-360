@@ -4,15 +4,30 @@
     const svgEl = document.getElementById('fp360-svg-overlay');
     const imgEl = document.getElementById('fp360-floorplan-img');
     const frame = document.getElementById('fp360-viewer-frame');
+    const placeholder = document.getElementById('fp360-placeholder');
 
     if (!svgEl || !imgEl || !frame) return;
 
     let hotspots = [];
+    let isIframeReady = false;
+    let pendingImage = null;
+
     try {
         hotspots = JSON.parse(svgEl.dataset.hotspots || '[]');
     } catch (e) { console.error(e); }
 
-    const viewerUrl = fp360Config.ajaxUrl + '?action=fp360_viewer';
+    const viewerBaseUrl = fp360Config.ajaxUrl + '?action=fp360_viewer';
+
+    // Listen for the "READY" signal from the iframe
+    window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'FP360_VIEWER_READY') {
+            isIframeReady = true;
+            if (pendingImage) {
+                frame.contentWindow.postMessage({ type: 'FP360_LOAD_IMAGE', url: pendingImage }, '*');
+                pendingImage = null;
+            }
+        }
+    });
 
     function renderPolygons() {
         if (imgEl.offsetWidth === 0) {
@@ -29,35 +44,32 @@
 
             const ptsString = hs.points.map(p => `${p.x * 100},${p.y * 100}`).join(' ');
             const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-            
             poly.setAttribute('points', ptsString);
-            // No need to set fill/stroke here, CSS handles the default now.
 
             poly.addEventListener('click', () => {
-                // 1. Clear active class from all
-                document.querySelectorAll('#fp360-svg-overlay polygon').forEach(p => {
-                    p.classList.remove('is-active');
-                });
-
-                // 2. Add active class to clicked
+                document.querySelectorAll('#fp360-svg-overlay polygon').forEach(p => p.classList.remove('is-active'));
                 poly.classList.add('is-active');
                 
-                // 3. Load the 360 image
+                if (placeholder) placeholder.style.display = 'none';
+
                 if (frame.src === '' || frame.src === 'about:blank') {
+                    // First load: Use URL parameters
                     frame.style.display = 'block';
-                    frame.src = viewerUrl + '&img=' + encodeURIComponent(hs.image360) + '&title=' + encodeURIComponent(hs.label);
+                    frame.src = viewerBaseUrl + '&img=' + encodeURIComponent(hs.image360) + '&title=' + encodeURIComponent(hs.label);
                 } else {
-                    frame.contentWindow.postMessage({ type: 'FP360_LOAD_IMAGE', url: hs.image360 }, '*');
+                    // Subsequent loads: Use postMessage
+                    if (isIframeReady) {
+                        frame.contentWindow.postMessage({ type: 'FP360_LOAD_IMAGE', url: hs.image360 }, '*');
+                    } else {
+                        pendingImage = hs.image360;
+                    }
                 }
-                
-                document.getElementById('fp360-placeholder').style.display = 'none';
             });
 
             svgEl.appendChild(poly);
         });
     }
 
-    // Initial check and listeners
     window.addEventListener('load', renderPolygons);
     window.addEventListener('resize', renderPolygons);
 })();
