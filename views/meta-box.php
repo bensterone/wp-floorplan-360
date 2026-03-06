@@ -1,36 +1,29 @@
 <?php defined('ABSPATH') || exit; ?>
 <div id="fp360-editor-wrap">
-    <p>
-        <label><strong>Floorplan Image (JPG/PNG/SVG)</strong></label><br>
-        <!-- This hidden input stores the URL for saving -->
+    <div style="margin-bottom: 15px;">
+        <label><strong>Floorplan Image</strong></label><br>
+        <!-- name="fp360_image" muss mit $_POST['fp360_image'] in Editor.php übereinstimmen -->
         <input type="hidden" name="fp360_image" id="fp360_image_url" value="<?php echo esc_attr( $floorplan_img ); ?>">
-        
-        <button type="button" class="button" id="fp360_pick_image">
-            <?php echo $floorplan_img ? 'Change Image' : 'Upload / Select Image'; ?>
+        <button type="button" class="button button-large" id="fp360_pick_image">
+            <?php echo $floorplan_img ? 'Change Image' : 'Select Floorplan Image'; ?>
         </button>
-    </p>
+    </div>
 
-    <div id="fp360-canvas-container" style="position:relative; display:inline-block; min-width:300px; min-height:200px; background:#eee; border:1px solid #ddd;">
-        <!-- Image tag is always here now, just hidden via inline style if empty -->
+    <div id="fp360-canvas-container" style="position:relative; background:#f0f0f0; border:2px dashed #ccc; min-height:200px; display:inline-block; max-width:100%;">
         <img id="fp360-floorplan-img" 
              src="<?php echo esc_url( $floorplan_img ); ?>" 
-             style="max-width:100%; display: <?php echo $floorplan_img ? 'block' : 'none'; ?>;">
+             style="display: <?php echo $floorplan_img ? 'block' : 'none'; ?>; max-width:100%; height:auto;">
         
         <svg id="fp360-svg-overlay" 
-             style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:10; cursor:crosshair; display: <?php echo $floorplan_img ? 'block' : 'none'; ?>;">
+             style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:10; display: <?php echo $floorplan_img ? 'block' : 'none'; ?>;">
         </svg>
     </div>
 
-    <!-- This hidden input stores the Hotspot JSON for saving -->
     <input type="hidden" name="fp360_hotspots" id="fp360_hotspots_data" value="<?php echo esc_attr( $hotspots_json ); ?>">
 
-    <div style="margin-top:10px;">
-        <button type="button" class="button" id="fp360-undo-point">Undo Last Point</button>
-        <button type="button" class="button button-link-delete" id="fp360-delete-selected" style="color:#d63638;">Delete Selected Hotspot</button>
-    </div>
-    
-    <div id="fp360-hotspot-list" style="margin-top:20px; border-top:1px solid #eee; padding-top:10px;">
-        <h4>Hotspots / Rooms</h4>
+    <div id="fp360-hotspot-list-admin" style="margin-top:20px;">
+        <h4>Defined Hotspots</h4>
         <ul id="fp360-hotspot-items"></ul>
+        <p class="description">Click on the image to draw. Click the green start point to close a shape.</p>
     </div>
 </div>
