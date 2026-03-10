@@ -1,15 +1,21 @@
 <?php defined('ABSPATH') || exit; ?>
 <div id="fp360-editor-wrap">
     <div style="margin-bottom: 15px;">
-        <label><strong>Floorplan Image</strong></label><br>
+        <label><strong><?php esc_html_e( 'Floorplan Image', 'wp-floorplan-360' ); ?></strong></label><br>
         <input type="hidden" name="fp360_image" id="fp360_image_url" value="<?php echo esc_attr( $floorplan_img ); ?>">
         <button type="button" class="button button-large" id="fp360_pick_image">
-            <?php echo $floorplan_img ? 'Change Image' : 'Select Floorplan Image'; ?>
+            <?php 
+            echo $floorplan_img 
+                ? esc_html__( 'Change Image', 'wp-floorplan-360' ) 
+                : esc_html__( 'Select Floorplan Image', 'wp-floorplan-360' ); 
+            ?>
         </button>
     </div>
 
-    <!-- Added 'is-empty' logic to handle the placeholder state -->
-    <div id="fp360-canvas-container" class="<?php echo ! $floorplan_img ? 'is-empty' : ''; ?>">
+    <div id="fp360-canvas-container">
+        <p id="fp360-empty-state" <?php echo $floorplan_img ? 'style="display:none;"' : ''; ?>>
+            <?php esc_html_e( 'Floorplan preview will appear here.', 'wp-floorplan-360' ); ?>
+        </p>
         <img id="fp360-floorplan-img" 
              src="<?php echo esc_url( $floorplan_img ); ?>" 
              style="display: <?php echo $floorplan_img ? 'block' : 'none'; ?>;">
@@ -23,15 +29,17 @@
 
     <div style="margin-top:10px;">
         <button type="button" class="button" id="fp360-undo-point">
-            <span class="dashicons dashicons-undo" style="padding-top:4px;"></span> Undo Last Point
+            <span class="dashicons dashicons-undo" style="padding-top:4px;"></span> 
+            <?php esc_html_e( 'Undo Last Point', 'wp-floorplan-360' ); ?>
         </button>
     </div>
     
     <div id="fp360-hotspot-list-admin" style="margin-top:20px;">
-        <h4 style="margin-bottom:5px;">Rooms & 360° Views</h4>
+        <h4 style="margin-bottom:5px;"><?php esc_html_e( 'Rooms & 360° Views', 'wp-floorplan-360' ); ?></h4>
         <ul id="fp360-hotspot-items"></ul>
         <p class="description">
-            <strong>Pro Tip:</strong> Double-click the last point to quickly close a room shape.
+            <strong><?php esc_html_e( 'Pro Tip:', 'wp-floorplan-360' ); ?></strong> 
+            <?php esc_html_e( 'Double-click the last point to quickly close a room shape.', 'wp-floorplan-360' ); ?>
         </p>
     </div>
 </div>
