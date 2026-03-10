@@ -66,26 +66,6 @@ window.addEventListener('message', function(event) {
         }
     }
 });
-        window.addEventListener('message', function(event) {
-            if (event.origin !== allowedOrigin) return;
-
-            if (event.data && event.data.type === 'FP360_LOAD_IMAGE' && event.data.url) {
-                if (!isUrlSafe(event.data.url)) return;
-
-                const sky = document.getElementById('fp360-sky');
-                const loader = document.getElementById('loading');
-                
-                if (sky) {
-                    loader.style.display = 'block';
-                    sky.addEventListener('materialtextureloaded', () => {
-                        loader.style.display = 'none';
-                        window.parent.postMessage({ type: 'FP360_IMAGE_LOADED' }, allowedOrigin);
-                    }, { once: true });
-                    
-                    sky.setAttribute('src', event.data.url);
-                }
-            }
-        });
 
         window.addEventListener('DOMContentLoaded', () => {
             const scene = document.querySelector('a-scene');
