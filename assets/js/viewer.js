@@ -6,6 +6,7 @@
     const frame = document.getElementById('fp360-viewer-frame');
     const placeholder = document.getElementById('fp360-placeholder');
     const loader = document.getElementById('fp360-loader');
+    const statusEl = document.getElementById('fp360-status');
 
     if (!svgEl || !imgEl || !frame) return;
 
@@ -17,10 +18,19 @@
     try {
         hotspots = JSON.parse(svgEl.dataset.hotspots || '[]');
     } catch (e) {
-        console.error(e);
+        console.error('FP360: Error parsing hotspots', e);
     }
 
     const viewerBaseUrl = fp360Config.ajaxUrl + '?action=fp360_viewer';
+
+    /**
+     * Updates the UI status message instead of using blocking alerts.
+     */
+    function setStatus(message) {
+        if (statusEl) {
+            statusEl.textContent = message || '';
+        }
+    }
 
     window.addEventListener('message', function (event) {
         if (event.origin !== allowedOrigin) return;
@@ -38,27 +48,31 @@
             } else {
                 if (loader) loader.style.display = 'none';
             }
-
             return;
         }
 
         if (event.data.type === 'FP360_IMAGE_LOADED') {
             if (loader) loader.style.display = 'none';
+            setStatus(''); // Clear any previous errors
             return;
         }
 
         if (event.data.type === 'FP360_IMAGE_ERROR') {
             if (loader) loader.style.display = 'none';
-            alert('The 360° image could not be loaded.');
+            // Fixed: Using i18n string from config
+            setStatus(fp360Config.i18n.viewerLoadError);
         }
     });
 
     function loadRoom(hs, poly) {
         if (!hs.image360) {
-            alert('No 360° image assigned to this room.');
+            // Fixed: Using i18n string from config
+            setStatus(fp360Config.i18n.noPanoramaAssigned);
             return;
         }
 
+        // Reset UI state
+        setStatus('');
         document.querySelectorAll('#fp360-svg-overlay polygon').forEach(p => p.classList.remove('is-active'));
         poly.classList.add('is-active');
 
@@ -96,9 +110,11 @@
             const ptsString = hs.points.map(p => `${p.x * 100},${p.y * 100}`).join(' ');
             const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
             poly.setAttribute('points', ptsString);
+            
+            // Fixed: Accessibility using i18n strings
             poly.setAttribute('tabindex', '0');
             poly.setAttribute('role', 'button');
-            poly.setAttribute('aria-label', hs.label || 'View Room');
+            poly.setAttribute('aria-label', hs.label || fp360Config.i18n.viewRoom);
 
             poly.addEventListener('click', () => loadRoom(hs, poly));
             poly.addEventListener('keydown', (e) => {
@@ -112,6 +128,9 @@
         });
     }
 
+    // Initial load
     window.addEventListener('load', renderPolygons);
-    window.addEventListener('resize', renderPolygons);
+    
+    // Note: Resize listener is intentionally removed. 
+    // SVG ViewBox preserves aspect-relative mapping automatically.
 })();
