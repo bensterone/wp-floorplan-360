@@ -5,271 +5,180 @@
     const $imageUrlInput = $('#fp360_image_url');
     const svg = document.getElementById('fp360-svg-overlay');
     const imgEl = document.getElementById('fp360-floorplan-img');
-
+    const $emptyState = $('#fp360-empty-state');
+    
     const state = {
         hotspots: [],
         drawing: false,
         currentPoints: [],
         selectedId: null,
-        mousePos: { x: 0, y: 0 }
+        mousePos: { x: 0, y: 0 },
+        needsRedraw: false
     };
 
     try {
         state.hotspots = JSON.parse($dataField.val() || '[]');
-    } catch (e) {
-        state.hotspots = [];
-    }
+    } catch (e) { state.hotspots = []; }
 
     function saveHotspots() {
         $dataField.val(JSON.stringify(state.hotspots));
     }
 
-    $('#fp360_pick_image').on('click', function (e) {
-        e.preventDefault();
-        if (typeof wp === 'undefined' || !wp.media) return;
-
-        const frame = wp.media({
-            title: 'Select Floorplan Image',
-            multiple: false
-        });
-
-        frame.on('select', function () {
-            const attachment = frame.state().get('selection').first().toJSON();
-            const url = attachment.url;
-
-            $imageUrlInput.val(url);
-
-            const img = document.getElementById('fp360-floorplan-img');
-            const container = document.getElementById('fp360-canvas-container');
-
-            if (img) {
-                img.src = url;
-                $(img).show();
-            }
-
-            if (svg) $(svg).show();
-
-            if (container) {
-                container.classList.remove('is-empty');
-            }
-
-            setTimeout(renderSVG, 100);
-        });
-
-        frame.open();
-    });
-
-    if (!svg) return;
-
-    function getNormalizedPos(e) {
-        const rect = svg.getBoundingClientRect();
-        return {
-            x: (e.clientX - rect.left) / rect.width,
-            y: (e.clientY - rect.top) / rect.height
-        };
+    function generateId() {
+        return (typeof self.crypto !== 'undefined' && self.crypto.randomUUID) 
+            ? self.crypto.randomUUID() 
+            : 'hs_' + Math.random().toString(36).slice(2, 11);
     }
 
-    svg.addEventListener('mousemove', function (e) {
-        const pos = getNormalizedPos(e);
-        state.mousePos = pos;
-
-        if (state.drawing) {
-            if (state.currentPoints.length >= 3) {
-                const first = state.currentPoints[0];
-                const dist = Math.hypot(pos.x - first.x, pos.y - first.y);
-
-                if (dist < 0.025) {
-                    svg.classList.add('snap-active');
-                } else {
-                    svg.classList.remove('snap-active');
-                }
-            }
-
-            renderSVG();
+    // --- 1. RENDER LOOP (Performance fix) ---
+    function requestRedraw() {
+        if (!state.needsRedraw) {
+            state.needsRedraw = true;
+            requestAnimationFrame(renderSVG);
         }
-    });
+    }
 
     function renderSVG() {
+        state.needsRedraw = false;
+        if (!svg) return;
+
         $(svg).empty();
         svg.setAttribute('viewBox', '0 0 100 100');
         svg.setAttribute('preserveAspectRatio', 'none');
 
         state.hotspots.forEach(hs => {
             if (!hs.points || hs.points.length < 3) return;
-
             const pts = hs.points.map(p => `${p.x * 100},${p.y * 100}`).join(' ');
             const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-
             poly.setAttribute('points', pts);
-            poly.setAttribute('fill', hs.id === state.selectedId ? 'rgba(0,120,255,0.6)' : 'rgba(0,180,100,0.3)');
-            poly.setAttribute('stroke', '#fff');
-            poly.setAttribute('stroke-width', '0.3');
-            poly.setAttribute('vector-effect', 'non-scaling-stroke');
-            poly.style.cursor = 'pointer';
-
-            poly.addEventListener('click', function (e) {
+            poly.setAttribute('class', hs.id === state.selectedId ? 'hs-poly active' : 'hs-poly');
+            poly.addEventListener('click', (e) => {
                 e.stopPropagation();
                 state.selectedId = hs.id;
-                renderSVG();
+                requestRedraw(); 
                 renderHotspotList();
             });
-
             svg.appendChild(poly);
         });
 
         if (state.currentPoints.length > 0) {
             const pointsWithMouse = [...state.currentPoints];
-
-            if (state.drawing) {
-                pointsWithMouse.push(state.mousePos);
-            }
+            if (state.drawing) pointsWithMouse.push(state.mousePos);
 
             const pts = pointsWithMouse.map(p => `${p.x * 100},${p.y * 100}`).join(' ');
             const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-
             line.setAttribute('points', pts);
-            line.setAttribute('fill', 'none');
-            line.setAttribute('stroke', '#ffcc00');
-            line.setAttribute('stroke-width', '0.5');
-            line.setAttribute('vector-effect', 'non-scaling-stroke');
+            line.setAttribute('class', 'drawing-line');
             svg.appendChild(line);
 
             state.currentPoints.forEach((p, i) => {
                 const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                c.setAttribute('cx', p.x * 100);
+                c.setAttribute('cx', p.x * 100); 
                 c.setAttribute('cy', p.y * 100);
-                c.setAttribute('r', i === 0 ? 1.5 : 0.8);
-                c.setAttribute('fill', i === 0 ? '#00e04b' : '#ffcc00');
-                c.setAttribute('stroke', '#000');
-                c.setAttribute('stroke-width', '0.2');
+                c.setAttribute('r', i === 0 ? 1.5 : 0.8); 
+                c.setAttribute('class', i === 0 ? 'node node-first' : 'node');
                 svg.appendChild(c);
             });
         }
     }
 
-    function closeShape() {
-        if (state.currentPoints.length < 3) return;
+    // --- 2. HOTSPOT LIST (XSS Hardening) ---
+    function renderHotspotList() {
+        const $ul = $('#fp360-hotspot-items').empty();
+        state.hotspots.forEach(hs => {
+            const isSelected = hs.id === state.selectedId;
+            const $li = $('<li>').addClass('hs-item').toggleClass('is-active', isSelected);
+            
+            const $label = $('<input>', {
+                type: 'text',
+                class: 'hs-label',
+                'data-id': hs.id,
+                placeholder: 'Room Label'
+            }).val(hs.label);
 
-        const id = 'hs_' + Math.random().toString(36).substr(2, 9);
+            const $row = $('<div>').addClass('hs-input-row');
+            const $urlInput = $('<input>', {
+                type: 'text',
+                class: 'hs-img360',
+                'data-id': hs.id,
+                placeholder: '360 Image URL'
+            }).val(hs.image360);
 
-        state.hotspots.push({
-            id,
-            points: [...state.currentPoints],
-            label: 'New Room',
-            image360: ''
+            const $pickBtn = $('<button>', {
+                type: 'button',
+                class: 'button hs-pick-360',
+                'data-id': hs.id,
+                text: fp360Admin.i18n.pick360
+            });
+
+            const $deleteBtn = $('<button>', {
+                type: 'button',
+                class: 'button button-link-delete hs-delete',
+                'data-id': hs.id,
+                text: fp360Admin.i18n.deleteRoom
+            });
+
+            $row.append($urlInput, $pickBtn);
+            $li.append($label, $row, $deleteBtn);
+            $ul.append($li);
         });
-
-        state.currentPoints = [];
-        state.drawing = false;
-        svg.classList.remove('snap-active');
-
-        saveHotspots();
-        renderSVG();
-        renderHotspotList();
     }
 
-    svg.addEventListener('click', function (e) {
-        if (!imgEl.src || imgEl.style.display === 'none') return;
+    // --- 3. EVENTS ---
+    svg.addEventListener('mousemove', function(e) {
+        if (!state.drawing) return;
+        const rect = svg.getBoundingClientRect();
+        state.mousePos = {
+            x: (e.clientX - rect.left) / rect.width,
+            y: (e.clientY - rect.top) / rect.height
+        };
 
-        const pos = getNormalizedPos(e);
+        if (state.currentPoints.length >= 3) {
+            const first = state.currentPoints[0];
+            const dist = Math.hypot(state.mousePos.x - first.x, state.mousePos.y - first.y);
+            svg.classList.toggle('snap-active', dist < 0.025);
+        }
+        requestRedraw();
+    });
+
+    svg.addEventListener('click', function (e) {
+        if (!imgEl.src || $emptyState.is(':visible')) return;
+        const rect = svg.getBoundingClientRect();
+        const pos = {
+            x: (e.clientX - rect.left) / rect.width,
+            y: (e.clientY - rect.top) / rect.height
+        };
 
         if (state.drawing && state.currentPoints.length >= 3) {
             const first = state.currentPoints[0];
             const dist = Math.hypot(pos.x - first.x, pos.y - first.y);
-
-            if (dist < 0.025) {
+            if (dist < 0.025) { 
                 closeShape();
                 return;
             }
         }
-
         state.drawing = true;
         state.currentPoints.push(pos);
-        renderSVG();
+        requestRedraw();
     });
 
-    svg.addEventListener('dblclick', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (!state.drawing || state.currentPoints.length < 3) return;
-
-        if (state.currentPoints.length >= 2) {
-            const last = state.currentPoints[state.currentPoints.length - 1];
-            const prev = state.currentPoints[state.currentPoints.length - 2];
-            const dist = Math.hypot(last.x - prev.x, last.y - prev.y);
-
-            if (dist < 0.01) {
-                state.currentPoints.pop();
-            }
-        }
-
-        closeShape();
-    });
-
-    function renderHotspotList() {
-        const ul = $('#fp360-hotspot-items').empty();
-
-        state.hotspots.forEach(hs => {
-            const isSelected = hs.id === state.selectedId;
-
-            const li = $(`
-                <li class="hs-item" data-id="${hs.id}" style="border:1px solid ${isSelected ? '#2271b1' : '#ddd'}; padding:10px; margin-bottom:5px; background:${isSelected ? '#f0f6fc' : '#fff'};">
-                    <input type="text" class="hs-label" data-id="${hs.id}" value="${hs.label}" style="width:100%; margin-bottom:5px;">
-                    <div style="display:flex; gap:5px;">
-                        <input type="text" class="hs-img360" data-id="${hs.id}" value="${hs.image360}" style="flex:1;">
-                        <button type="button" class="button hs-pick-360" data-id="${hs.id}">Pick 360</button>
-                    </div>
-                    <button type="button" class="button button-link-delete hs-delete" data-id="${hs.id}" style="color:#d63638; padding:0; margin-top:5px;">Delete Room</button>
-                </li>
-            `);
-
-            ul.append(li);
+    function closeShape() {
+        if (state.currentPoints.length < 3) return;
+        state.hotspots.push({ 
+            id: generateId(), 
+            points: [...state.currentPoints], 
+            label: 'New Room', 
+            image360: '' 
         });
+        state.currentPoints = [];
+        state.drawing = false;
+        svg.classList.remove('snap-active');
+        saveHotspots(); requestRedraw(); renderHotspotList();
     }
 
-    $(document).on('click', '.hs-pick-360', function () {
-        const id = $(this).data('id');
-        const frame = wp.media({
-            title: 'Select 360° Image',
-            multiple: false
-        });
-
-        frame.on('select', function () {
-            const url = frame.state().get('selection').first().toJSON().url;
-            const hs = state.hotspots.find(h => h.id === id);
-
-            if (hs) {
-                hs.image360 = url;
-                saveHotspots();
-            }
-
-            renderHotspotList();
-        });
-
-        frame.open();
-    });
-
-    $(document).on('click', '.hs-delete', function () {
-        const id = $(this).data('id');
-
-        if (confirm('Delete this room?')) {
-            state.hotspots = state.hotspots.filter(h => h.id !== id);
-
-            if (state.selectedId === id) {
-                state.selectedId = null;
-            }
-
-            saveHotspots();
-            renderSVG();
-            renderHotspotList();
-        }
-    });
-
-    $(document).on('input', '.hs-label, .hs-img360', function () {
+    $(document).on('input', '.hs-label, .hs-img360', function() {
         const id = $(this).data('id');
         const hs = state.hotspots.find(h => h.id === id);
-
         if (hs) {
             hs.label = $(`.hs-label[data-id="${id}"]`).val();
             hs.image360 = $(`.hs-img360[data-id="${id}"]`).val();
@@ -277,19 +186,30 @@
         }
     });
 
-    $('#fp360-undo-point').on('click', function () {
-        state.currentPoints.pop();
-
-        if (state.currentPoints.length === 0) {
-            state.drawing = false;
-            svg.classList.remove('snap-active');
-        }
-
-        renderSVG();
+    $('#fp360_pick_image').on('click', function(e) {
+        e.preventDefault();
+        const frame = wp.media({ title: 'Select Floorplan', multiple: false });
+        frame.on('select', function() {
+            const url = frame.state().get('selection').first().toJSON().url;
+            $imageUrlInput.val(url);
+            imgEl.src = url;
+            $(imgEl).show();
+            $(svg).show();
+            $emptyState.hide();
+            requestRedraw();
+        });
+        frame.open();
     });
 
-    window.addEventListener('resize', renderSVG);
+    $(document).on('click', '.hs-delete', function() {
+        if (confirm(fp360Admin.i18n.deleteRoomConfirm)) {
+            const id = $(this).data('id');
+            state.hotspots = state.hotspots.filter(h => h.id !== id);
+            saveHotspots(); requestRedraw(); renderHotspotList();
+        }
+    });
+
     renderHotspotList();
-    renderSVG();
+    requestRedraw();
 
 })(jQuery);
