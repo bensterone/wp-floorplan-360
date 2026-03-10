@@ -1,5 +1,6 @@
 <?php
 namespace Floorplan360\Frontend;
+
 use Floorplan360\Core\Ajax;
 
 class Assets {
@@ -15,23 +16,12 @@ class Assets {
             wp_localize_script( 'fp360-viewer', 'fp360Config', [
                 'ajaxUrl' => admin_url( 'admin-ajax.php' ),
                 'origin'  => Ajax::get_allowed_origin(),
+                'i18n'    => [
+                    'viewRoom'           => __( 'View room', 'wp-floorplan-360' ),
+                    'noPanoramaAssigned' => __( 'No 360° image assigned to this room.', 'wp-floorplan-360' ),
+                    'viewerLoadError'    => __( 'The 360° image could not be loaded.', 'wp-floorplan-360' ),
+                ],
             ] );
         }
     }
-}
-
-function fp360_get_allowed_origin() {
-    $home = wp_parse_url( home_url( '/' ) );
-
-    if ( empty( $home['scheme'] ) || empty( $home['host'] ) ) {
-        return '';
-    }
-
-    $origin = $home['scheme'] . '://' . $home['host'];
-
-    if ( ! empty( $home['port'] ) ) {
-        $origin .= ':' . (int) $home['port'];
-    }
-
-    return esc_url_raw( $origin );
 }
