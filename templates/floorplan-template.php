@@ -8,7 +8,6 @@ if ( ! $hotspots_json ) {
     $hotspots_json = '[]';
 }
 ?>
-<!-- CSS enqueued via Assets.php -->
 <div id="fp360-wrap">
     <div id="fp360-left">
         <?php if ( $floorplan_img ) : ?>
@@ -20,21 +19,27 @@ if ( ! $hotspots_json ) {
                  data-hotspots='<?php echo esc_attr( $hotspots_json ); ?>'>
             </svg>
         <?php else : ?>
-            <p style="padding:20px;text-align:center;">No floorplan image uploaded.</p>
+            <p class="fp360-no-image-notice">
+                <?php esc_html_e( 'No floorplan image uploaded.', 'wp-floorplan-360' ); ?>
+            </p>
         <?php endif; ?>
     </div>
 
-    <div id="fp360-right" role="region" aria-label="360 degree room view">
+    <div id="fp360-right" role="region" aria-label="<?php echo esc_attr__( '360 degree room view', 'wp-floorplan-360' ); ?>">
         <div id="fp360-placeholder">
-            <p>Select a room on the floorplan to view it in 360°</p>
+            <p><?php esc_html_e( 'Select a room on the floorplan to view it in 360°', 'wp-floorplan-360' ); ?></p>
         </div>
-        <div id="fp360-loader">Loading viewer...</div>
+        
+        <div id="fp360-loader"><?php esc_html_e( 'Loading viewer...', 'wp-floorplan-360' ); ?></div>
+        
+        <!-- Fixed: Added the status element for JS feedback -->
+        <div id="fp360-status" aria-live="polite"></div>
+
         <iframe id="fp360-viewer-frame"
                 allowfullscreen
-                title="360 degree room viewer">
+                title="<?php echo esc_attr__( '360 degree room viewer', 'wp-floorplan-360' ); ?>">
         </iframe>
     </div>
 </div>
-<!-- JS enqueued via Assets.php -->
 
 <?php get_footer(); ?>
