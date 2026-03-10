@@ -1,3 +1,117 @@
+/* Layout Wrapper */
+#fp360-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    width: 100%;
+    margin-bottom: 30px;
+}
+
+/* Floorplan Left Column */
+#fp360-left {
+    flex: 1 1 500px; /* Grow, shrink, base width */
+    position: relative; /* Essential for SVG absolute positioning */
+    line-height: 0;     /* Removes gap under image */
+    width: fit-content;
+    max-width: 100%;
+}
+
+#fp360-floorplan-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+}
+
+/* Floorplan Overlay Styles */
+#fp360-svg-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    cursor: pointer;
+}
+
+/* 360 Viewer Right Column */
+#fp360-right {
+    flex: 1 1 400px;
+    position: relative;
+    background: #f0f0f0;
+    min-height: 400px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+/* Layout Elements for the viewer area */
+#fp360-loader {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-family: sans-serif;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px 20px;
+    border-radius: 4px;
+    z-index: 10;
+}
+
+#fp360-placeholder {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    text-align: center;
+    opacity: 0.7;
+    font-family: sans-serif;
+}
+
+#fp360-viewer-frame {
+    width: 100%;
+    height: 100%;
+    min-height: 400px;
+    border: none;
+    display: none; /* Hidden until loaded */
+    background: #000;
+}
+
+/* Transitions for polygons interaction */
+#fp360-svg-overlay polygon {
+    transition: fill 0.2s ease, stroke 0.2s ease;
+    outline: none; /* Remove focus outline on click */
+}
+
+/* Active State for polygons */
+#fp360-svg-overlay polygon:focus {
+    outline: none;
+}
+
+/* Default state for polygons (Shown on load) */
+#fp360-svg-overlay polygon {
+    fill: rgba(0, 180, 100, 0.15); /* Subtle green hint */
+    stroke: rgba(255, 255, 255, 0.5); /* Light white border */
+    stroke-width: 0.3;
+    vector-effect: non-scaling-stroke;
+    transition: fill 0.3s ease, stroke 0.3s ease;
+    cursor: pointer;
+}
+
+/* Hover state */
+#fp360-svg-overlay polygon:hover {
+    fill: rgba(0, 180, 100, 0.35); /* Stronger green on hover */
+    stroke: rgba(255, 255, 255, 1);
+}
+
+/* Active/Selected state (Set via JS) */
+#fp360-svg-overlay polygon.is-active {
+    fill: rgba(0, 120, 255, 0.4) !important; /* Distinct blue for selected room */
+    stroke: #fff !important;
+    stroke-width: 0.6;
+}
 #fp360-svg-overlay polygon {
     fill: rgba(0, 180, 100, 0.15);
     stroke: rgba(255, 255, 255, 0.5);
