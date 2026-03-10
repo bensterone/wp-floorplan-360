@@ -7,16 +7,11 @@ class Assets {
     }
 
     public function enqueue( $hook ) {
-        // Get current post type reliably
-        $post_type = get_post_type();
-        
-        if ( ( $hook === 'post.php' || $hook === 'post-new.php' ) && $post_type === FP360_CPT ) {
-            // Load WordPress Media Uploader
+        if ( ( $hook === 'post.php' || $hook === 'post-new.php' ) && get_post_type() === FP360_CPT ) {
             wp_enqueue_media();
             
             wp_enqueue_style( 'fp360-admin', FP360_URL . 'assets/css/editor.css', [], FP360_VERSION );
             
-            // Added 'media-views' as a dependency to ensure 'wp.media' exists
             wp_enqueue_script( 
                 'fp360-admin', 
                 FP360_URL . 'assets/js/editor.js', 
@@ -24,6 +19,15 @@ class Assets {
                 FP360_VERSION, 
                 true 
             );
+
+            // Fix: Localize the admin script so the JS i18n object exists
+            wp_localize_script( 'fp360-admin', 'fp360Admin', [
+                'i18n' => [
+                    'pick360'           => __( 'Pick 360', 'wp-floorplan-360' ),
+                    'deleteRoom'        => __( 'Delete Room', 'wp-floorplan-360' ),
+                    'deleteRoomConfirm' => __( 'Delete this room?', 'wp-floorplan-360' ),
+                ],
+            ] );
         }
     }
 }
