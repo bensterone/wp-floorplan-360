@@ -40,3 +40,8 @@ register_activation_hook( __FILE__, function() {
     $pt->register_cpt_raw(); 
     flush_rewrite_rules();
 });
+
+register_deactivation_hook( __FILE__, function() {
+    // Flush rewrite rules on deactivation to clean up the 'floorplan' slug
+    flush_rewrite_rules();
+});
