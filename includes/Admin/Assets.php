@@ -6,8 +6,11 @@ class Assets {
         add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
     }
 
-    public function enqueue( $hook ) {
-        if ( ( $hook === 'post.php' || $hook === 'post-new.php' ) && get_post_type() === FP360_CPT ) {
+    public function enqueue() {
+        $screen = get_current_screen();
+        
+        // Use screen base and post_type for robust detection
+        if ( $screen && 'post' === $screen->base && FP360_CPT === $screen->post_type ) {
             wp_enqueue_media();
             
             wp_enqueue_style( 'fp360-admin', FP360_URL . 'assets/css/editor.css', [], FP360_VERSION );
@@ -20,7 +23,6 @@ class Assets {
                 true 
             );
 
-            // Fix: Localize the admin script so the JS i18n object exists
             wp_localize_script( 'fp360-admin', 'fp360Admin', [
                 'i18n' => [
                     'pick360'           => __( 'Pick 360', 'wp-floorplan-360' ),
