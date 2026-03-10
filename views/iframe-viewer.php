@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo esc_attr( get_bloginfo( 'language' ) ); ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,111 +14,54 @@
     </style>
 </head>
 <body>
-    <div id="loading" style="display:none;">Loading Panorama...</div>
+    <div id="loading" style="display:none;"><?php esc_html_e( 'Loading Panorama...', 'wp-floorplan-360' ); ?></div>
 
     <script src="<?php echo esc_url( FP360_URL . 'assets/js/aframe.min.js' ); ?>"></script>
 
     <script>
-            const allowedOrigin = <?php echo wp_json_encode( \Floorplan360\Core\Ajax::get_allowed_origin() ); ?>;
-
-    function postToParent(message) {
-        if (!allowedOrigin) return;
-        window.parent.postMessage(message, allowedOrigin);
-    }
+        const allowedOrigin = <?php echo wp_json_encode( \Floorplan360\Core\Ajax::get_allowed_origin() ); ?>;
 
         function signalReady() {
-            postToParent({ type: 'FP360_VIEWER_READY' });
+            window.parent.postMessage({ type: 'FP360_VIEWER_READY' }, allowedOrigin);
         }
 
         function isUrlSafe(url) {
             if (!url) return false;
-
             try {
                 const parsed = new URL(url, window.location.href);
-
-                if (parsed.origin !== allowedOrigin) {
-                    return false;
-                }
-
-                return /^https?:$/i.test(parsed.protocol);
-            } catch (e) {
-                return false;
-            }
-        }
-
-        function notifyInitialImageState() {
-            const roomImg = document.getElementById('fp360-room-img');
-            if (!roomImg) return;
-
-            if (roomImg.complete) {
-                if (roomImg.naturalWidth > 0) {
-                    postToParent({ type: 'FP360_IMAGE_LOADED' });
-                } else {
-                    postToParent({ type: 'FP360_IMAGE_ERROR' });
-                }
-                return;
-            }
-
-            roomImg.addEventListener('load', function () {
-                postToParent({ type: 'FP360_IMAGE_LOADED' });
-            }, { once: true });
-
-            roomImg.addEventListener('error', function () {
-                postToParent({ type: 'FP360_IMAGE_ERROR' });
-            }, { once: true });
-        }
-
-        function loadSkyImage(url) {
-            const sky = document.getElementById('fp360-sky');
-            const loaderHint = document.getElementById('loading');
-
-            if (!sky || !isUrlSafe(url)) {
-                postToParent({ type: 'FP360_IMAGE_ERROR' });
-                return;
-            }
-
-            loaderHint.style.display = 'block';
-
-            const onLoaded = function () {
-                loaderHint.style.display = 'none';
-                postToParent({ type: 'FP360_IMAGE_LOADED' });
-            };
-
-            const onError = function () {
-                loaderHint.style.display = 'none';
-                postToParent({ type: 'FP360_IMAGE_ERROR' });
-            };
-
-            sky.addEventListener('materialtextureloaded', onLoaded, { once: true });
-            sky.addEventListener('error', onError, { once: true });
-
-            sky.setAttribute('src', url);
+                return parsed.origin === allowedOrigin && /^https?:$/i.test(parsed.protocol);
+            } catch (e) { return false; }
         }
 
         window.addEventListener('message', function(event) {
             if (event.origin !== allowedOrigin) return;
 
             if (event.data && event.data.type === 'FP360_LOAD_IMAGE' && event.data.url) {
-                loadSkyImage(event.data.url);
+                if (!isUrlSafe(event.data.url)) return;
+
+                const sky = document.getElementById('fp360-sky');
+                const loader = document.getElementById('loading');
+                
+                if (sky) {
+                    loader.style.display = 'block';
+                    sky.addEventListener('materialtextureloaded', () => {
+                        loader.style.display = 'none';
+                        window.parent.postMessage({ type: 'FP360_IMAGE_LOADED' }, allowedOrigin);
+                    }, { once: true });
+                    
+                    sky.setAttribute('src', event.data.url);
+                }
             }
         });
 
-        window.addEventListener('DOMContentLoaded', function() {
-            notifyInitialImageState();
-
+        window.addEventListener('DOMContentLoaded', () => {
             const scene = document.querySelector('a-scene');
-            if (scene.hasLoaded) {
-                signalReady();
-            } else {
-                scene.addEventListener('loaded', signalReady, { once: true });
-            }
+            if (scene.hasLoaded) signalReady();
+            else scene.addEventListener('loaded', signalReady, { once: true });
         });
     </script>
 
-    <a-scene embedded
-             vr-mode-ui="enabled: false"
-             device-orientation-permission-ui="enabled: false"
-             renderer="antialias: true; colorManagement: true;">
+    <a-scene embedded vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
         <a-assets>
             <img id="fp360-room-img" src="<?php echo esc_url( $img ); ?>" crossorigin="anonymous">
         </a-assets>
