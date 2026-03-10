@@ -3,24 +3,28 @@ namespace Floorplan360\Core;
 
 class PostType {
     public function register() {
-        // Register the CPT on init
-        add_action( 'init', [ $this, 'register_cpt' ] );
+        // Standard WordPress init hook
+        add_action( 'init', [ $this, 'register_cpt_raw' ] );
     }
 
-    public function register_cpt() {
+    /**
+     * Registered as a separate method so it can be called directly 
+     * by the activation hook to flush rewrite rules safely.
+     */
+    public function register_cpt_raw() {
         $labels = [
-            'name'          => 'Floorplans',
-            'singular_name' => 'Floorplan',
-            'add_new'       => 'Add New',
-            'edit_item'     => 'Edit Floorplan',
-            'search_items'  => 'Search Floorplans',
-            'menu_name'     => 'Floorplans',
+            'name'          => __( 'Floorplans', 'wp-floorplan-360' ),
+            'singular_name' => __( 'Floorplan', 'wp-floorplan-360' ),
+            'add_new'       => __( 'Add New', 'wp-floorplan-360' ),
+            'edit_item'     => __( 'Edit Floorplan', 'wp-floorplan-360' ),
+            'search_items'  => __( 'Search Floorplans', 'wp-floorplan-360' ),
+            'menu_name'     => __( 'Floorplans', 'wp-floorplan-360' ),
         ];
 
         $args = [
             'labels'             => $labels,
             'public'             => true,
-            'publicly_queryable' => true, // Ensure it can be viewed on frontend
+            'publicly_queryable' => true,
             'show_ui'            => true,
             'show_in_menu'       => true,
             'query_var'          => true,
@@ -31,7 +35,7 @@ class PostType {
             'menu_position'      => 20,
             'supports'           => [ 'title' ],
             'menu_icon'          => 'dashicons-admin-home',
-            'show_in_rest'       => true, // Enable Block Editor support
+            'show_in_rest'       => true,
         ];
 
         register_post_type( FP360_CPT, $args );
