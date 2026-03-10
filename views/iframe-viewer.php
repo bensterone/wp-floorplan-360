@@ -33,39 +33,37 @@
             } catch (e) { return false; }
         }
 
-        
-window.addEventListener('message', function(event) {
-    if (event.origin !== allowedOrigin) return;
+        window.addEventListener('message', function(event) {
+            if (event.origin !== allowedOrigin) return;
 
-    if (event.data && event.data.type === 'FP360_LOAD_IMAGE' && event.data.url) {
-        if (!isUrlSafe(event.data.url)) {
-            // New: Signal failure if URL is blocked
-            postToParent({ type: 'FP360_IMAGE_ERROR' });
-            return;
-        }
+            if (event.data && event.data.type === 'FP360_LOAD_IMAGE' && event.data.url) {
+                if (!isUrlSafe(event.data.url)) {
+                    window.parent.postMessage({ type: 'FP360_IMAGE_ERROR' }, allowedOrigin);
+                    return;
+                }
 
-        const sky = document.getElementById('fp360-sky');
-        const loader = document.getElementById('loading');
-        
-        if (sky) {
-            loader.style.display = 'block';
-            
-            // Success Path
-            sky.addEventListener('materialtextureloaded', () => {
-                loader.style.display = 'none';
-                postToParent({ type: 'FP360_IMAGE_LOADED' });
-            }, { once: true });
+                const sky = document.getElementById('fp360-sky');
+                const loader = document.getElementById('loading');
 
-            // Fix: Added Failure Path for A-Frame texture errors
-            sky.addEventListener('materialtextureerror', () => {
-                loader.style.display = 'none';
-                postToParent({ type: 'FP360_IMAGE_ERROR' });
-            }, { once: true });
-            
-            sky.setAttribute('src', event.data.url);
-        }
-    }
-});
+                if (sky) {
+                    loader.style.display = 'block';
+
+                    // Success Path
+                    sky.addEventListener('materialtextureloaded', () => {
+                        loader.style.display = 'none';
+                        window.parent.postMessage({ type: 'FP360_IMAGE_LOADED' }, allowedOrigin);
+                    }, { once: true });
+
+                    // Failure Path
+                    sky.addEventListener('materialtextureerror', () => {
+                        loader.style.display = 'none';
+                        window.parent.postMessage({ type: 'FP360_IMAGE_ERROR' }, allowedOrigin);
+                    }, { once: true });
+
+                    sky.setAttribute('src', event.data.url);
+                }
+            }
+        });
 
         window.addEventListener('DOMContentLoaded', () => {
             const scene = document.querySelector('a-scene');
