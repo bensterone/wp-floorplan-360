@@ -21,6 +21,14 @@
     box-sizing: border-box;
 }
 
+/* Break out of Twenty Twenty-Five's 645px content constraint
+   on the dedicated singular floorplan template */
+#fp360-wrap {
+    max-width: var(--wp--style--global--wide-size, 100%);
+    margin-left: auto;
+    margin-right: auto;
+}
+
 /* 2. Floorplan Column (Left) */
 #fp360-left,
 .fp360-left {
