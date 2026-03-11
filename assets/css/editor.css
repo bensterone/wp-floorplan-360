@@ -1,0 +1,55 @@
+#fp360-editor-wrap { max-width: 100%; }
+
+#fp360-canvas-container {
+    border: 2px dashed #ccc;
+    background: #fafafa;
+    position: relative;
+    overflow: hidden;
+    width: fit-content;
+    max-width: 100%;
+    min-height: 200px;
+    line-height: 0;
+}
+
+#fp360-empty-state {
+    padding: 40px;
+    text-align: center;
+    color: #999;
+    font-style: italic;
+}
+
+#fp360-hotspot-items { list-style: none; padding: 0; margin: 20px 0; }
+
+.hs-item {
+    border: 1px solid #ddd;
+    border-left: 4px solid #2271b1;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: #fff;
+}
+
+.hs-item.is-active {
+    background: #f0f6fc;
+    border-color: #2271b1;
+}
+
+.hs-item .hs-label { width: 100%; margin-bottom: 8px; font-weight: 600; }
+.hs-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.hs-input-row .hs-img360 { flex-grow: 1; }
+
+/* SVG Drawing Elements */
+.hs-poly { fill: rgba(0, 180, 100, 0.3); stroke: #fff; stroke-width: 0.3; vector-effect: non-scaling-stroke; cursor: pointer; }
+.hs-poly.active { fill: rgba(0, 120, 255, 0.6); }
+
+.drawing-line { fill: none; stroke: #ffcc00; stroke-width: 0.5; vector-effect: non-scaling-stroke; }
+.node { fill: #ffcc00; stroke: #000; stroke-width: 0.2; }
+.node-first { fill: #00e04b; animation: fp360-pulse 2s infinite; }
+
+@keyframes fp360-pulse {
+    0% { opacity: 1; fill: #00e04b; }
+    50% { opacity: 0.5; fill: #55ff8b; }
+    100% { opacity: 1; fill: #00e04b; }
+}
+
+.snap-active { cursor: crosshair; }
+.snap-active .node-first { fill: #00ff55; stroke-width: 0.5; stroke: #fff; animation: none; }

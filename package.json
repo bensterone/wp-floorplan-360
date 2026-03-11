@@ -1,0 +1,13 @@
+{
+  "name": "wp-floorplan-360",
+  "version": "1.3.0",
+  "description": "Build tooling for the Floorplan 360 block editor component.",
+  "scripts": {
+    "build":   "wp-scripts build   src/block-editor.js --output-path=assets/js --output-filename=block-editor.js",
+    "start":   "wp-scripts start   src/block-editor.js --output-path=assets/js --output-filename=block-editor.js",
+    "lint:js": "wp-scripts lint-js src/"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^30.0.0"
+  }
+}

@@ -1,0 +1,25 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "floorplan-360/viewer",
+	"version": "1.3.0",
+	"title": "Floorplan 360 Viewer",
+	"category": "media",
+	"icon": "admin-home",
+	"description": "Embed an interactive floorplan with 360° room viewer into any post or page.",
+	"keywords": [ "floorplan", "360", "panorama", "viewer", "rooms" ],
+	"textdomain": "wp-floorplan-360",
+	"attributes": {
+		"floorplanId": {
+			"type": "number",
+			"default": 0
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ]
+	},
+	"editorScript": "file:./assets/js/block-editor.js",
+	"editorStyle":  "file:./assets/css/block-editor.css",
+	"style":        "file:./assets/css/viewer.css"
+}

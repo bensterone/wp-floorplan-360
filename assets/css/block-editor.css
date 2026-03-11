@@ -1,0 +1,25 @@
+/**
+ * Floorplan 360 Viewer — Block Editor Styles
+ * These styles apply only inside the Gutenberg editor, never on the frontend.
+ */
+
+.fp360-block-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 24px 20px;
+    background: #f0f6fc;
+    border: 2px solid #2271b1;
+    border-radius: 4px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    color: #2271b1;
+    font-weight: 500;
+}
+
+.fp360-block-preview__icon {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}

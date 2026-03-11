@@ -1,0 +1,64 @@
+# =============================================================================
+# wp-floorplan-360 — .gitignore
+# =============================================================================
+
+
+# --- Node / Build tooling ---
+node_modules/
+
+
+# --- WordPress core & environment ---
+# If you're developing inside a local WordPress install,
+# ignore everything except your own plugin folder.
+# (Remove these if your repo root IS the plugin folder.)
+wp-admin/
+wp-includes/
+wp-content/uploads/
+wp-content/plugins/
+wp-content/themes/
+wp-config.php
+wp-config-local.php
+.htaccess
+
+
+# --- Compiled / generated assets ---
+# The built block editor JS is intentionally KEPT in git
+# (so users can install without running npm).
+# Only exclude source maps if you don't want them public.
+assets/js/*.map
+
+
+# --- A-Frame binary ---
+# Large vendored binary — keep it if you want the repo self-contained,
+# remove this line if you commit it (recommended for easy installation).
+# assets/js/aframe.min.js
+
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+
+# --- Editor / IDE ---
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+
+# --- Logs & temp ---
+*.log
+*.tmp
+*.bak
+*.swp
+
+
+# --- Environment files ---
+.env
+.env.local
+
+
+# --- Composer (not used yet, but common in WP projects) ---
+vendor/
+composer.lock
