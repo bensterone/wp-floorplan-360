@@ -1,9 +1,17 @@
 /**
  * Floorplan 360 Viewer - Frontend Styles
+ *
+ * Each rule targets both:
+ *   #fp360-*   — the singular floorplan post template (floorplan-template.php)
+ *   .fp360-*   — the Gutenberg block template (block-viewer.php)
+ *
+ * This means the single post view and the block embed share identical styles
+ * with zero duplication.
  */
 
 /* 1. Layout Wrapper */
-#fp360-wrap {
+#fp360-wrap,
+.fp360-wrap {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
@@ -13,7 +21,8 @@
 }
 
 /* 2. Floorplan Column (Left) */
-#fp360-left {
+#fp360-left,
+.fp360-left {
     flex: 1 1 500px;
     position: relative;
     line-height: 0;
@@ -21,7 +30,8 @@
     max-width: 100%;
 }
 
-#fp360-floorplan-img {
+#fp360-floorplan-img,
+.fp360-floorplan-img {
     display: block;
     width: 100%;
     height: auto;
@@ -29,7 +39,8 @@
 }
 
 /* 3. SVG Interactive Overlay */
-#fp360-svg-overlay {
+#fp360-svg-overlay,
+.fp360-svg-overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -38,7 +49,8 @@
     z-index: 5;
 }
 
-#fp360-svg-overlay polygon {
+#fp360-svg-overlay polygon,
+.fp360-svg-overlay polygon {
     fill: rgba(0, 180, 100, 0.15);
     stroke: rgba(255, 255, 255, 0.5);
     stroke-width: 0.3;
@@ -49,20 +61,23 @@
 }
 
 /* Hover state */
-#fp360-svg-overlay polygon:hover {
+#fp360-svg-overlay polygon:hover,
+.fp360-svg-overlay polygon:hover {
     fill: rgba(0, 180, 100, 0.35);
     stroke: rgba(255, 255, 255, 1);
 }
 
 /* Active/Selected state */
-#fp360-svg-overlay polygon.is-active {
+#fp360-svg-overlay polygon.is-active,
+.fp360-svg-overlay polygon.is-active {
     fill: rgba(0, 120, 255, 0.4) !important;
     stroke: #fff !important;
     stroke-width: 0.6;
 }
 
 /* Accessibility: Keyboard Focus State */
-#fp360-svg-overlay polygon:focus-visible {
+#fp360-svg-overlay polygon:focus-visible,
+.fp360-svg-overlay polygon:focus-visible {
     outline: 2px solid #fff;
     stroke: #2271b1;
     stroke-width: 1;
@@ -70,7 +85,8 @@
 }
 
 /* 4. 360 Viewer Column (Right) */
-#fp360-right {
+#fp360-right,
+.fp360-right {
     flex: 1 1 400px;
     position: relative;
     background: #000;
@@ -79,7 +95,8 @@
     overflow: hidden;
 }
 
-#fp360-viewer-frame {
+#fp360-viewer-frame,
+.fp360-viewer-frame {
     width: 100%;
     height: 100%;
     min-height: 400px;
@@ -89,7 +106,8 @@
 }
 
 /* 5. UI Elements (Placeholders & Status) */
-#fp360-placeholder {
+#fp360-placeholder,
+.fp360-placeholder {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -100,7 +118,8 @@
     font-family: sans-serif;
 }
 
-#fp360-loader {
+#fp360-loader,
+.fp360-loader {
     display: none;
     position: absolute;
     top: 50%;
@@ -114,7 +133,8 @@
     z-index: 10;
 }
 
-#fp360-status {
+#fp360-status,
+.fp360-status {
     position: absolute;
     left: 16px;
     right: 16px;
@@ -131,7 +151,8 @@
 }
 
 /* Hide status if empty */
-#fp360-status:empty {
+#fp360-status:empty,
+.fp360-status:empty {
     display: none;
 }
 
@@ -147,17 +168,21 @@
 
 /* 6. Responsive Adjustments */
 @media (max-width: 768px) {
-    #fp360-wrap {
+    #fp360-wrap,
+    .fp360-wrap {
         flex-direction: column;
     }
-    
-    #fp360-left, 
-    #fp360-right {
+
+    #fp360-left,
+    #fp360-right,
+    .fp360-left,
+    .fp360-right {
         flex: 1 1 auto;
         width: 100%;
     }
 
-    #fp360-right {
+    #fp360-right,
+    .fp360-right {
         min-height: 300px;
     }
 }
