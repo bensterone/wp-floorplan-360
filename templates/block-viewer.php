@@ -3,14 +3,19 @@
  * Block render template for the Floorplan 360 Viewer block.
  *
  * Variables available (set by Block::render() before include):
- *   $post_id        int     The floorplan post ID.
- *   $floorplan_img  string  URL of the floorplan image.
- *   $hotspots_json  string  JSON string of hotspot data.
+ *   $post_id         int     The floorplan post ID.
+ *   $floorplan_img   string  URL of the floorplan image.
+ *   $hotspots_json   string  JSON string of hotspot data.
+ *   $auto_rotate     string  '1' to enable auto-rotate, '0' or '' to disable.
+ *   $highlight_color string  Hex colour for the active room polygon.
  */
 
 defined( 'ABSPATH' ) || exit;
 ?>
-<div id="fp360-wrap-<?php echo esc_attr( $post_id ); ?>" class="fp360-wrap">
+<div id="fp360-wrap-<?php echo esc_attr( $post_id ); ?>"
+     class="fp360-wrap"
+     data-auto-rotate="<?php echo esc_attr( $auto_rotate ); ?>"
+     data-highlight="<?php echo esc_attr( $highlight_color ); ?>">
     <div class="fp360-left">
         <?php if ( $floorplan_img ) : ?>
             <img id="fp360-floorplan-img-<?php echo esc_attr( $post_id ); ?>"

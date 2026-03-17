@@ -20,6 +20,16 @@
         const allowedOrigin = fp360Config?.origin || '';
         const viewerBaseUrl = (fp360Config?.ajaxUrl || '') + '?action=fp360_viewer';
 
+        // Per-floorplan viewer settings stored as data attributes on the wrapper
+        const autoRotate     = wrap.dataset.autoRotate === '1';
+        const highlightColor = wrap.dataset.highlight || null;
+
+        // Apply the highlight colour as a CSS variable on the SVG element so
+        // viewer.css can use it for the active polygon state across all rooms.
+        if (highlightColor && svgEl) {
+            svgEl.style.setProperty('--fp360-active-color', highlightColor);
+        }
+
         let hotspots      = [];
         let isIframeReady = false;
         let pendingImage  = null;
@@ -80,7 +90,9 @@
 
             if (frame.src === '' || frame.src === 'about:blank') {
                 frame.style.display = 'block';
-                frame.src = viewerBaseUrl + '&img=' + encodeURIComponent(hs.image360);
+                let src = viewerBaseUrl + '&img=' + encodeURIComponent(hs.image360);
+                if (autoRotate) src += '&autorotate=1';
+                frame.src = src;
             } else {
                 if (isIframeReady) {
                     frame.contentWindow.postMessage(

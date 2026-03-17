@@ -46,8 +46,10 @@ class Block {
             return '';
         }
 
-        $floorplan_img = get_post_meta( $post_id, '_fp360_image', true );
-        $hotspots_json = get_post_meta( $post_id, '_fp360_hotspots', true );
+        $floorplan_img   = get_post_meta( $post_id, '_fp360_image', true );
+        $hotspots_json   = get_post_meta( $post_id, '_fp360_hotspots', true );
+        $auto_rotate     = get_post_meta( $post_id, '_fp360_auto_rotate', true );
+        $highlight_color = get_post_meta( $post_id, '_fp360_highlight_color', true ) ?: '#0078ff';
 
         if ( ! $hotspots_json ) {
             $hotspots_json = '[]';

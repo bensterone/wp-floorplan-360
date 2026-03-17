@@ -82,11 +82,12 @@
     stroke: color-mix(in srgb, var(--fp360-room-color, #00b464) 100%, transparent);
 }
 
-/* Active/Selected state — uses the room's own colour at higher opacity */
+/* Active/Selected state — uses the admin-configured highlight colour if set
+   (--fp360-active-color on the SVG), otherwise falls back to the room's own colour */
 #fp360-svg-overlay polygon.is-active,
 .fp360-svg-overlay polygon.is-active {
-    fill: color-mix(in srgb, var(--fp360-room-color, #0078ff) 50%, transparent) !important;
-    stroke: color-mix(in srgb, var(--fp360-room-color, #0078ff) 100%, transparent) !important;
+    fill: color-mix(in srgb, var(--fp360-active-color, var(--fp360-room-color, #0078ff)) 50%, transparent) !important;
+    stroke: var(--fp360-active-color, var(--fp360-room-color, #0078ff)) !important;
     stroke-width: 0.6;
 }
 

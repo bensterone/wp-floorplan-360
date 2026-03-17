@@ -16,19 +16,62 @@ class Editor {
             'normal',
             'high'
         );
+
+        add_meta_box(
+            'fp360_settings',
+            __( 'Viewer Settings', 'wp-floorplan-360' ),
+            [ $this, 'render_settings' ],
+            FP360_CPT,
+            'side',
+            'default'
+        );
     }
 
     public function render_ui( $post ) {
         wp_nonce_field( 'fp360_save_action', 'fp360_nonce_field' );
-        
+
         $floorplan_img = get_post_meta( $post->ID, '_fp360_image', true );
         $hotspots_json = get_post_meta( $post->ID, '_fp360_hotspots', true );
-        
+
         if ( ! $hotspots_json ) {
             $hotspots_json = '[]';
         }
 
         require FP360_PATH . 'views/meta-box.php';
+    }
+
+    public function render_settings( $post ) {
+        $auto_rotate     = get_post_meta( $post->ID, '_fp360_auto_rotate', true );
+        $highlight_color = get_post_meta( $post->ID, '_fp360_highlight_color', true );
+
+        // Default highlight colour — a clear, accessible blue
+        if ( empty( $highlight_color ) ) {
+            $highlight_color = '#0078ff';
+        }
+        ?>
+        <p>
+            <label>
+                <input type="checkbox"
+                       name="fp360_auto_rotate"
+                       value="1"
+                       <?php checked( $auto_rotate, '1' ); ?> />
+                <?php esc_html_e( 'Auto-rotate panorama', 'wp-floorplan-360' ); ?>
+            </label>
+        </p>
+        <p>
+            <label for="fp360_highlight_color">
+                <strong><?php esc_html_e( 'Active room colour:', 'wp-floorplan-360' ); ?></strong>
+            </label><br>
+            <input type="color"
+                   id="fp360_highlight_color"
+                   name="fp360_highlight_color"
+                   value="<?php echo esc_attr( $highlight_color ); ?>"
+                   style="margin-top:6px; width:48px; height:28px; cursor:pointer; border:1px solid #ccc; border-radius:3px;" />
+            <span style="margin-left:6px; font-size:12px; color:#666;">
+                <?php esc_html_e( 'Colour of the selected room polygon', 'wp-floorplan-360' ); ?>
+            </span>
+        </p>
+        <?php
     }
 
     public function save_meta( $post_id, $post ) {
@@ -76,6 +119,19 @@ class Editor {
                     ];
                 }
                 update_post_meta( $post_id, '_fp360_hotspots', wp_json_encode( $clean_hotspots ) );
+            }
+        }
+        // Save viewer settings
+        update_post_meta(
+            $post_id,
+            '_fp360_auto_rotate',
+            isset( $_POST['fp360_auto_rotate'] ) ? '1' : '0'
+        );
+
+        if ( isset( $_POST['fp360_highlight_color'] ) ) {
+            $color = sanitize_hex_color( wp_unslash( $_POST['fp360_highlight_color'] ) );
+            if ( $color ) {
+                update_post_meta( $post_id, '_fp360_highlight_color', $color );
             }
         }
     }

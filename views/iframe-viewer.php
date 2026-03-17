@@ -20,6 +20,7 @@
 
     <script>
         const allowedOrigin = <?php echo wp_json_encode( \Floorplan360\Core\Ajax::get_allowed_origin() ); ?>;
+        const autoRotate    = <?php echo isset( $_GET['autorotate'] ) && $_GET['autorotate'] === '1' ? 'true' : 'false'; ?>;
 
         function signalReady() {
             window.parent.postMessage({ type: 'FP360_VIEWER_READY' }, allowedOrigin);
@@ -42,19 +43,17 @@
                     return;
                 }
 
-                const sky = document.getElementById('fp360-sky');
+                const sky    = document.getElementById('fp360-sky');
                 const loader = document.getElementById('loading');
 
                 if (sky) {
                     loader.style.display = 'block';
 
-                    // Success Path
                     sky.addEventListener('materialtextureloaded', () => {
                         loader.style.display = 'none';
                         window.parent.postMessage({ type: 'FP360_IMAGE_LOADED' }, allowedOrigin);
                     }, { once: true });
 
-                    // Failure Path
                     sky.addEventListener('materialtextureerror', () => {
                         loader.style.display = 'none';
                         window.parent.postMessage({ type: 'FP360_IMAGE_ERROR' }, allowedOrigin);
@@ -69,6 +68,49 @@
             const scene = document.querySelector('a-scene');
             if (scene.hasLoaded) signalReady();
             else scene.addEventListener('loaded', signalReady, { once: true });
+
+            // Auto-rotate — slowly spin the camera when enabled.
+            // Stops immediately when the user interacts with the viewer.
+            if (autoRotate) {
+                let rotating   = true;
+                let rafId      = null;
+                let lastTime   = null;
+                const DEG_PER_SEC = 8; // one full rotation every 45 seconds
+
+                function stopRotation() {
+                    rotating = false;
+                    if (rafId) cancelAnimationFrame(rafId);
+                }
+
+                // Any touch or mouse interaction cancels auto-rotation
+                document.addEventListener('mousedown', stopRotation, { once: true });
+                document.addEventListener('touchstart', stopRotation, { once: true });
+
+                function tick(timestamp) {
+                    if (!rotating) return;
+                    rafId = requestAnimationFrame(tick);
+
+                    if (!lastTime) { lastTime = timestamp; return; }
+                    const delta = (timestamp - lastTime) / 1000; // seconds
+                    lastTime = timestamp;
+
+                    const camera = document.querySelector('[camera]');
+                    if (!camera) return;
+
+                    const rot = camera.getAttribute('rotation') || { x: 0, y: 0, z: 0 };
+                    camera.setAttribute('rotation', {
+                        x: rot.x,
+                        y: rot.y + (DEG_PER_SEC * delta),
+                        z: rot.z
+                    });
+                }
+
+                // Start rotating once the scene is ready
+                const scene = document.querySelector('a-scene');
+                const startWhenReady = () => requestAnimationFrame(tick);
+                if (scene.hasLoaded) startWhenReady();
+                else scene.addEventListener('loaded', startWhenReady, { once: true });
+            }
         });
     </script>
 
