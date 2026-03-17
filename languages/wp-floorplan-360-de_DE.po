@@ -2,11 +2,11 @@
 # This file is distributed under the GPL-2.0+.
 msgid ""
 msgstr ""
-"Project-Id-Version: Floorplan 360 Viewer 1.3.0\n"
+"Project-Id-Version: Floorplan 360 Viewer 1.4.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-"
 "floorplan-360-1.3\n"
-"POT-Creation-Date: 2026-03-11T11:42:55+00:00\n"
-"PO-Revision-Date: 2026-03-11 12:53+0100\n"
+"POT-Creation-Date: 2026-03-17T14:04:22+00:00\n"
+"PO-Revision-Date: 2026-03-17 15:07+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: de\n"
@@ -26,7 +26,7 @@ msgstr "Grundriss 360°-Viewer"
 #: wp-floorplan-360.php
 msgid "Interactive floorplans with polygon hotspots and 360° room viewer."
 msgstr ""
-"Interaktive Grundrisse mit polygonalen Hotspots und 360° Raumbetrachter."
+"Interaktive Grundrisse mit polygonalen Hotspots und 360° Raumbetrachter"
 
 #. Author of the plugin
 #: wp-floorplan-360.php
@@ -45,19 +45,43 @@ msgstr "Raum löschen"
 msgid "Delete this room?"
 msgstr "Diesen Raum löschen?"
 
+#: includes/Admin/Assets.php:31
+msgid "New Room"
+msgstr "Neuer Raum"
+
+#: includes/Admin/Assets.php:32
+msgid "Room Label"
+msgstr "Raum Label"
+
 #: includes/Admin/Editor.php:13
 msgid "Floorplan Editor"
 msgstr "Grundriss Editor"
 
-#: includes/Block/Block.php:59 includes/Frontend/Assets.php:20
+#: includes/Admin/Editor.php:22
+msgid "Viewer Settings"
+msgstr "Viewer-Einstellungen"
+
+#: includes/Admin/Editor.php:58
+msgid "Auto-rotate panorama"
+msgstr "Lade Panorama..."
+
+#: includes/Admin/Editor.php:63
+msgid "Active room colour:"
+msgstr "Aktiver Raum Farbe:"
+
+#: includes/Admin/Editor.php:71
+msgid "Colour of the selected room polygon"
+msgstr "Farbe des ausgewählten Polygons"
+
+#: includes/Block/Block.php:68 includes/Frontend/Assets.php:20
 msgid "View room"
 msgstr "Raum anzeigen"
 
-#: includes/Block/Block.php:60 includes/Frontend/Assets.php:21
+#: includes/Block/Block.php:69 includes/Frontend/Assets.php:21
 msgid "No 360° image assigned to this room."
 msgstr "Kein 360°-Bild diesem Raum zugewiesen."
 
-#: includes/Block/Block.php:61 includes/Frontend/Assets.php:22
+#: includes/Block/Block.php:70 includes/Frontend/Assets.php:22
 msgid "The 360° image could not be loaded."
 msgstr "Das 360°-Bild konnte nicht geladen werden."
 
@@ -81,25 +105,29 @@ msgstr "Grundriss bearbeiten"
 msgid "Search Floorplans"
 msgstr "Grundrisse suchen"
 
-#: templates/block-viewer.php:27 templates/floorplan-template.php:25
+#: templates/block-viewer.php:32 templates/floorplan-template.php:31
 msgid "No floorplan image uploaded."
 msgstr "Kein Grundriss-Bild hochgeladen."
 
-#: templates/block-viewer.php:34 templates/floorplan-template.php:30
+#: templates/block-viewer.php:39 templates/floorplan-template.php:36
 msgid "360 degree room view"
 msgstr "360 Grad Raumansicht"
 
-#: templates/block-viewer.php:37 templates/floorplan-template.php:32
+#: templates/block-viewer.php:42 templates/floorplan-template.php:38
 msgid "Select a room on the floorplan to view it in 360°"
 msgstr "Klicken Sie auf einen Raum im Grundriss für die 360°-Ansicht"
 
-#: templates/block-viewer.php:40 templates/floorplan-template.php:35
+#: templates/block-viewer.php:45 templates/floorplan-template.php:41
 msgid "Loading viewer..."
 msgstr "Lade Betrachter..."
 
-#: templates/block-viewer.php:46 templates/floorplan-template.php:42
+#: templates/block-viewer.php:51 templates/floorplan-template.php:48
 msgid "360 degree room viewer"
 msgstr "360°-Raumviewer"
+
+#: templates/block-viewer.php:57 templates/floorplan-template.php:54
+msgid "Room list"
+msgstr "Liste der Räume"
 
 #: views/iframe-viewer.php:17
 msgid "Loading Panorama..."
