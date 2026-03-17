@@ -69,7 +69,10 @@ class Editor {
                         'id'       => sanitize_key( $hotspot['id'] ?? '' ),
                         'label'    => sanitize_text_field( $hotspot['label'] ?? '' ),
                         'image360' => esc_url_raw( $hotspot['image360'] ?? '' ),
-                        'points'   => $clean_points
+                        // Colour is a hex value — sanitize_hex_color() returns '' for
+                        // invalid input, so we fall back to a safe default blue.
+                        'color'    => sanitize_hex_color( $hotspot['color'] ?? '' ) ?: '#4fa8e8',
+                        'points'   => $clean_points,
                     ];
                 }
                 update_post_meta( $post_id, '_fp360_hotspots', wp_json_encode( $clean_hotspots ) );

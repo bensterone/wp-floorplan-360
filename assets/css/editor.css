@@ -22,33 +22,58 @@
 
 .hs-item {
     border: 1px solid #ddd;
-    border-left: 4px solid #2271b1;
+    /* Left accent bar uses the room's own colour, stored as --hs-color by editor.js */
+    border-left: 4px solid var(--hs-color, #2271b1);
     padding: 12px;
     margin-bottom: 8px;
     background: #fff;
 }
 
 .hs-item.is-active {
-    background: #f0f6fc;
-    border-color: #2271b1;
+    background: #f7f9fc;
+    border-color: var(--hs-color, #2271b1);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
-.hs-item .hs-label { width: 100%; margin-bottom: 8px; font-weight: 600; }
+/* Room header row — swatch dot + label input side by side */
+.hs-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+/* Colour swatch dot shown next to each room label */
+.hs-color-swatch {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.hs-item .hs-label { flex: 1; font-weight: 600; }
 .hs-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
 .hs-input-row .hs-img360 { flex-grow: 1; }
 
 /* SVG Drawing Elements */
-.hs-poly { fill: rgba(0, 180, 100, 0.3); stroke: #fff; stroke-width: 0.3; vector-effect: non-scaling-stroke; cursor: pointer; }
-.hs-poly.active { fill: rgba(0, 120, 255, 0.6); }
+/* Individual polygon colours are set via inline attributes in editor.js —
+   these rules only handle drawing-in-progress elements. */
+.hs-poly {
+    vector-effect: non-scaling-stroke;
+    cursor: pointer;
+    transition: fill 0.15s ease;
+}
 
 .drawing-line { fill: none; stroke: #ffcc00; stroke-width: 0.5; vector-effect: non-scaling-stroke; }
-.node { fill: #ffcc00; stroke: #000; stroke-width: 0.2; }
+.node { fill: #ffcc00; stroke: #000; stroke-width: 0.2; vector-effect: non-scaling-stroke; }
 .node-first { fill: #00e04b; animation: fp360-pulse 2s infinite; }
 
 @keyframes fp360-pulse {
-    0% { opacity: 1; fill: #00e04b; }
-    50% { opacity: 0.5; fill: #55ff8b; }
-    100% { opacity: 1; fill: #00e04b; }
+    0%   { opacity: 1;   fill: #00e04b; }
+    50%  { opacity: 0.5; fill: #55ff8b; }
+    100% { opacity: 1;   fill: #00e04b; }
 }
 
 .snap-active { cursor: crosshair; }

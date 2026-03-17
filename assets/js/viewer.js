@@ -7,17 +7,18 @@
      * on the same post each get their own isolated state.
      */
     function initViewer(wrap) {
-        const svgEl      = wrap.querySelector('.fp360-svg-overlay');
-        const imgEl      = wrap.querySelector('.fp360-floorplan-img');
-        const frame      = wrap.querySelector('.fp360-viewer-frame');
+        const svgEl       = wrap.querySelector('.fp360-svg-overlay');
+        const imgEl       = wrap.querySelector('.fp360-floorplan-img');
+        const frame       = wrap.querySelector('.fp360-viewer-frame');
         const placeholder = wrap.querySelector('.fp360-placeholder');
-        const loader     = wrap.querySelector('.fp360-loader');
-        const statusEl   = wrap.querySelector('.fp360-status');
+        const loader      = wrap.querySelector('.fp360-loader');
+        const statusEl    = wrap.querySelector('.fp360-status');
 
         if (!svgEl || !imgEl || !frame) return;
 
-        const allowedOrigin  = fp360Config.origin;
-        const viewerBaseUrl  = fp360Config.ajaxUrl + '?action=fp360_viewer';
+        const i18n          = fp360Config?.i18n || {};
+        const allowedOrigin = fp360Config?.origin || '';
+        const viewerBaseUrl = (fp360Config?.ajaxUrl || '') + '?action=fp360_viewer';
 
         let hotspots      = [];
         let isIframeReady = false;
@@ -29,32 +30,17 @@
             console.error('FP360: Error parsing hotspots', e);
         }
 
-        // ------------------------------------------------------------------
-        // Helpers
-        // ------------------------------------------------------------------
-
         function setStatus(message) {
-            if (statusEl) {
-                statusEl.textContent = message || '';
-            }
+            if (statusEl) statusEl.textContent = message || '';
         }
-
-        // ------------------------------------------------------------------
-        // postMessage handler — scoped to this instance's iframe
-        // ------------------------------------------------------------------
 
         window.addEventListener('message', function (event) {
             if (event.origin !== allowedOrigin) return;
             if (!event.data || !event.data.type) return;
-
-            // Ignore messages not meant for this instance's frame.
-            // When multiple viewers exist, all listeners fire for every message,
-            // so we check that the source window matches our own iframe.
             if (event.source !== frame.contentWindow) return;
 
             if (event.data.type === 'FP360_VIEWER_READY') {
                 isIframeReady = true;
-
                 if (pendingImage) {
                     frame.contentWindow.postMessage(
                         { type: 'FP360_LOAD_IMAGE', url: pendingImage },
@@ -75,17 +61,13 @@
 
             if (event.data.type === 'FP360_IMAGE_ERROR') {
                 if (loader) loader.style.display = 'none';
-                setStatus(fp360Config.i18n.viewerLoadError);
+                setStatus(i18n.viewerLoadError || '');
             }
         });
 
-        // ------------------------------------------------------------------
-        // Room loading
-        // ------------------------------------------------------------------
-
         function loadRoom(hs, poly) {
             if (!hs.image360) {
-                setStatus(fp360Config.i18n.noPanoramaAssigned);
+                setStatus(i18n.noPanoramaAssigned || '');
                 return;
             }
 
@@ -111,10 +93,6 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Polygon rendering
-        // ------------------------------------------------------------------
-
         function renderPolygons() {
             if (imgEl.offsetWidth === 0) {
                 imgEl.addEventListener('load', renderPolygons, { once: true });
@@ -129,11 +107,18 @@
                 if (!hs.points || hs.points.length < 3) return;
 
                 const ptsString = hs.points.map(p => `${p.x * 100},${p.y * 100}`).join(' ');
-                const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                const poly      = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+
                 poly.setAttribute('points', ptsString);
                 poly.setAttribute('tabindex', '0');
                 poly.setAttribute('role', 'button');
-                poly.setAttribute('aria-label', hs.label || fp360Config.i18n.viewRoom);
+                poly.setAttribute('aria-label', hs.label || i18n.viewRoom || '');
+
+                // Store the room colour as a CSS custom property so viewer.css
+                // can tint fill, hover and active states per room.
+                if (hs.color) {
+                    poly.style.setProperty('--fp360-room-color', hs.color);
+                }
 
                 poly.addEventListener('click', () => loadRoom(hs, poly));
                 poly.addEventListener('keydown', (e) => {
@@ -148,14 +133,7 @@
         }
 
         window.addEventListener('load', renderPolygons);
-
-        // Note: Resize listener is intentionally omitted.
-        // SVG viewBox + preserveAspectRatio handle scaling automatically.
     }
-
-    // ------------------------------------------------------------------
-    // Boot — find every viewer on the page and initialize each one
-    // ------------------------------------------------------------------
 
     document.querySelectorAll('.fp360-wrap').forEach(initViewer);
 

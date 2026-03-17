@@ -63,11 +63,14 @@
 
 #fp360-svg-overlay polygon,
 .fp360-svg-overlay polygon {
-    fill: rgba(0, 180, 100, 0.15);
-    stroke: rgba(255, 255, 255, 0.5);
+    /* Each polygon sets --fp360-room-color via inline style in viewer.js.
+       color-mix() gives us a transparent tint of that colour for free,
+       without needing rgba() arithmetic in JavaScript. */
+    fill: color-mix(in srgb, var(--fp360-room-color, #00b464) 18%, transparent);
+    stroke: color-mix(in srgb, var(--fp360-room-color, #00b464) 70%, transparent);
     stroke-width: 0.3;
     vector-effect: non-scaling-stroke;
-    transition: fill 0.3s ease, stroke 0.3s ease;
+    transition: fill 0.25s ease, stroke 0.25s ease;
     cursor: pointer;
     outline: none;
 }
@@ -75,15 +78,15 @@
 /* Hover state */
 #fp360-svg-overlay polygon:hover,
 .fp360-svg-overlay polygon:hover {
-    fill: rgba(0, 180, 100, 0.35);
-    stroke: rgba(255, 255, 255, 1);
+    fill: color-mix(in srgb, var(--fp360-room-color, #00b464) 38%, transparent);
+    stroke: color-mix(in srgb, var(--fp360-room-color, #00b464) 100%, transparent);
 }
 
-/* Active/Selected state */
+/* Active/Selected state — uses the room's own colour at higher opacity */
 #fp360-svg-overlay polygon.is-active,
 .fp360-svg-overlay polygon.is-active {
-    fill: rgba(0, 120, 255, 0.4) !important;
-    stroke: #fff !important;
+    fill: color-mix(in srgb, var(--fp360-room-color, #0078ff) 50%, transparent) !important;
+    stroke: color-mix(in srgb, var(--fp360-room-color, #0078ff) 100%, transparent) !important;
     stroke-width: 0.6;
 }
 
@@ -91,9 +94,9 @@
 #fp360-svg-overlay polygon:focus-visible,
 .fp360-svg-overlay polygon:focus-visible {
     outline: 2px solid #fff;
-    stroke: #2271b1;
+    stroke: color-mix(in srgb, var(--fp360-room-color, #2271b1) 100%, transparent);
     stroke-width: 1;
-    fill: rgba(255, 196, 0, 0.35);
+    fill: color-mix(in srgb, var(--fp360-room-color, #2271b1) 35%, transparent);
 }
 
 /* 4. 360 Viewer Column (Right) */
