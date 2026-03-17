@@ -2,17 +2,19 @@
 
 A WordPress plugin for housing cooperatives and property managers. Upload a floorplan image, draw interactive room polygons directly in the editor, assign a 360° panorama to each room, and embed the result anywhere on your site — as a dedicated page or as a Gutenberg block inside any post or page.
 
-![Plugin Version](https://img.shields.io/badge/version-1.3.0-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
+![Plugin Version](https://img.shields.io/badge/version-1.4.0-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
 
 ---
 
 ## Features
 
 - **Visual hotspot editor** — click directly on the floorplan to draw room polygons. Snap-to-start closing, undo support, and real-time SVG preview.
+- **Color-coded rooms** — each room is automatically assigned a distinct colour from a palette, visible in both the editor and the frontend viewer.
 - **360° panorama viewer** — powered by A-Frame. Visitors click a room and the panorama loads in an inline viewer without leaving the page.
+- **Viewer settings** — per-floorplan options for auto-rotating the panorama and choosing the active room highlight colour.
 - **Gutenberg block** — embed any floorplan into any post or page with the `Floorplan 360 Viewer` block. Select the floorplan from the block settings panel.
 - **Multiple instances** — place the block several times on the same page with different floorplans. Each viewer operates independently.
-- **Responsive layout** — two-column floorplan/viewer layout on desktop, single-column stack on mobile.
+- **Responsive layout** — two-column floorplan/viewer layout on desktop, single-column stack on mobile with a scrollable room list.
 - **Accessible** — all room polygons are keyboard-navigable (`Tab` to focus, `Enter` or `Space` to open). ARIA roles and labels throughout.
 - **Secure** — iframe-based viewer with strict `postMessage` origin validation, `X-Frame-Options`, and `Content-Security-Policy` headers. Panorama URLs must be hosted on the same domain.
 - **Translatable** — full i18n support. German (`de_DE`) translation included.
