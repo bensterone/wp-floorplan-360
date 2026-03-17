@@ -9,12 +9,22 @@ class Ajax {
 
     /**
      * Centralized helper to get the allowed origin for security checks.
+     *
+     * Tries to build a precise scheme://host[:port] string from home_url().
+     * Falls back to home_url() itself if wp_parse_url() cannot extract the
+     * individual parts (e.g. on non-standard server configurations), so the
+     * viewer always has a valid, non-empty origin to compare against.
      */
     public static function get_allowed_origin() {
         $home = wp_parse_url( home_url( '/' ) );
+
+        // Fallback: if parsing fails for any reason, use home_url() directly.
+        // This guarantees we never return an empty string, which would cause
+        // all postMessage origin checks to fail silently.
         if ( empty( $home['scheme'] ) || empty( $home['host'] ) ) {
-            return '';
+            return esc_url_raw( home_url() );
         }
+
         $origin = $home['scheme'] . '://' . $home['host'];
         if ( ! empty( $home['port'] ) ) {
             $origin .= ':' . (int) $home['port'];
@@ -23,10 +33,13 @@ class Ajax {
     }
 
     public function render_viewer() {
-        send_origin_headers();
+        // Security headers first — before any output and before
+        // send_origin_headers(), so there is no risk of duplication.
+        header_remove( 'X-Frame-Options' );
         header( 'X-Frame-Options: SAMEORIGIN' );
         header( 'Content-Security-Policy: frame-ancestors \'self\'' );
         header( 'Content-Type: text/html; charset=utf-8' );
+        send_origin_headers();
 
         $img = isset( $_GET['img'] ) ? esc_url_raw( wp_unslash( $_GET['img'] ) ) : '';
 

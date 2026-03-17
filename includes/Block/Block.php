@@ -33,9 +33,16 @@ class Block {
             return '';
         }
 
-        // Make sure the referenced floorplan post actually exists and is published
+        // Make sure the referenced floorplan post actually exists and is published.
         $post = get_post( $post_id );
         if ( ! $post || $post->post_type !== FP360_CPT || $post->post_status !== 'publish' ) {
+            return '';
+        }
+
+        // Do not render if the current visitor cannot read this post.
+        // This prevents private or password-protected floorplans from being
+        // exposed publicly via a block embedded on another page.
+        if ( ! current_user_can( 'read_post', $post_id ) ) {
             return '';
         }
 

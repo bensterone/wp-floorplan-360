@@ -8,7 +8,7 @@ class PostType {
     }
 
     /**
-     * Registered as a separate method so it can be called directly 
+     * Registered as a separate method so it can be called directly
      * by the activation hook to flush rewrite rules safely.
      */
     public function register_cpt_raw() {
@@ -27,6 +27,10 @@ class PostType {
             'publicly_queryable' => true,
             'show_ui'            => true,
             'show_in_menu'       => true,
+            // Floorplans are embedded content, not navigation destinations.
+            // Hiding from the nav menus UI prevents editors from accidentally
+            // adding a Floorplans entry to the site menu.
+            'show_in_nav_menus'  => false,
             'query_var'          => true,
             'rewrite'            => [ 'slug' => 'floorplan' ],
             'capability_type'    => 'post',
