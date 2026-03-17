@@ -207,3 +207,73 @@
         min-height: 300px;
     }
 }
+
+/* 7. Mobile Room List
+   A horizontally scrollable strip of buttons below the viewer.
+   Hidden on desktop — only shown when the layout stacks vertically. */
+
+.fp360-room-list {
+    display: none; /* hidden on desktop */
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 680px) {
+    .fp360-room-list {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 8px;
+        padding: 10px 0 4px;
+        /* Smooth momentum scrolling on iOS */
+        -webkit-overflow-scrolling: touch;
+        /* Hide the scrollbar visually but keep it functional */
+        scrollbar-width: none;
+    }
+
+    .fp360-room-list::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/* Room button — colour dot + label text */
+.fp360-room-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0; /* prevent buttons from shrinking in the scroll strip */
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: sans-serif;
+    white-space: nowrap;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.fp360-room-btn:hover {
+    background: #f0f0f0;
+    border-color: #bbb;
+}
+
+.fp360-room-btn.is-active {
+    background: #111;
+    border-color: #111;
+    color: #fff;
+}
+
+.fp360-room-btn.is-active .fp360-room-btn__dot {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Colour dot inside each button */
+.fp360-room-btn__dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+}

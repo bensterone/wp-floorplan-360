@@ -51,4 +51,9 @@ defined( 'ABSPATH' ) || exit;
                 title="<?php echo esc_attr__( '360 degree room viewer', 'wp-floorplan-360' ); ?>">
         </iframe>
     </div>
+
+    <!-- Room list — hidden on desktop, shown as a scrollable button strip on mobile -->
+    <nav class="fp360-room-list"
+         aria-label="<?php echo esc_attr__( 'Room list', 'wp-floorplan-360' ); ?>">
+    </nav>
 </div>

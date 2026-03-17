@@ -13,6 +13,7 @@
         const placeholder = wrap.querySelector('.fp360-placeholder');
         const loader      = wrap.querySelector('.fp360-loader');
         const statusEl    = wrap.querySelector('.fp360-status');
+        const roomListEl  = wrap.querySelector('.fp360-room-list');
 
         if (!svgEl || !imgEl || !frame) return;
 
@@ -85,6 +86,13 @@
             svgEl.querySelectorAll('polygon').forEach(p => p.classList.remove('is-active'));
             poly.classList.add('is-active');
 
+            // Sync active state on the mobile room list buttons
+            if (roomListEl) {
+                roomListEl.querySelectorAll('.fp360-room-btn').forEach(b => b.classList.remove('is-active'));
+                const activeBtn = roomListEl.querySelector(`.fp360-room-btn[data-id="${hs.id}"]`);
+                if (activeBtn) activeBtn.classList.add('is-active');
+            }
+
             if (placeholder) placeholder.style.display = 'none';
             if (loader) loader.style.display = 'block';
 
@@ -144,7 +152,57 @@
             });
         }
 
-        window.addEventListener('load', renderPolygons);
+        /**
+         * Builds the mobile room list — one button per hotspot.
+         * Only visible below the responsive breakpoint (see viewer.css).
+         * Uses DOM creation throughout to prevent XSS.
+         */
+        function renderRoomList() {
+            if (!roomListEl) return;
+
+            // Clear any previous content
+            while (roomListEl.firstChild) {
+                roomListEl.removeChild(roomListEl.firstChild);
+            }
+
+            hotspots.forEach(hs => {
+                if (!hs.points || hs.points.length < 3) return;
+
+                const btn = document.createElement('button');
+                btn.className = 'fp360-room-btn';
+                btn.setAttribute('type', 'button');
+                btn.setAttribute('data-id', hs.id);
+
+                // Colour dot
+                const dot = document.createElement('span');
+                dot.className = 'fp360-room-btn__dot';
+                if (hs.color) dot.style.backgroundColor = hs.color;
+
+                // Label text — set via textContent, never innerHTML, to prevent XSS
+                const label = document.createElement('span');
+                label.className = 'fp360-room-btn__label';
+                label.textContent = hs.label || '';
+
+                btn.appendChild(dot);
+                btn.appendChild(label);
+
+                btn.addEventListener('click', () => {
+                    // Find the matching polygon and trigger the same loadRoom path
+                    const polys = svgEl.querySelectorAll('polygon');
+                    const index = hotspots.findIndex(h => h.id === hs.id);
+                    if (index !== -1 && polys[index]) {
+                        loadRoom(hs, polys[index]);
+                    }
+                });
+
+                roomListEl.appendChild(btn);
+            });
+        }
+
+        window.addEventListener('load', () => {
+            renderPolygons();
+            renderRoomList();
+        });
     }
 
     document.querySelectorAll('.fp360-wrap').forEach(initViewer);
