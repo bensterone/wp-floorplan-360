@@ -604,62 +604,46 @@
 
         if (validLabels.size === 0) return [];
 
-        // --- Steps 9–11: Expand back to opened, trace, simplify, normalise ---
+        // --- Steps 9–11: Expand each region, trace, simplify, normalise ---
         //
-        // The connected components were found on `sealed` (rooms shrunk by gapK).
-        // If we traced boundaries on `sealed` the polygons would be gapK pixels
-        // inside the actual room walls — visibly too small as seen in testing.
+        // Regions were found on `sealed` (rooms shrunk inward by gapK px on each side).
+        // We need to expand each region back to its true size before tracing.
         //
-        // Fix: for each valid sealed region, flood-fill outward onto `opened`
-        // (the image before gap-sealing) using one sealed pixel as a seed.
-        // This recovers the full room shape, then we trace that.
+        // We do this per-region: extract a binary mask for just that region from
+        // `sealed`, dilate it by gapK pixels, then trace the dilated boundary.
+        // Per-region dilation is safe because each mask starts from only one room —
+        // unlike flood-filling onto `opened`, it cannot bleed through door gaps
+        // into adjacent rooms.
         //
         const polygons = [];
 
         validLabels.forEach(function (label) {
-            // Find one seed pixel from the sealed region (top-left by scan order).
-            let seedIdx = -1;
-            for (let i = 0; i < W * H; i++) {
-                if (labels[i] === label) { seedIdx = i; break; }
-            }
-            if (seedIdx === -1) return;
-
-            // Flood-fill on `opened` from the seed pixel.
-            // `opened` has not been gap-sealed so it preserves the true room shape.
-            // We use a visited array so we don't bleed into adjacent rooms —
-            // the sealed walls between rooms act as natural barriers because
-            // `opened` still has thin walls surviving after the open operation.
-            const visited = new Uint8Array(W * H);
-            const fq      = [seedIdx];
-            visited[seedIdx] = 1;
-            let fqi = 0;
-
-            while (fqi < fq.length) {
-                const idx = fq[fqi++];
-                const x   = idx % W;
-                const y   = Math.floor(idx / W);
-                if (y > 0     && opened[idx - W] === 255 && !visited[idx - W]) { visited[idx - W] = 1; fq.push(idx - W); }
-                if (y < H - 1 && opened[idx + W] === 255 && !visited[idx + W]) { visited[idx + W] = 1; fq.push(idx + W); }
-                if (x > 0     && opened[idx - 1] === 255 && !visited[idx - 1]) { visited[idx - 1] = 1; fq.push(idx - 1); }
-                if (x < W - 1 && opened[idx + 1] === 255 && !visited[idx + 1]) { visited[idx + 1] = 1; fq.push(idx + 1); }
-            }
-
-            // The flood-filled region is in `visited`. Build a label map for mooreTrace.
-            // mooreTrace expects an Int32Array where pixels belonging to this region
-            // have value `targetLabel` and everything else is different.
-            const TARGET = 0;
-            const regionLabels = new Int32Array(W * H).fill(-1);
+            // Build a binary mask containing only this region.
+            const mask = new Uint8Array(W * H);
             let startIdx = -1;
             for (let i = 0; i < W * H; i++) {
-                if (!visited[i]) continue;
-                regionLabels[i] = TARGET;
-                if (startIdx === -1) startIdx = i; // top-left pixel for Moore entry
+                if (labels[i] !== label) continue;
+                mask[i] = 255;
+                if (startIdx === -1) startIdx = i;
             }
+            if (startIdx === -1) return;
 
-            if (startIdx === -1 || fq.length < 10) return;
+            // Dilate the mask by gapK to recover the room's true size.
+            const expanded = morphDilate(mask, W, H, gapK);
 
-            // Moore contour trace on the expanded (opened) region.
-            const boundary = mooreTrace(regionLabels, W, H, TARGET, startIdx);
+            // Build a label array for mooreTrace (expects Int32Array).
+            const TARGET       = 0;
+            const regionLabels = new Int32Array(W * H).fill(-1);
+            let   traceStart   = -1;
+            for (let i = 0; i < W * H; i++) {
+                if (expanded[i] !== 255) continue;
+                regionLabels[i] = TARGET;
+                if (traceStart === -1) traceStart = i;
+            }
+            if (traceStart === -1) return;
+
+            // Moore contour trace on the expanded mask.
+            const boundary = mooreTrace(regionLabels, W, H, TARGET, traceStart);
             if (boundary.length < 6) return;
 
             // Subsample to at most 600 points before RDP.
