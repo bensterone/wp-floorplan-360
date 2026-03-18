@@ -672,45 +672,68 @@
 
         if (validLabels.size === 0) return [];
 
-        // --- Steps 9–11: Expand each region, trace, simplify, normalise ---
+        // --- Steps 9–11: Constrained expand, trace, snap, normalise ---
         //
-        // Regions were found on `sealed` (rooms shrunk inward by gapK px on each side).
-        // We need to expand each region back to its true size before tracing.
+        // CONSTRAINED FLOOD-FILL (Gemini / Groq suggestion implemented):
+        // Instead of dilating each sealed region by a fixed gapK (which overshoots
+        // walls and causes bleed between rooms), we flood-fill from a seed pixel
+        // in the sealed region outward onto the original `binary` image, stopping
+        // the moment we hit a dark wall pixel. This snaps the polygon boundary
+        // precisely to the actual wall lines of the floorplan — no overshoot possible.
         //
-        // We do this per-region: extract a binary mask for just that region from
-        // `sealed`, dilate it by gapK pixels, then trace the dilated boundary.
-        // Per-region dilation is safe because each mask starts from only one room —
-        // unlike flood-filling onto `opened`, it cannot bleed through door gaps
-        // into adjacent rooms.
+        // MANHATTAN SNAPPING (Gemini suggestion):
+        // After RDP simplification, any polygon edge within 15° of horizontal or
+        // vertical is forced to be exactly so. Architectural rooms are almost always
+        // rectilinear; this makes the SVG polygons look professional rather than wobbly.
         //
         const polygons = [];
 
         validLabels.forEach(function (label) {
-            // Build a binary mask containing only this region.
-            const mask = new Uint8Array(W * H);
-            let startIdx = -1;
+            // Find one seed pixel from this sealed region.
+            let seedIdx = -1;
             for (let i = 0; i < W * H; i++) {
-                if (labels[i] !== label) continue;
-                mask[i] = 255;
-                if (startIdx === -1) startIdx = i;
+                if (labels[i] === label) { seedIdx = i; break; }
             }
-            if (startIdx === -1) return;
+            if (seedIdx === -1) return;
 
-            // Dilate the mask by gapK to recover the room's true size.
-            const expanded = morphDilate(mask, W, H, gapK);
+            // --- Constrained flood-fill onto original binary ---
+            // Grows from the seed across all light pixels in `binary`, stopping
+            // at dark (wall) pixels. The wall pixels act as a perfect containment
+            // field — the fill can never cross a real wall.
+            const visited = new Uint8Array(W * H);
+            const fq      = [seedIdx];
+            visited[seedIdx] = 1;
+            let fqi = 0;
 
-            // Build a label array for mooreTrace (expects Int32Array).
+            while (fqi < fq.length) {
+                const idx = fq[fqi++];
+                const x   = idx % W;
+                const y   = Math.floor(idx / W);
+                // 4-connected expansion — stops at wall pixels (binary[n] === 0)
+                if (y > 0     && binary[idx - W] === 255 && !visited[idx - W]) { visited[idx - W] = 1; fq.push(idx - W); }
+                if (y < H - 1 && binary[idx + W] === 255 && !visited[idx + W]) { visited[idx + W] = 1; fq.push(idx + W); }
+                if (x > 0     && binary[idx - 1] === 255 && !visited[idx - 1]) { visited[idx - 1] = 1; fq.push(idx - 1); }
+                if (x < W - 1 && binary[idx + 1] === 255 && !visited[idx + 1]) { visited[idx + 1] = 1; fq.push(idx + 1); }
+            }
+
+            // If the fill covered more than 75% of the image it leaked into
+            // the exterior — discard this region.
+            if (fq.length > W * H * 0.75) return;
+            // If the fill is tiny it's an artefact — discard.
+            if (fq.length < W * H * 0.002) return;
+
+            // Build label array for mooreTrace from the visited mask.
             const TARGET       = 0;
             const regionLabels = new Int32Array(W * H).fill(-1);
             let   traceStart   = -1;
             for (let i = 0; i < W * H; i++) {
-                if (expanded[i] !== 255) continue;
+                if (!visited[i]) continue;
                 regionLabels[i] = TARGET;
                 if (traceStart === -1) traceStart = i;
             }
             if (traceStart === -1) return;
 
-            // Moore contour trace on the expanded mask.
+            // Moore contour trace on the flood-filled region.
             const boundary = mooreTrace(regionLabels, W, H, TARGET, traceStart);
             if (boundary.length < 6) return;
 
@@ -723,8 +746,33 @@
             const simplified   = rdpSimplify(sampled, rdpTolerance);
             if (simplified.length < 3) return;
 
+            // --- Manhattan snapping ---
+            // For each polygon edge, if it's within SNAP_DEG degrees of
+            // horizontal or vertical, force it to be exactly so.
+            // This makes rectilinear rooms look clean and professional.
+            const SNAP_DEG  = 15;
+            const SNAP_RAD  = SNAP_DEG * Math.PI / 180;
+            const snapped   = simplified.map(function (pt) { return { x: pt.x, y: pt.y }; });
+
+            for (let i = 0; i < snapped.length; i++) {
+                const a   = snapped[i];
+                const b   = snapped[(i + 1) % snapped.length];
+                const dx  = b.x - a.x;
+                const dy  = b.y - a.y;
+                const ang = Math.abs(Math.atan2(dy, dx));
+
+                // Within SNAP_DEG of horizontal (0 or π) → force same Y
+                if (ang < SNAP_RAD || ang > Math.PI - SNAP_RAD) {
+                    b.y = a.y;
+                }
+                // Within SNAP_DEG of vertical (π/2) → force same X
+                else if (Math.abs(ang - Math.PI / 2) < SNAP_RAD) {
+                    b.x = a.x;
+                }
+            }
+
             // Normalise to 0–1 coordinate space.
-            const points = simplified.map(function (p) {
+            const points = snapped.map(function (p) {
                 return {
                     x: Math.max(0, Math.min(1, (p.x / scale) / img.naturalWidth)),
                     y: Math.max(0, Math.min(1, (p.y / scale) / img.naturalHeight))
