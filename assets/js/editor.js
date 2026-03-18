@@ -604,53 +604,74 @@
 
         if (validLabels.size === 0) return [];
 
-        // Raise minArea to filter door arc remnants and tiny artefacts,
-        // but keep it low enough that a small Bad/WC (~80px wide at 1200px)
-        // survives after the gapK sealing shrinks it.
-        // 0.002 = 0.2% of total area — at 1200×809 that's ~1940px = ~44×44px minimum.
-        const minAreaFinal = totalArea * 0.002;
-
-        // --- Steps 9–11: Extract, simplify, normalise each region ---
+        // --- Steps 9–11: Expand back to opened, trace, simplify, normalise ---
+        //
+        // The connected components were found on `sealed` (rooms shrunk by gapK).
+        // If we traced boundaries on `sealed` the polygons would be gapK pixels
+        // inside the actual room walls — visibly too small as seen in testing.
+        //
+        // Fix: for each valid sealed region, flood-fill outward onto `opened`
+        // (the image before gap-sealing) using one sealed pixel as a seed.
+        // This recovers the full room shape, then we trace that.
+        //
         const polygons = [];
 
         validLabels.forEach(function (label) {
-            // Count region size and find top-left starting pixel for Moore tracing.
-            let startIdx = -1;
-            let count    = 0;
+            // Find one seed pixel from the sealed region (top-left by scan order).
+            let seedIdx = -1;
             for (let i = 0; i < W * H; i++) {
-                if (labels[i] !== label) continue;
-                count++;
-                if (startIdx === -1) startIdx = i; // first pixel found (top-left due to scan order)
+                if (labels[i] === label) { seedIdx = i; break; }
+            }
+            if (seedIdx === -1) return;
+
+            // Flood-fill on `opened` from the seed pixel.
+            // `opened` has not been gap-sealed so it preserves the true room shape.
+            // We use a visited array so we don't bleed into adjacent rooms —
+            // the sealed walls between rooms act as natural barriers because
+            // `opened` still has thin walls surviving after the open operation.
+            const visited = new Uint8Array(W * H);
+            const fq      = [seedIdx];
+            visited[seedIdx] = 1;
+            let fqi = 0;
+
+            while (fqi < fq.length) {
+                const idx = fq[fqi++];
+                const x   = idx % W;
+                const y   = Math.floor(idx / W);
+                if (y > 0     && opened[idx - W] === 255 && !visited[idx - W]) { visited[idx - W] = 1; fq.push(idx - W); }
+                if (y < H - 1 && opened[idx + W] === 255 && !visited[idx + W]) { visited[idx + W] = 1; fq.push(idx + W); }
+                if (x > 0     && opened[idx - 1] === 255 && !visited[idx - 1]) { visited[idx - 1] = 1; fq.push(idx - 1); }
+                if (x < W - 1 && opened[idx + 1] === 255 && !visited[idx + 1]) { visited[idx + 1] = 1; fq.push(idx + 1); }
             }
 
-            // Skip regions that are too small after the stricter filter.
-            if (count < minAreaFinal || startIdx === -1) return;
+            // The flood-filled region is in `visited`. Build a label map for mooreTrace.
+            // mooreTrace expects an Int32Array where pixels belonging to this region
+            // have value `targetLabel` and everything else is different.
+            const TARGET = 0;
+            const regionLabels = new Int32Array(W * H).fill(-1);
+            let startIdx = -1;
+            for (let i = 0; i < W * H; i++) {
+                if (!visited[i]) continue;
+                regionLabels[i] = TARGET;
+                if (startIdx === -1) startIdx = i; // top-left pixel for Moore entry
+            }
 
-            // --- Moore Neighbourhood Contour Tracing ---
-            //
-            // Walks the outer boundary of the region in a connected, ordered sequence.
-            // Unlike angle-sort (which breaks on concave rooms), Moore tracing follows
-            // the actual perimeter pixel-by-pixel, so the result is always a valid
-            // non-self-intersecting polygon.
-            //
-            // Reference: Jacob's stopping criterion variant.
-            //
-            const boundary = mooreTrace(labels, W, H, label, startIdx);
+            if (startIdx === -1 || fq.length < 10) return;
 
+            // Moore contour trace on the expanded (opened) region.
+            const boundary = mooreTrace(regionLabels, W, H, TARGET, startIdx);
             if (boundary.length < 6) return;
 
-            // Subsample to at most 600 points before RDP for performance.
+            // Subsample to at most 600 points before RDP.
             const step    = Math.max(1, Math.floor(boundary.length / 600));
             const sampled = boundary.filter(function (_, i) { return i % step === 0; });
 
-            // RDP simplification — reduces polygon to 4–20 points typically.
-            // Tolerance scales with image width so it works across resolutions.
+            // RDP simplification — produces 4–20 points for a typical room.
             const rdpTolerance = Math.max(3, Math.round(W / 80));
             const simplified   = rdpSimplify(sampled, rdpTolerance);
-
             if (simplified.length < 3) return;
 
-            // Normalise to 0–1 using original image dimensions.
+            // Normalise to 0–1 coordinate space.
             const points = simplified.map(function (p) {
                 return {
                     x: Math.max(0, Math.min(1, (p.x / scale) / img.naturalWidth)),
