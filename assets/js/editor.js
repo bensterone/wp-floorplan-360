@@ -727,6 +727,32 @@
         // Gap sealing (closes doorway openings)
         const sealed = morphErode(opened, W, H, gapK);
 
+        // --- Exterior flood-fill on `opened` ---
+        // Mark all pixels reachable from the image border without crossing a wall.
+        // These are outside the building. We exclude them from seed search and
+        // watershed so a seed near an outer wall can never claim the exterior.
+        const exterior = new Uint8Array(W * H);
+        const extQ     = [];
+
+        function seedExt(idx) {
+            if (opened[idx] === 255 && !exterior[idx]) {
+                exterior[idx] = 1;
+                extQ.push(idx);
+            }
+        }
+        for (let x = 0; x < W; x++) { seedExt(x); seedExt((H-1)*W+x); }
+        for (let y = 0; y < H; y++) { seedExt(y*W); seedExt(y*W+W-1); }
+
+        let eqi = 0;
+        while (eqi < extQ.length) {
+            const i = extQ[eqi++];
+            const x = i%W, y = Math.floor(i/W);
+            if (y > 0     && opened[i-W] === 255 && !exterior[i-W]) { exterior[i-W] = 1; extQ.push(i-W); }
+            if (y < H-1   && opened[i+W] === 255 && !exterior[i+W]) { exterior[i+W] = 1; extQ.push(i+W); }
+            if (x > 0     && opened[i-1] === 255 && !exterior[i-1]) { exterior[i-1] = 1; extQ.push(i-1); }
+            if (x < W-1   && opened[i+1] === 255 && !exterior[i+1]) { exterior[i+1] = 1; extQ.push(i+1); }
+        }
+
         // Initialise the label map with -1 (unclaimed).
         // Seed pixels get label 0, 1, 2... matching the seeds array index.
         const labels = new Int32Array(W * H).fill(-1);
@@ -751,8 +777,8 @@
                         const nx = Math.max(0, Math.min(W-1, px+dx));
                         const ny = Math.max(0, Math.min(H-1, py+dy));
                         const ni = ny*W+nx;
-                        // Must be light in opened AND not already claimed by another seed.
-                        if (opened[ni] === 255 && labels[ni] === -1) {
+                        // Must be light in opened, not exterior, AND not already claimed by another seed.
+                        if (opened[ni] === 255 && !exterior[ni] && labels[ni] === -1) {
                             labels[ni] = idx;
                             validSeedCount++;
                             found = true;
@@ -773,20 +799,20 @@
         const expanded = labels.slice();
         const wQueue = [];
 
-        // Seed the queue with all labelled pixels and their unclaimed neighbours.
+        // Seed the queue with all labelled pixels and their unclaimed non-exterior neighbours.
         for (let i = 0; i < W*H; i++) {
             if (expanded[i] < 0) continue;
             const x = i%W, y = Math.floor(i/W);
-            if (y > 0     && opened[i-W] === 255 && expanded[i-W] === -1) wQueue.push(i-W);
-            if (y < H-1   && opened[i+W] === 255 && expanded[i+W] === -1) wQueue.push(i+W);
-            if (x > 0     && opened[i-1] === 255 && expanded[i-1] === -1) wQueue.push(i-1);
-            if (x < W-1   && opened[i+1] === 255 && expanded[i+1] === -1) wQueue.push(i+1);
+            if (y > 0     && opened[i-W] === 255 && !exterior[i-W] && expanded[i-W] === -1) wQueue.push(i-W);
+            if (y < H-1   && opened[i+W] === 255 && !exterior[i+W] && expanded[i+W] === -1) wQueue.push(i+W);
+            if (x > 0     && opened[i-1] === 255 && !exterior[i-1] && expanded[i-1] === -1) wQueue.push(i-1);
+            if (x < W-1   && opened[i+1] === 255 && !exterior[i+1] && expanded[i+1] === -1) wQueue.push(i+1);
         }
 
         let wqi = 0;
         while (wqi < wQueue.length) {
             const i = wQueue[wqi++];
-            if (expanded[i] >= 0 || opened[i] !== 255) continue; // already claimed or wall
+            if (expanded[i] >= 0 || opened[i] !== 255 || exterior[i]) continue; // claimed, wall, or exterior
             const x = i%W, y = Math.floor(i/W);
             // Inherit label from first already-labelled neighbour found.
             let lbl = -1;
@@ -796,11 +822,11 @@
             else if (x < W-1 && expanded[i+1] >= 0) lbl = expanded[i+1];
             if (lbl < 0) { wQueue.push(i); continue; } // neighbours not yet labelled, retry later
             expanded[i] = lbl;
-            // Propagate to unclaimed neighbours.
-            if (y > 0     && opened[i-W] === 255 && expanded[i-W] === -1) wQueue.push(i-W);
-            if (y < H-1   && opened[i+W] === 255 && expanded[i+W] === -1) wQueue.push(i+W);
-            if (x > 0     && opened[i-1] === 255 && expanded[i-1] === -1) wQueue.push(i-1);
-            if (x < W-1   && opened[i+1] === 255 && expanded[i+1] === -1) wQueue.push(i+1);
+            // Propagate to unclaimed non-exterior neighbours.
+            if (y > 0     && opened[i-W] === 255 && !exterior[i-W] && expanded[i-W] === -1) wQueue.push(i-W);
+            if (y < H-1   && opened[i+W] === 255 && !exterior[i+W] && expanded[i+W] === -1) wQueue.push(i+W);
+            if (x > 0     && opened[i-1] === 255 && !exterior[i-1] && expanded[i-1] === -1) wQueue.push(i-1);
+            if (x < W-1   && opened[i+1] === 255 && !exterior[i+1] && expanded[i+1] === -1) wQueue.push(i+1);
         }
 
         // Trace, simplify, snap, and normalise each seed's region.
