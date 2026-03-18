@@ -25,11 +25,17 @@ class Assets {
 
             wp_localize_script( 'fp360-admin', 'fp360Admin', [
                 'i18n' => [
-                    'pick360'           => __( 'Pick 360', 'wp-floorplan-360' ),
-                    'deleteRoom'        => __( 'Delete Room', 'wp-floorplan-360' ),
-                    'deleteRoomConfirm' => __( 'Delete this room?', 'wp-floorplan-360' ),
-                    'newRoom'           => __( 'New Room', 'wp-floorplan-360' ),
-                    'roomLabel'         => __( 'Room Label', 'wp-floorplan-360' ),
+                    'pick360'            => __( 'Pick 360', 'wp-floorplan-360' ),
+                    'deleteRoom'         => __( 'Delete Room', 'wp-floorplan-360' ),
+                    'deleteRoomConfirm'  => __( 'Delete this room?', 'wp-floorplan-360' ),
+                    'newRoom'            => __( 'New Room', 'wp-floorplan-360' ),
+                    'roomLabel'          => __( 'Room Label', 'wp-floorplan-360' ),
+                    'detectRooms'        => __( 'Detect Rooms', 'wp-floorplan-360' ),
+                    'detecting'          => __( 'Detecting…', 'wp-floorplan-360' ),
+                    'detectedRooms'      => __( 'Detected {n} room(s). Review polygons and assign 360° images.', 'wp-floorplan-360' ),
+                    'noRoomsFound'       => __( 'No rooms detected. Try a lower sensitivity value, or draw rooms manually.', 'wp-floorplan-360' ),
+                    'noImageForDetect'   => __( 'Please upload a floorplan image first.', 'wp-floorplan-360' ),
+                    'detectionError'     => __( 'Detection failed. Please draw rooms manually.', 'wp-floorplan-360' ),
                 ],
             ] );
         }
