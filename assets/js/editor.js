@@ -1,6 +1,8 @@
 (function ($) {
     'use strict';
 
+$(document).ready(function () {
+
     // --- 1. CONSTANTS & STATE ---
 
     // Palette of 12 distinct, accessible colours for room polygons.
@@ -30,8 +32,12 @@
         dragHotspotId: null,
         dragPointIdx:  null,
         // Click-to-seed state
-        seedMode:      false,  // true when editor is placing seed points
-        seeds:         []      // [{x, y}] normalised 0-1 coords, one per room click
+        seedMode:      false,
+        seeds:         [],
+        // Rectangle tool state
+        rectMode:      false,  // true when rectangle tool is active
+        rectStart:     null,   // {x,y} normalised — where the drag began
+        rectCurrent:   null    // {x,y} normalised — current mouse position
     };
 
     try {
@@ -183,6 +189,26 @@
             });
         }
 
+        // Render rectangle drag preview when rect tool is active.
+        if (state.rectMode && state.rectStart && state.rectCurrent) {
+            const x1 = state.rectStart.x   * 100;
+            const y1 = state.rectStart.y   * 100;
+            const x2 = state.rectCurrent.x * 100;
+            const y2 = state.rectCurrent.y * 100;
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x',            Math.min(x1, x2));
+            rect.setAttribute('y',            Math.min(y1, y2));
+            rect.setAttribute('width',        Math.abs(x2 - x1));
+            rect.setAttribute('height',       Math.abs(y2 - y1));
+            rect.setAttribute('fill',         'rgba(34, 113, 177, 0.15)');
+            rect.setAttribute('stroke',       '#2271b1');
+            rect.setAttribute('stroke-width', '0.5');
+            rect.setAttribute('stroke-dasharray', '1.5 1');
+            rect.style.setProperty('vector-effect', 'non-scaling-stroke');
+            rect.setAttribute('pointer-events', 'none');
+            svg.appendChild(rect);
+        }
+
         // Render seed markers when in seed mode.
         // Each marker shows a numbered circle so the editor can see
         // exactly where they clicked and in what order.
@@ -302,14 +328,20 @@
             if (state.dragging && state.dragHotspotId !== null) {
                 const hs = state.hotspots.find(h => h.id === state.dragHotspotId);
                 if (hs && state.dragPointIdx !== null) {
-                    // Clamp to 0–1 so points can't leave the image bounds.
                     hs.points[state.dragPointIdx] = {
                         x: Math.max(0, Math.min(1, pos.x)),
                         y: Math.max(0, Math.min(1, pos.y))
                     };
                     requestRedraw();
                 }
-                return; // don't process drawing rubber-band while dragging
+                return;
+            }
+
+            // --- Rectangle drag preview ---
+            if (state.rectMode && state.rectStart) {
+                state.rectCurrent = pos;
+                requestRedraw();
+                return;
             }
 
             // --- Drawing rubber-band ---
@@ -323,17 +355,32 @@
             requestRedraw();
         });
 
-        svg.addEventListener('mouseup', function () {
-            if (state.dragging) {
-                state.dragging      = false;
-                state.dragHotspotId = null;
-                state.dragPointIdx  = null;
-                saveHotspots(); // persist the moved vertex
-            }
+        svg.addEventListener('mousedown', function (e) {
+            if (!state.rectMode) return;
+            if (state.dragging) return;
+            e.preventDefault();
+            const pos = getNormalizedPos(e);
+            state.rectStart   = pos;
+            state.rectCurrent = pos;
+            requestRedraw();
         });
 
-        // Also cancel drag if mouse leaves the SVG entirely.
-        svg.addEventListener('mouseleave', function () {
+        svg.addEventListener('mouseup', function (e) {
+            // --- Finish rectangle drag ---
+            if (state.rectMode && state.rectStart && state.rectCurrent) {
+                const s = state.rectStart;
+                const c = state.rectCurrent;
+                const minW = 0.02; // ignore accidental tiny drags
+                if (Math.abs(c.x - s.x) > minW && Math.abs(c.y - s.y) > minW) {
+                    finishRect(s, c);
+                }
+                state.rectStart   = null;
+                state.rectCurrent = null;
+                requestRedraw();
+                return;
+            }
+
+            // --- Finish vertex drag ---
             if (state.dragging) {
                 state.dragging      = false;
                 state.dragHotspotId = null;
@@ -342,22 +389,37 @@
             }
         });
 
+        svg.addEventListener('mouseleave', function () {
+            if (state.dragging) {
+                state.dragging      = false;
+                state.dragHotspotId = null;
+                state.dragPointIdx  = null;
+                saveHotspots();
+            }
+            // Cancel in-progress rect drag if mouse leaves canvas
+            if (state.rectMode && state.rectStart) {
+                state.rectStart   = null;
+                state.rectCurrent = null;
+                requestRedraw();
+            }
+        });
+
         svg.addEventListener('click', function (e) {
             if (state.dragging) return;
+            if (state.rectMode) return; // rect uses mousedown/mouseup, not click
             if (!imgEl.src || $emptyState.is(':visible')) return;
 
             const pos = getNormalizedPos(e);
 
-            // --- Seed mode: place a seed marker ---
+            // --- Seed mode ---
             if (state.seedMode) {
                 state.seeds.push({ x: pos.x, y: pos.y });
-                // Enable Run Fill button once at least one seed exists
                 $('#fp360-run-fill').prop('disabled', state.seeds.length === 0);
                 requestRedraw();
-                return; // never falls through to draw mode
+                return;
             }
 
-            // --- Draw mode: add polygon point ---
+            // --- Draw mode ---
             if (state.drawing && state.currentPoints.length >= 3) {
                 const first = state.currentPoints[0];
                 if (Math.hypot(pos.x - first.x, pos.y - first.y) < SNAP_DISTANCE) {
@@ -500,10 +562,199 @@
         requestRedraw();
     });
 
+    // Rectangle tool toggle
+    $('#fp360-rect-tool').on('click', function () {
+        state.rectMode = !state.rectMode;
+
+        if (state.rectMode) {
+            // Exit other modes
+            state.drawing       = false;
+            state.currentPoints = [];
+            state.seedMode      = false;
+            if (svg) svg.classList.remove('snap-active');
+            $('#fp360-seed-mode').removeClass('is-active')
+                .text(fp360Admin.i18n.seedMode || 'Seed Rooms');
+            $(this).addClass('is-active')
+                .text(fp360Admin.i18n.rectModeActive || '✕ Cancel Rectangle');
+            if (svg) svg.style.cursor = 'crosshair';
+        } else {
+            $(this).removeClass('is-active')
+                .text(fp360Admin.i18n.rectTool || 'Rectangle');
+            if (svg) svg.style.cursor = '';
+        }
+        requestRedraw();
+    });
+
     window.addEventListener('resize', requestRedraw);
 
     renderHotspotList();
     requestRedraw();
+
+    // --- 6. RECTANGLE TOOL ---
+
+    /**
+     * Called when the editor finishes a rectangle drag.
+     * Snaps each edge to the nearest wall pixel in `opened`,
+     * then creates a hotspot polygon from the snapped rectangle.
+     *
+     * @param {{x:number,y:number}} s  Drag start (normalised 0-1)
+     * @param {{x:number,y:number}} c  Drag end   (normalised 0-1)
+     */
+    function finishRect(s, c) {
+        if (!imgEl || !imgEl.naturalWidth) return;
+
+        // Build opened image for snapping (same pre-processing as detection).
+        const MAX_DIM = 1200;
+        const scale   = Math.min(MAX_DIM / imgEl.naturalWidth, MAX_DIM / imgEl.naturalHeight, 1);
+        const W       = Math.round(imgEl.naturalWidth  * scale);
+        const H       = Math.round(imgEl.naturalHeight * scale);
+
+        const canvas  = document.createElement('canvas');
+        canvas.width  = W;
+        canvas.height = H;
+        const ctx     = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, W, H);
+        ctx.drawImage(imgEl, 0, 0, W, H);
+
+        let pixelData;
+        try {
+            pixelData = ctx.getImageData(0, 0, W, H).data;
+        } catch (e) {
+            // Cross-origin — snap disabled, use raw coordinates
+            commitRect(s, c);
+            return;
+        }
+
+        const grey    = new Uint8Array(W * H);
+        for (let i = 0; i < W * H; i++) {
+            grey[i] = Math.round(
+                0.299 * pixelData[i*4] +
+                0.587 * pixelData[i*4+1] +
+                0.114 * pixelData[i*4+2]
+            );
+        }
+
+        const thresh = otsuThreshold(grey, W * H);
+        const binary = new Uint8Array(W * H);
+        for (let i = 0; i < W * H; i++) binary[i] = grey[i] >= thresh ? 255 : 0;
+
+        const k      = 3; // fixed — just need to remove text/furniture
+        const opened = morphDilate(morphErode(binary, W, H, k), W, H, k);
+
+        // Raw rectangle edges in pixel coords (on the processed image).
+        const SNAP_RANGE = Math.round(W * 0.04); // search ±4% of image width
+
+        let top    = Math.round(Math.min(s.y, c.y) * H);
+        let bottom = Math.round(Math.max(s.y, c.y) * H);
+        let left   = Math.round(Math.min(s.x, c.x) * W);
+        let right  = Math.round(Math.max(s.x, c.x) * W);
+
+        // Snap each edge outward toward the nearest dark line.
+        top    = snapEdge(opened, W, H, top,    left, right, 'top',    SNAP_RANGE);
+        bottom = snapEdge(opened, W, H, bottom, left, right, 'bottom', SNAP_RANGE);
+        left   = snapEdge(opened, W, H, left,   top,  bottom,'left',   SNAP_RANGE);
+        right  = snapEdge(opened, W, H, right,  top,  bottom,'right',  SNAP_RANGE);
+
+        // Convert back to normalised coords.
+        const snappedS = { x: left  / W, y: top    / H };
+        const snappedC = { x: right / W, y: bottom / H };
+
+        commitRect(snappedS, snappedC);
+    }
+
+    /**
+     * Snaps one edge of the rectangle toward the nearest dark wall line.
+     * Searches outward only (away from the room interior) within SNAP_RANGE px.
+     *
+     * @param {Uint8Array} opened  Morphologically opened binary image
+     * @param {number} W           Image width
+     * @param {number} H           Image height
+     * @param {number} edge        Current edge position in pixels
+     * @param {number} rangeA      Start of perpendicular scan range
+     * @param {number} rangeB      End of perpendicular scan range
+     * @param {string} direction   'top'|'bottom'|'left'|'right'
+     * @param {number} maxSearch   Maximum pixels to search outward
+     * @returns {number}           Snapped edge position in pixels
+     */
+    function snapEdge(opened, W, H, edge, rangeA, rangeB, direction, maxSearch) {
+        // We scan a line along the edge and look at pixels in a band
+        // perpendicular to it, moving outward (away from room interior).
+        // A "wall" is a run of dark pixels — we stop at the first dark pixel.
+
+        const DARK_THRESHOLD = 0.3; // fraction of scanned pixels that must be dark
+
+        for (let offset = 0; offset <= maxSearch; offset++) {
+            let darkCount = 0;
+            let sampleCount = 0;
+
+            if (direction === 'top') {
+                const row = Math.max(0, edge - offset);
+                for (let x = rangeA; x <= rangeB; x += 3) {
+                    if (x < 0 || x >= W) continue;
+                    sampleCount++;
+                    if (opened[row * W + x] === 0) darkCount++;
+                }
+            } else if (direction === 'bottom') {
+                const row = Math.min(H - 1, edge + offset);
+                for (let x = rangeA; x <= rangeB; x += 3) {
+                    if (x < 0 || x >= W) continue;
+                    sampleCount++;
+                    if (opened[row * W + x] === 0) darkCount++;
+                }
+            } else if (direction === 'left') {
+                const col = Math.max(0, edge - offset);
+                for (let y = rangeA; y <= rangeB; y += 3) {
+                    if (y < 0 || y >= H) continue;
+                    sampleCount++;
+                    if (opened[y * W + col] === 0) darkCount++;
+                }
+            } else if (direction === 'right') {
+                const col = Math.min(W - 1, edge + offset);
+                for (let y = rangeA; y <= rangeB; y += 3) {
+                    if (y < 0 || y >= H) continue;
+                    sampleCount++;
+                    if (opened[y * W + col] === 0) darkCount++;
+                }
+            }
+
+            if (sampleCount > 0 && darkCount / sampleCount >= DARK_THRESHOLD) {
+                return direction === 'top'    ? Math.max(0, edge - offset) :
+                       direction === 'bottom' ? Math.min(H - 1, edge + offset) :
+                       direction === 'left'   ? Math.max(0, edge - offset) :
+                                                Math.min(W - 1, edge + offset);
+            }
+        }
+
+        return edge; // no wall found — keep original position
+    }
+
+    /**
+     * Creates a hotspot from a normalised rectangle (no snapping).
+     */
+    function commitRect(s, c) {
+        const x1 = Math.max(0, Math.min(1, Math.min(s.x, c.x)));
+        const y1 = Math.max(0, Math.min(1, Math.min(s.y, c.y)));
+        const x2 = Math.max(0, Math.min(1, Math.max(s.x, c.x)));
+        const y2 = Math.max(0, Math.min(1, Math.max(s.y, c.y)));
+
+        state.hotspots.push({
+            id:       generateId(),
+            points:   [
+                { x: x1, y: y1 },
+                { x: x2, y: y1 },
+                { x: x2, y: y2 },
+                { x: x1, y: y2 }
+            ],
+            label:    fp360Admin.i18n.newRoom || 'New Room',
+            image360: '',
+            color:    nextColor()
+        });
+
+        saveHotspots();
+        renderHotspotList();
+        requestRedraw();
+    }
 
     // --- 6. ROOM DETECTION ---
     //
@@ -1337,5 +1588,7 @@
         const t = Math.max(0, Math.min(1, ((pt.x - a.x) * dx + (pt.y - a.y) * dy) / lenSq));
         return Math.hypot(pt.x - a.x - t * dx, pt.y - a.y - t * dy);
     }
+
+}); // end document.ready
 
 })(jQuery);
