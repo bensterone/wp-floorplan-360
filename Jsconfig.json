@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "checkJs": false,
+        "allowJs": true,
+        "noEmit": true,
+        "target": "ES6",
+        "lib": ["ES6", "DOM"]
+    },
+    "exclude": [
+        "node_modules",
+        "assets/js/aframe.min.js",
+        "assets/js/block-editor.js"
+    ]
+}
