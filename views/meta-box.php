@@ -18,6 +18,8 @@
         </p>
         <img id="fp360-floorplan-img"
              src="<?php echo esc_url( $floorplan_img ); ?>"
+             crossorigin="anonymous"
+             alt=""
              style="display: <?php echo $floorplan_img ? 'block' : 'none'; ?>;">
 
         <svg id="fp360-svg-overlay"

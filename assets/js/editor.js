@@ -426,8 +426,10 @@
      * @return {Array<Array<{x:number,y:number}>>}
      */
     function runDetection(img, tolerancePx) {
-        // Scale image to at most 600px on the longer side for fast processing.
-        const MAX_DIM = 600;
+        // Process at up to 1200px so walls remain thick enough to survive erosion.
+        // At 600px, a 12px wall in a 1500px original shrinks to 5px and gets
+        // eaten by the erosion kernel. At 1200px it stays at ~10px and survives.
+        const MAX_DIM = 1200;
         const scale   = Math.min(MAX_DIM / img.naturalWidth, MAX_DIM / img.naturalHeight, 1);
         const W       = Math.round(img.naturalWidth  * scale);
         const H       = Math.round(img.naturalHeight * scale);
@@ -489,15 +491,15 @@
         // --- Step 4: Morphological opening (removes thin features) ---
         // Erode removes thin dark features (furniture, text, dimension lines).
         // Dilate restores the surviving thick walls to their original thickness.
-        const k      = Math.max(1, tolerancePx);
+        // Scale the erosion kernel proportionally to the processed image width.
+        // A fixed pixel value would be too small for large images (walls disappear)
+        // and too large for small images (rooms merge). W/200 gives a good ratio:
+        //   W=600  → k=tolerancePx*3,  sensitivity=3 → k=9
+        //   W=1200 → k=tolerancePx*6,  sensitivity=3 → k=18
+        const k      = Math.max(2, Math.round(tolerancePx * W / 200));
+        const gapK   = Math.round(k * 1.8); // larger kernel seals doorway gaps
         const eroded = morphErode(binary, W, H, k);
         const opened = morphDilate(eroded, W, H, k);
-
-        // --- Step 5: Gap sealing (close doorway openings) ---
-        // Eroding the light pixels (= growing dark walls) by gapK pixels
-        // seals narrow gaps between rooms caused by door openings.
-        // Rooms shrink slightly from each wall, which is acceptable.
-        const gapK  = k + 3;
         const sealed = morphErode(opened, W, H, gapK);
 
         // --- Step 6: Mark exterior by flood-fill from image border ---
@@ -563,7 +565,7 @@
 
         // --- Step 8: Filter regions by area ---
         const totalArea = W * H;
-        const minArea   = totalArea * 0.004; // ~0.4% — smaller = artifact/AR/WC
+        const minArea   = totalArea * 0.002; // ~0.2% — catches small rooms like Bad/WC
         const maxArea   = totalArea * 0.75;  // larger = exterior leaked in
 
         const validLabels = new Set();

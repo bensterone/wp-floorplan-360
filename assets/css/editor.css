@@ -5,10 +5,19 @@
     background: #fafafa;
     position: relative;
     overflow: hidden;
-    width: fit-content;
+    width: 100%;       /* fill available meta box width */
     max-width: 100%;
     min-height: 200px;
     line-height: 0;
+}
+
+/* Constrain the floorplan image to the container.
+   The SVG overlay uses position:absolute + 100%/100% so it scales with the image. */
+#fp360-floorplan-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 100%;
 }
 
 #fp360-empty-state {
