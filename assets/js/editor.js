@@ -26,9 +26,12 @@
         mousePos:      { x: 0, y: 0 },
         needsRedraw:   false,
         // Vertex dragging state
-        dragging:      false,  // true while a handle is being dragged
-        dragHotspotId: null,   // id of the hotspot being edited
-        dragPointIdx:  null    // index of the point being dragged
+        dragging:      false,
+        dragHotspotId: null,
+        dragPointIdx:  null,
+        // Click-to-seed state
+        seedMode:      false,  // true when editor is placing seed points
+        seeds:         []      // [{x, y}] normalised 0-1 coords, one per room click
     };
 
     try {
@@ -179,6 +182,39 @@
                 svg.appendChild(c);
             });
         }
+
+        // Render seed markers when in seed mode.
+        // Each marker shows a numbered circle so the editor can see
+        // exactly where they clicked and in what order.
+        if (state.seedMode || state.seeds.length > 0) {
+            state.seeds.forEach((s, i) => {
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx',           s.x * 100);
+                circle.setAttribute('cy',           s.y * 100);
+                circle.setAttribute('r',            '2.2');
+                circle.setAttribute('fill',         '#fff');
+                circle.setAttribute('stroke',       '#333');
+                circle.setAttribute('stroke-width', '0.5');
+                circle.style.setProperty('vector-effect', 'non-scaling-stroke');
+
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x',                 s.x * 100);
+                label.setAttribute('y',                 s.y * 100);
+                label.setAttribute('text-anchor',       'middle');
+                label.setAttribute('dominant-baseline', 'middle');
+                label.setAttribute('font-size',         '2.5');
+                label.setAttribute('font-weight',       'bold');
+                label.setAttribute('fill',              '#333');
+                label.setAttribute('pointer-events',    'none');
+                label.textContent = String(i + 1);
+
+                g.appendChild(circle);
+                g.appendChild(label);
+                svg.appendChild(g);
+            });
+        }
     }
 
     function renderHotspotList() {
@@ -307,10 +343,21 @@
         });
 
         svg.addEventListener('click', function (e) {
-            // Don't add a new point if we just finished dragging.
             if (state.dragging) return;
             if (!imgEl.src || $emptyState.is(':visible')) return;
+
             const pos = getNormalizedPos(e);
+
+            // --- Seed mode: place a seed marker ---
+            if (state.seedMode) {
+                state.seeds.push({ x: pos.x, y: pos.y });
+                // Enable Run Fill button once at least one seed exists
+                $('#fp360-run-fill').prop('disabled', state.seeds.length === 0);
+                requestRedraw();
+                return; // never falls through to draw mode
+            }
+
+            // --- Draw mode: add polygon point ---
             if (state.drawing && state.currentPoints.length >= 3) {
                 const first = state.currentPoints[0];
                 if (Math.hypot(pos.x - first.x, pos.y - first.y) < SNAP_DISTANCE) {
@@ -409,6 +456,50 @@
         $('#fp360-detect-tolerance-val').text($(this).val());
     });
 
+    // --- Seed mode toggle ---
+    $('#fp360-seed-mode').on('click', function () {
+        state.seedMode = !state.seedMode;
+
+        if (state.seedMode) {
+            // Entering seed mode — abort any in-progress polygon drawing
+            state.drawing       = false;
+            state.currentPoints = [];
+            if (svg) svg.classList.remove('snap-active');
+            $(this).addClass('is-active').text(fp360Admin.i18n.seedModeActive || '✕ Cancel Seed Mode');
+            if (svg) svg.style.cursor = 'crosshair';
+            $('#fp360-run-fill').prop('disabled', state.seeds.length === 0);
+            setDetectionStatus('seed-mode');
+        } else {
+            // Exiting seed mode
+            $(this).removeClass('is-active').text(fp360Admin.i18n.seedMode || 'Seed Rooms');
+            if (svg) svg.style.cursor = '';
+            $('#fp360-run-fill').prop('disabled', true);
+            setDetectionStatus('idle');
+        }
+        requestRedraw();
+    });
+
+    // --- Run Fill button ---
+    $('#fp360-run-fill').on('click', function () {
+        if (state.seeds.length === 0) return;
+        const tolerance = parseInt($('#fp360-detect-tolerance').val(), 10) || 3;
+
+        // Exit seed mode
+        state.seedMode = false;
+        $('#fp360-seed-mode').removeClass('is-active').text(fp360Admin.i18n.seedMode || 'Seed Rooms');
+        if (svg) svg.style.cursor = '';
+        $('#fp360-run-fill').prop('disabled', true);
+
+        runSeedFill(state.seeds, tolerance);
+    });
+
+    // --- Clear Seeds button ---
+    $('#fp360-clear-seeds').on('click', function () {
+        state.seeds = [];
+        $('#fp360-run-fill').prop('disabled', true);
+        requestRedraw();
+    });
+
     window.addEventListener('resize', requestRedraw);
 
     renderHotspotList();
@@ -488,19 +579,23 @@
         const i18n    = fp360Admin.i18n;
 
         const labels = {
-            'processing': { btn: i18n.detecting   || 'Detecting…',      disabled: true,  cls: 'fp360-status--info'    },
-            'done':       { btn: i18n.detectRooms  || 'Detect Rooms',    disabled: false, cls: 'fp360-status--success' },
-            'none-found': { btn: i18n.detectRooms  || 'Detect Rooms',    disabled: false, cls: 'fp360-status--warn'    },
-            'no-image':   { btn: i18n.detectRooms  || 'Detect Rooms',    disabled: false, cls: 'fp360-status--warn'    },
-            'error':      { btn: i18n.detectRooms  || 'Detect Rooms',    disabled: false, cls: 'fp360-status--error'   },
+            'processing': { btn: i18n.detecting   || 'Detecting…',   disabled: true,  cls: 'fp360-status--info'    },
+            'done':       { btn: i18n.detectRooms  || 'Detect Rooms', disabled: false, cls: 'fp360-status--success' },
+            'none-found': { btn: i18n.detectRooms  || 'Detect Rooms', disabled: false, cls: 'fp360-status--warn'    },
+            'no-image':   { btn: i18n.detectRooms  || 'Detect Rooms', disabled: false, cls: 'fp360-status--warn'    },
+            'error':      { btn: i18n.detectRooms  || 'Detect Rooms', disabled: false, cls: 'fp360-status--error'   },
+            'seed-mode':  { btn: i18n.detectRooms  || 'Detect Rooms', disabled: false, cls: 'fp360-status--info'    },
+            'idle':       { btn: i18n.detectRooms  || 'Detect Rooms', disabled: false, cls: ''                      },
         };
 
         const messages = {
-            'processing': i18n.detecting      || 'Detecting rooms…',
-            'done':       (i18n.detectedRooms || 'Detected {n} room(s). Review and assign 360° images.').replace('{n}', count),
-            'none-found': i18n.noRoomsFound   || 'No rooms detected. Try a lower sensitivity value, or draw rooms manually.',
+            'processing': i18n.detecting        || 'Detecting rooms…',
+            'done':       (i18n.detectedRooms   || 'Detected {n} room(s). Review polygons and assign 360° images.').replace('{n}', count),
+            'none-found': i18n.noRoomsFound     || 'No rooms detected. Try a lower sensitivity value, or draw rooms manually.',
             'no-image':   i18n.noImageForDetect || 'Please upload a floorplan image first.',
-            'error':      i18n.detectionError || 'Detection failed. Please draw rooms manually.',
+            'error':      i18n.detectionError   || 'Detection failed. Please draw rooms manually.',
+            'seed-mode':  i18n.seedModeHint     || 'Click inside each room, then click Run Fill.',
+            'idle':       '',
         };
 
         const cfg = labels[status] || labels['error'];
@@ -513,7 +608,226 @@
     }
 
     /**
-     * Core detection algorithm. Returns an array of normalised polygon point arrays.
+     * Click-to-seed fill.
+     * Takes human-placed seed points (one per room), runs the same
+     * pre-processing as auto-detection, then uses each seed to label
+     * a region in the sealed image before watershed expansion.
+     *
+     * @param {Array<{x:number,y:number}>} seeds  Normalised 0-1 coords
+     * @param {number} tolerancePx                Sensitivity slider value
+     */
+    function runSeedFill(seeds, tolerancePx) {
+        if (!imgEl || !imgEl.naturalWidth) {
+            setDetectionStatus('no-image');
+            return;
+        }
+        if (!seeds || seeds.length === 0) return;
+
+        setDetectionStatus('processing');
+
+        setTimeout(function () {
+            try {
+                const polygons = runSeedFillCore(imgEl, seeds, tolerancePx);
+
+                if (polygons.length === 0) {
+                    setDetectionStatus('none-found');
+                    state.seeds = [];
+                    requestRedraw();
+                    return;
+                }
+
+                polygons.forEach(function (points) {
+                    state.hotspots.push({
+                        id:       generateId(),
+                        points:   points,
+                        label:    fp360Admin.i18n.newRoom || 'New Room',
+                        image360: '',
+                        color:    nextColor()
+                    });
+                });
+
+                // Clear seeds now that polygons have been produced.
+                state.seeds = [];
+
+                saveHotspots();
+                renderHotspotList();
+                requestRedraw();
+                setDetectionStatus('done', polygons.length);
+
+            } catch (err) {
+                console.error('FP360 Seed fill error:', err);
+                setDetectionStatus('error');
+            }
+        }, 50);
+    }
+
+    /**
+     * Core seed fill algorithm.
+     * Runs the same pre-processing pipeline as runDetection (greyscale,
+     * blur, threshold, open, seal), but instead of using connected
+     * components to find seeds automatically, it converts the human-placed
+     * seed coordinates to pixel positions on the processed image and uses
+     * those directly as the starting labels for the watershed expansion.
+     */
+    function runSeedFillCore(img, seeds, tolerancePx) {
+        const MAX_DIM = 1200;
+        const scale   = Math.min(MAX_DIM / img.naturalWidth, MAX_DIM / img.naturalHeight, 1);
+        const W       = Math.round(img.naturalWidth  * scale);
+        const H       = Math.round(img.naturalHeight * scale);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = W; canvas.height = H;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, W, H);
+        ctx.drawImage(img, 0, 0, W, H);
+
+        let pixelData;
+        try {
+            pixelData = ctx.getImageData(0, 0, W, H).data;
+        } catch (e) {
+            throw new Error('Cross-origin image — upload to WordPress media library.');
+        }
+
+        // Greyscale
+        const grey = new Uint8Array(W * H);
+        for (let i = 0; i < W * H; i++) {
+            grey[i] = Math.round(0.299*pixelData[i*4] + 0.587*pixelData[i*4+1] + 0.114*pixelData[i*4+2]);
+        }
+
+        // Gaussian blur
+        const blurred = new Uint8Array(W * H);
+        const gK = [1,2,1,2,4,2,1,2,1];
+        for (let y = 0; y < H; y++) {
+            for (let x = 0; x < W; x++) {
+                let s = 0, w = 0;
+                for (let ky = -1; ky <= 1; ky++) {
+                    for (let kx = -1; kx <= 1; kx++) {
+                        const nx = Math.max(0, Math.min(W-1, x+kx));
+                        const ny = Math.max(0, Math.min(H-1, y+ky));
+                        const k  = gK[(ky+1)*3+(kx+1)];
+                        s += grey[ny*W+nx]*k; w += k;
+                    }
+                }
+                blurred[y*W+x] = Math.round(s/w);
+            }
+        }
+
+        // Otsu threshold
+        const thresh = otsuThreshold(blurred, W * H);
+        const binary = new Uint8Array(W * H);
+        for (let i = 0; i < W*H; i++) binary[i] = blurred[i] >= thresh ? 255 : 0;
+
+        // Morphological open (removes thin features: text, door arcs, furniture)
+        const k      = Math.max(2, tolerancePx);
+        const gapK   = Math.max(k + 2, Math.round(W / 60));
+        const eroded = morphErode(binary, W, H, k);
+        const opened = morphDilate(eroded, W, H, k);
+
+        // Gap sealing (closes doorway openings)
+        const sealed = morphErode(opened, W, H, gapK);
+
+        // Initialise the label map with -1 (unclaimed).
+        // Seed pixels get label 0, 1, 2… matching the seeds array index.
+        const labels = new Int32Array(W * H).fill(-1);
+        let validSeedCount = 0;
+
+        seeds.forEach(function (s, idx) {
+            // Convert normalised seed coord to processed image pixel.
+            const px = Math.round(s.x * W);
+            const py = Math.round(s.y * H);
+
+            // Search outward from the click point for the nearest pixel
+            // that is light in `sealed` — the editor may have clicked on
+            // a wall or text that was eroded dark. Search up to 20px radius.
+            let found = false;
+            outer: for (let r = 0; r <= 20; r++) {
+                for (let dy = -r; dy <= r; dy++) {
+                    for (let dx = -r; dx <= r; dx++) {
+                        if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+                        const nx = Math.max(0, Math.min(W-1, px+dx));
+                        const ny = Math.max(0, Math.min(H-1, py+dy));
+                        const ni = ny*W+nx;
+                        if (sealed[ni] === 255 && labels[ni] === -1) {
+                            labels[ni] = idx;
+                            validSeedCount++;
+                            found = true;
+                            break outer;
+                        }
+                    }
+                }
+            }
+            if (!found) console.warn('FP360: seed', idx+1, 'landed on a wall — try clicking closer to room centre');
+        });
+
+        if (validSeedCount === 0) return [];
+
+        // Watershed expansion — identical to auto-detect step 9.
+        // All seeds expand simultaneously on `opened`, stopping at walls.
+        const expanded = labels.slice();
+        for (let round = 0; round < gapK; round++) {
+            const next = expanded.slice();
+            for (let i = 0; i < W*H; i++) {
+                if (expanded[i] >= 0) continue;
+                if (opened[i] !== 255) continue;
+                const x = i%W, y = Math.floor(i/W);
+                if (y > 0     && expanded[i-W] >= 0) { next[i] = expanded[i-W]; continue; }
+                if (y < H-1   && expanded[i+W] >= 0) { next[i] = expanded[i+W]; continue; }
+                if (x > 0     && expanded[i-1] >= 0) { next[i] = expanded[i-1]; continue; }
+                if (x < W-1   && expanded[i+1] >= 0) { next[i] = expanded[i+1]; }
+            }
+            expanded.set(next);
+        }
+
+        // Trace, simplify, snap, and normalise each seed's region.
+        const polygons = [];
+        const SNAP_RAD = 15 * Math.PI / 180;
+
+        seeds.forEach(function (_, label) {
+            const TARGET       = 0;
+            const regionLabels = new Int32Array(W * H).fill(-1);
+            let   traceStart   = -1;
+            for (let i = 0; i < W*H; i++) {
+                if (expanded[i] !== label) continue;
+                regionLabels[i] = TARGET;
+                if (traceStart === -1) traceStart = i;
+            }
+            if (traceStart === -1) return;
+
+            const boundary = mooreTrace(regionLabels, W, H, TARGET, traceStart);
+            if (boundary.length < 6) return;
+
+            const step     = Math.max(1, Math.floor(boundary.length / 600));
+            const sampled  = boundary.filter(function(_, i) { return i%step===0; });
+            const rdpTol   = Math.max(3, Math.round(W/80));
+            const simplified = rdpSimplify(sampled, rdpTol);
+            if (simplified.length < 3) return;
+
+            // Manhattan snapping
+            const snapped = simplified.map(function(p) { return {x:p.x, y:p.y}; });
+            for (let i = 0; i < snapped.length; i++) {
+                const a = snapped[i], b = snapped[(i+1)%snapped.length];
+                const ang = Math.abs(Math.atan2(b.y-a.y, b.x-a.x));
+                if (ang < SNAP_RAD || ang > Math.PI-SNAP_RAD) b.y = a.y;
+                else if (Math.abs(ang - Math.PI/2) < SNAP_RAD) b.x = a.x;
+            }
+
+            const points = snapped.map(function(p) {
+                return {
+                    x: Math.max(0, Math.min(1, (p.x/scale)/img.naturalWidth)),
+                    y: Math.max(0, Math.min(1, (p.y/scale)/img.naturalHeight))
+                };
+            });
+            polygons.push(points);
+        });
+
+        return polygons;
+    }
+
+    /**
+     * Auto-detection entry point — called by the Auto-Detect button.
+     * Runs the full pipeline without human seeds. Less reliable than
+     * click-to-seed but requires zero interaction.
      * @param  {HTMLImageElement} img
      * @param  {number}           tolerancePx
      * @return {Array<Array<{x:number,y:number}>>}
@@ -774,13 +1088,13 @@
      * Moore Neighbourhood Contour Tracing
      *
      * Traces the ordered outer boundary of a connected region.
-     * Returns boundary pixels in traversal order — suitable for polygon creation
+     * Returns boundary pixels in traversal order - suitable for polygon creation
      * without any sorting step, and correctly handles concave rooms.
      *
-     * @param  {Int32Array} labels  Labelled pixel array from connected components
-     * @param  {number}     W       Image width
-     * @param  {number}     H       Image height
-     * @param  {number}     label   The region label to trace
+     * @param  {Int32Array} labels    Labelled pixel array from connected components
+     * @param  {number}     W         Image width
+     * @param  {number}     H         Image height
+     * @param  {number}     label     The region label to trace
      * @param  {number}     startIdx  Top-left pixel of the region (scan order)
      * @return {Array<{x:number,y:number}>}
      */
