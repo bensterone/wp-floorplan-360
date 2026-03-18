@@ -728,7 +728,7 @@
         const sealed = morphErode(opened, W, H, gapK);
 
         // Initialise the label map with -1 (unclaimed).
-        // Seed pixels get label 0, 1, 2… matching the seeds array index.
+        // Seed pixels get label 0, 1, 2... matching the seeds array index.
         const labels = new Int32Array(W * H).fill(-1);
         let validSeedCount = 0;
 
@@ -737,18 +737,22 @@
             const px = Math.round(s.x * W);
             const py = Math.round(s.y * H);
 
-            // Search outward from the click point for the nearest pixel
-            // that is light in `sealed` — the editor may have clicked on
-            // a wall or text that was eroded dark. Search up to 20px radius.
+            // Search outward from the click point for the nearest light pixel
+            // in `opened` (NOT `sealed`). Reasons:
+            //   - `opened` has text, door arcs and furniture removed.
+            //   - `opened` still has large light areas in room centres.
+            //   - `sealed` is aggressively eroded — small rooms may be fully dark.
+            // Search up to 50px so clicks on text labels still find the room interior.
             let found = false;
-            outer: for (let r = 0; r <= 20; r++) {
+            outer: for (let r = 0; r <= 50; r++) {
                 for (let dy = -r; dy <= r; dy++) {
                     for (let dx = -r; dx <= r; dx++) {
                         if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
                         const nx = Math.max(0, Math.min(W-1, px+dx));
                         const ny = Math.max(0, Math.min(H-1, py+dy));
                         const ni = ny*W+nx;
-                        if (sealed[ni] === 255 && labels[ni] === -1) {
+                        // Must be light in opened AND not already claimed by another seed.
+                        if (opened[ni] === 255 && labels[ni] === -1) {
                             labels[ni] = idx;
                             validSeedCount++;
                             found = true;
@@ -757,26 +761,46 @@
                     }
                 }
             }
-            if (!found) console.warn('FP360: seed', idx+1, 'landed on a wall — try clicking closer to room centre');
+            if (!found) console.warn('FP360: seed', idx+1, 'could not find a room pixel — it may be entirely walled off');
         });
 
         if (validSeedCount === 0) return [];
 
-        // Watershed expansion — identical to auto-detect step 9.
-        // All seeds expand simultaneously on `opened`, stopping at walls.
+        // Watershed expansion using a BFS queue — O(W*H) total, not O(rounds*W*H).
+        // All seeds expand simultaneously on `opened`, stopping at walls or each other.
+        // Using a queue means each pixel is processed exactly once regardless of
+        // how far the seed needs to travel to reach the room boundary.
         const expanded = labels.slice();
-        for (let round = 0; round < gapK; round++) {
-            const next = expanded.slice();
-            for (let i = 0; i < W*H; i++) {
-                if (expanded[i] >= 0) continue;
-                if (opened[i] !== 255) continue;
-                const x = i%W, y = Math.floor(i/W);
-                if (y > 0     && expanded[i-W] >= 0) { next[i] = expanded[i-W]; continue; }
-                if (y < H-1   && expanded[i+W] >= 0) { next[i] = expanded[i+W]; continue; }
-                if (x > 0     && expanded[i-1] >= 0) { next[i] = expanded[i-1]; continue; }
-                if (x < W-1   && expanded[i+1] >= 0) { next[i] = expanded[i+1]; }
-            }
-            expanded.set(next);
+        const wQueue = [];
+
+        // Seed the queue with all labelled pixels and their unclaimed neighbours.
+        for (let i = 0; i < W*H; i++) {
+            if (expanded[i] < 0) continue;
+            const x = i%W, y = Math.floor(i/W);
+            if (y > 0     && opened[i-W] === 255 && expanded[i-W] === -1) wQueue.push(i-W);
+            if (y < H-1   && opened[i+W] === 255 && expanded[i+W] === -1) wQueue.push(i+W);
+            if (x > 0     && opened[i-1] === 255 && expanded[i-1] === -1) wQueue.push(i-1);
+            if (x < W-1   && opened[i+1] === 255 && expanded[i+1] === -1) wQueue.push(i+1);
+        }
+
+        let wqi = 0;
+        while (wqi < wQueue.length) {
+            const i = wQueue[wqi++];
+            if (expanded[i] >= 0 || opened[i] !== 255) continue; // already claimed or wall
+            const x = i%W, y = Math.floor(i/W);
+            // Inherit label from first already-labelled neighbour found.
+            let lbl = -1;
+            if (y > 0     && expanded[i-W] >= 0) lbl = expanded[i-W];
+            else if (y < H-1 && expanded[i+W] >= 0) lbl = expanded[i+W];
+            else if (x > 0   && expanded[i-1] >= 0) lbl = expanded[i-1];
+            else if (x < W-1 && expanded[i+1] >= 0) lbl = expanded[i+1];
+            if (lbl < 0) { wQueue.push(i); continue; } // neighbours not yet labelled, retry later
+            expanded[i] = lbl;
+            // Propagate to unclaimed neighbours.
+            if (y > 0     && opened[i-W] === 255 && expanded[i-W] === -1) wQueue.push(i-W);
+            if (y < H-1   && opened[i+W] === 255 && expanded[i+W] === -1) wQueue.push(i+W);
+            if (x > 0     && opened[i-1] === 255 && expanded[i-1] === -1) wQueue.push(i-1);
+            if (x < W-1   && opened[i+1] === 255 && expanded[i+1] === -1) wQueue.push(i+1);
         }
 
         // Trace, simplify, snap, and normalise each seed's region.
