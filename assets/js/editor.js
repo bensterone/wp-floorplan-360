@@ -713,10 +713,13 @@
                 if (labels[ny * W + nx] !== label) continue;
 
                 // Found next boundary pixel.
-                // Entry direction for next pixel = opposite of the direction
-                // we came from (the pixel we just left).
                 const backDir = (dir + 4) % 8;
-                entryDir = backDir;
+                // Start the next search one step clockwise PAST the backtrack
+                // direction. If we used backDir directly, the first neighbour
+                // checked would be the pixel we just came from (which is in the
+                // region), causing the trace to immediately reverse and return
+                // to start after 2 steps with only 1 boundary point.
+                entryDir = (backDir + 1) % 8;
                 cx = nx;
                 cy = ny;
                 found = true;
