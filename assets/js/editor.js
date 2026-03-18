@@ -24,7 +24,11 @@
         currentPoints: [],
         selectedId:    null,
         mousePos:      { x: 0, y: 0 },
-        needsRedraw:   false
+        needsRedraw:   false,
+        // Vertex dragging state
+        dragging:      false,  // true while a handle is being dragged
+        dragHotspotId: null,   // id of the hotspot being edited
+        dragPointIdx:  null    // index of the point being dragged
     };
 
     try {
@@ -110,6 +114,32 @@
             });
 
             svg.appendChild(poly);
+
+            // Render drag handles on the selected polygon.
+            // Each vertex gets a circle the editor can grab and drag.
+            if (isSelected) {
+                hs.points.forEach((p, idx) => {
+                    const handle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    handle.setAttribute('cx',     p.x * 100);
+                    handle.setAttribute('cy',     p.y * 100);
+                    handle.setAttribute('r',      '1.6');
+                    handle.setAttribute('class',  'hs-handle');
+                    handle.setAttribute('fill',   '#fff');
+                    handle.setAttribute('stroke', color);
+                    handle.setAttribute('stroke-width', '0.5');
+                    handle.style.setProperty('vector-effect', 'non-scaling-stroke');
+                    handle.style.cursor = 'move';
+
+                    handle.addEventListener('mousedown', (e) => {
+                        e.stopPropagation(); // prevent polygon click / new point
+                        state.dragging      = true;
+                        state.dragHotspotId = hs.id;
+                        state.dragPointIdx  = idx;
+                    });
+
+                    svg.appendChild(handle);
+                });
+            }
 
             if (hs.label) {
                 const center = getCentroid(hs.points);
@@ -230,8 +260,25 @@
 
     if (svg) {
         svg.addEventListener('mousemove', function (e) {
+            const pos = getNormalizedPos(e);
+
+            // --- Vertex dragging ---
+            if (state.dragging && state.dragHotspotId !== null) {
+                const hs = state.hotspots.find(h => h.id === state.dragHotspotId);
+                if (hs && state.dragPointIdx !== null) {
+                    // Clamp to 0–1 so points can't leave the image bounds.
+                    hs.points[state.dragPointIdx] = {
+                        x: Math.max(0, Math.min(1, pos.x)),
+                        y: Math.max(0, Math.min(1, pos.y))
+                    };
+                    requestRedraw();
+                }
+                return; // don't process drawing rubber-band while dragging
+            }
+
+            // --- Drawing rubber-band ---
             if (!state.drawing) return;
-            state.mousePos = getNormalizedPos(e);
+            state.mousePos = pos;
             if (state.currentPoints.length >= 3) {
                 const first = state.currentPoints[0];
                 const dist  = Math.hypot(state.mousePos.x - first.x, state.mousePos.y - first.y);
@@ -240,7 +287,28 @@
             requestRedraw();
         });
 
+        svg.addEventListener('mouseup', function () {
+            if (state.dragging) {
+                state.dragging      = false;
+                state.dragHotspotId = null;
+                state.dragPointIdx  = null;
+                saveHotspots(); // persist the moved vertex
+            }
+        });
+
+        // Also cancel drag if mouse leaves the SVG entirely.
+        svg.addEventListener('mouseleave', function () {
+            if (state.dragging) {
+                state.dragging      = false;
+                state.dragHotspotId = null;
+                state.dragPointIdx  = null;
+                saveHotspots();
+            }
+        });
+
         svg.addEventListener('click', function (e) {
+            // Don't add a new point if we just finished dragging.
+            if (state.dragging) return;
             if (!imgEl.src || $emptyState.is(':visible')) return;
             const pos = getNormalizedPos(e);
             if (state.drawing && state.currentPoints.length >= 3) {
