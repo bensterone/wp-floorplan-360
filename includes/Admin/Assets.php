@@ -39,6 +39,11 @@ class Assets {
                     'detectConfirmClear' => __( 'Clear existing rooms and re-detect?', 'wp-floorplan-360' ),
                     'clearAllConfirm'    => __( 'Delete all rooms? This cannot be undone until you save.', 'wp-floorplan-360' ),
                     'clearAllRooms'      => __( 'Clear All Rooms', 'wp-floorplan-360' ),
+                    'seedMode'           => __( 'Seed Rooms', 'wp-floorplan-360' ),
+                    'seedModeActive'     => __( '✕ Cancel Seed Mode', 'wp-floorplan-360' ),
+                    'seedModeHint'       => __( 'Click once inside each room, then click Run Fill.', 'wp-floorplan-360' ),
+                    'runFill'            => __( 'Run Fill', 'wp-floorplan-360' ),
+                    'clearSeeds'         => __( 'Clear Seeds', 'wp-floorplan-360' ),
                 ],
             ] );
         }

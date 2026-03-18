@@ -35,9 +35,24 @@
             <?php esc_html_e( 'Undo Last Point', 'wp-floorplan-360' ); ?>
         </button>
 
-        <button type="button" class="button button-primary" id="fp360-detect-rooms">
+        <button type="button" class="button" id="fp360-seed-mode">
+            <span class="dashicons dashicons-location" style="padding-top:4px;"></span>
+            <?php esc_html_e( 'Seed Rooms', 'wp-floorplan-360' ); ?>
+        </button>
+
+        <button type="button" class="button button-primary" id="fp360-run-fill" disabled>
+            <span class="dashicons dashicons-superhero" style="padding-top:4px;"></span>
+            <?php esc_html_e( 'Run Fill', 'wp-floorplan-360' ); ?>
+        </button>
+
+        <button type="button" class="button" id="fp360-clear-seeds">
+            <span class="dashicons dashicons-marker" style="padding-top:4px;"></span>
+            <?php esc_html_e( 'Clear Seeds', 'wp-floorplan-360' ); ?>
+        </button>
+
+        <button type="button" class="button" id="fp360-detect-rooms">
             <span class="dashicons dashicons-search" style="padding-top:4px;"></span>
-            <?php esc_html_e( 'Detect Rooms', 'wp-floorplan-360' ); ?>
+            <?php esc_html_e( 'Auto-Detect', 'wp-floorplan-360' ); ?>
         </button>
 
         <button type="button" class="button" id="fp360-clear-rooms">
@@ -58,6 +73,9 @@
 
     <div id="fp360-hotspot-list-admin" style="margin-top:20px;">
         <h4 style="margin-bottom:5px;"><?php esc_html_e( 'Rooms & 360° Views', 'wp-floorplan-360' ); ?></h4>
+        <p class="description" style="margin-bottom:8px;">
+            <?php esc_html_e( 'Click "Seed Rooms", click once inside each room on the floorplan, then click "Run Fill".', 'wp-floorplan-360' ); ?>
+        </p>
         <ul id="fp360-hotspot-items"></ul>
         <p class="description">
             <strong><?php esc_html_e( 'Pro Tip:', 'wp-floorplan-360' ); ?></strong>

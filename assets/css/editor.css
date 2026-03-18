@@ -122,7 +122,16 @@
     transition: fill 0.15s ease;
 }
 
-/* Vertex drag handles — shown on selected polygon */
+/* Seed mode toggle — highlighted when active */
+#fp360-seed-mode.is-active {
+    background: #2271b1;
+    border-color: #2271b1;
+    color: #fff;
+}
+#fp360-seed-mode.is-active:hover {
+    background: #135e96;
+    border-color: #135e96;
+}
 .hs-handle {
     vector-effect: non-scaling-stroke;
     cursor: move;
