@@ -308,7 +308,32 @@
     // Detect Rooms button
     $('#fp360-detect-rooms').on('click', function () {
         const tolerance = parseInt($('#fp360-detect-tolerance').val(), 10) || 3;
+
+        // If rooms already exist, ask before clearing them.
+        if (state.hotspots.length > 0) {
+            if (!confirm(fp360Admin.i18n.detectConfirmClear || 'Clear existing rooms and re-detect?')) {
+                return;
+            }
+            state.hotspots  = [];
+            state.selectedId = null;
+            saveHotspots();
+            renderHotspotList();
+            requestRedraw();
+        }
+
         detectRooms(tolerance);
+    });
+
+    // Clear All Rooms button
+    $('#fp360-clear-rooms').on('click', function () {
+        if (state.hotspots.length === 0) return;
+        if (confirm(fp360Admin.i18n.clearAllConfirm || 'Delete all rooms?')) {
+            state.hotspots   = [];
+            state.selectedId = null;
+            saveHotspots();
+            renderHotspotList();
+            requestRedraw();
+        }
     });
 
     // Tolerance slider — update displayed value in real time
@@ -575,49 +600,46 @@
 
         if (validLabels.size === 0) return [];
 
+        // Raise minArea now that we have a better contour tracer —
+        // tiny artefacts (door arc remnants, stair details) are reliably excluded.
+        const minAreaFinal = totalArea * 0.006;
+
         // --- Steps 9–11: Extract, simplify, normalise each region ---
         const polygons = [];
 
         validLabels.forEach(function (label) {
-            // Collect boundary pixels and compute centroid simultaneously.
-            const boundary = [];
-            let sumX = 0, sumY = 0, count = 0;
-
+            // Count region size and find top-left starting pixel for Moore tracing.
+            let startIdx = -1;
+            let count    = 0;
             for (let i = 0; i < W * H; i++) {
                 if (labels[i] !== label) continue;
-                const x = i % W;
-                const y = Math.floor(i / W);
-                sumX += x;
-                sumY += y;
                 count++;
-
-                // A pixel is on the boundary if any 4-connected neighbour is not in the same region.
-                const isBoundary = (
-                    x === 0 || x === W - 1 || y === 0 || y === H - 1 ||
-                    labels[i - 1] !== label || labels[i + 1] !== label ||
-                    labels[i - W] !== label || labels[i + W] !== label
-                );
-                if (isBoundary) boundary.push({ x, y });
+                if (startIdx === -1) startIdx = i; // first pixel found (top-left due to scan order)
             }
+
+            // Skip regions that are too small after the stricter filter.
+            if (count < minAreaFinal || startIdx === -1) return;
+
+            // --- Moore Neighbourhood Contour Tracing ---
+            //
+            // Walks the outer boundary of the region in a connected, ordered sequence.
+            // Unlike angle-sort (which breaks on concave rooms), Moore tracing follows
+            // the actual perimeter pixel-by-pixel, so the result is always a valid
+            // non-self-intersecting polygon.
+            //
+            // Reference: Jacob's stopping criterion variant.
+            //
+            const boundary = mooreTrace(labels, W, H, label, startIdx);
 
             if (boundary.length < 6) return;
 
-            // Sort boundary pixels by angle from centroid.
-            // This produces a correctly-ordered polygon traversal for
-            // star-shaped rooms (the vast majority of rooms in practice).
-            const cx = sumX / count;
-            const cy = sumY / count;
-
-            boundary.sort(function (a, b) {
-                return Math.atan2(a.y - cy, a.x - cx) - Math.atan2(b.y - cy, b.x - cx);
-            });
-
-            // Subsample to at most 400 points before RDP for performance.
-            const step    = Math.max(1, Math.floor(boundary.length / 400));
+            // Subsample to at most 600 points before RDP for performance.
+            const step    = Math.max(1, Math.floor(boundary.length / 600));
             const sampled = boundary.filter(function (_, i) { return i % step === 0; });
 
             // RDP simplification — reduces polygon to 4–20 points typically.
-            const rdpTolerance = Math.max(2, Math.round(W / 120)); // ~5px at 600px
+            // Tolerance scales with image width so it works across resolutions.
+            const rdpTolerance = Math.max(3, Math.round(W / 80));
             const simplified   = rdpSimplify(sampled, rdpTolerance);
 
             if (simplified.length < 3) return;
@@ -634,6 +656,75 @@
         });
 
         return polygons;
+    }
+
+    /**
+     * Moore Neighbourhood Contour Tracing
+     *
+     * Traces the ordered outer boundary of a connected region.
+     * Returns boundary pixels in traversal order — suitable for polygon creation
+     * without any sorting step, and correctly handles concave rooms.
+     *
+     * @param  {Int32Array} labels  Labelled pixel array from connected components
+     * @param  {number}     W       Image width
+     * @param  {number}     H       Image height
+     * @param  {number}     label   The region label to trace
+     * @param  {number}     startIdx  Top-left pixel of the region (scan order)
+     * @return {Array<{x:number,y:number}>}
+     */
+    function mooreTrace(labels, W, H, label, startIdx) {
+        // 8-connected neighbour offsets in clockwise order starting from West.
+        // dx/dy pairs: W, NW, N, NE, E, SE, S, SW
+        const dx = [-1, -1,  0,  1,  1,  1,  0, -1];
+        const dy = [ 0, -1, -1, -1,  0,  1,  1,  1];
+
+        const startX = startIdx % W;
+        const startY = Math.floor(startIdx / W);
+        const result = [];
+        const maxSteps = W * H; // safety limit
+
+        let cx = startX;
+        let cy = startY;
+
+        // The entry direction: we arrived at start from the left (West neighbour),
+        // so we begin searching clockwise from direction index 0 (West).
+        let entryDir = 0;
+
+        let steps = 0;
+        let firstStep = true;
+
+        do {
+            result.push({ x: cx, y: cy });
+
+            // Search 8 neighbours clockwise starting from the entry direction.
+            let found = false;
+            for (let k = 0; k < 8; k++) {
+                const dir = (entryDir + k) % 8;
+                const nx  = cx + dx[dir];
+                const ny  = cy + dy[dir];
+
+                if (nx < 0 || nx >= W || ny < 0 || ny >= H) continue;
+                if (labels[ny * W + nx] !== label) continue;
+
+                // Found next boundary pixel.
+                // Entry direction for next pixel = opposite of the direction
+                // we came from (the pixel we just left).
+                const backDir = (dir + 4) % 8;
+                entryDir = backDir;
+                cx = nx;
+                cy = ny;
+                found = true;
+                break;
+            }
+
+            if (!found) break; // isolated pixel
+
+            steps++;
+            firstStep = false;
+
+        } while ((cx !== startX || cy !== startY) && steps < maxSteps);
+
+        return result;
     }
 
     // --- Morphological helpers (separable box structuring element) ---

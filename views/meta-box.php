@@ -40,6 +40,11 @@
             <?php esc_html_e( 'Detect Rooms', 'wp-floorplan-360' ); ?>
         </button>
 
+        <button type="button" class="button" id="fp360-clear-rooms">
+            <span class="dashicons dashicons-trash" style="padding-top:4px;"></span>
+            <?php esc_html_e( 'Clear All Rooms', 'wp-floorplan-360' ); ?>
+        </button>
+
         <label class="fp360-tolerance-label">
             <?php esc_html_e( 'Sensitivity:', 'wp-floorplan-360' ); ?>
             <input type="range"

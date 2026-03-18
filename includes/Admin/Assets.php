@@ -36,6 +36,9 @@ class Assets {
                     'noRoomsFound'       => __( 'No rooms detected. Try a lower sensitivity value, or draw rooms manually.', 'wp-floorplan-360' ),
                     'noImageForDetect'   => __( 'Please upload a floorplan image first.', 'wp-floorplan-360' ),
                     'detectionError'     => __( 'Detection failed. Please draw rooms manually.', 'wp-floorplan-360' ),
+                    'detectConfirmClear' => __( 'Clear existing rooms and re-detect?', 'wp-floorplan-360' ),
+                    'clearAllConfirm'    => __( 'Delete all rooms? This cannot be undone until you save.', 'wp-floorplan-360' ),
+                    'clearAllRooms'      => __( 'Clear All Rooms', 'wp-floorplan-360' ),
                 ],
             ] );
         }
