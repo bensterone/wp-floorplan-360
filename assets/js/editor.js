@@ -516,13 +516,17 @@
         // --- Step 4: Morphological opening (removes thin features) ---
         // Erode removes thin dark features (furniture, text, dimension lines).
         // Dilate restores the surviving thick walls to their original thickness.
-        // Scale the erosion kernel proportionally to the processed image width.
-        // A fixed pixel value would be too small for large images (walls disappear)
-        // and too large for small images (rooms merge). W/200 gives a good ratio:
-        //   W=600  → k=tolerancePx*3,  sensitivity=3 → k=9
-        //   W=1200 → k=tolerancePx*6,  sensitivity=3 → k=18
-        const k      = Math.max(2, Math.round(tolerancePx * W / 200));
-        const gapK   = Math.round(k * 1.8); // larger kernel seals doorway gaps
+        // k controls morphological opening — removes thin features (furniture, text,
+        // door arcs). Direct mapping from slider: 2–8px is appropriate for all
+        // floorplan resolutions up to 1200px. Previous formula (tolerancePx * W/200)
+        // produced k=18 at W=1200 which eroded small rooms into nothing.
+        const k      = Math.max(2, tolerancePx);
+
+        // gapK seals doorway openings by eroding light pixels inward from each wall.
+        // Door gaps at 1200px are ~30–60px wide so we need gapK ~15–30.
+        // W/60 gives 20 at W=1200, 10 at W=600 — appropriate across resolutions.
+        const gapK   = Math.max(k + 2, Math.round(W / 60));
+
         const eroded = morphErode(binary, W, H, k);
         const opened = morphDilate(eroded, W, H, k);
         const sealed = morphErode(opened, W, H, gapK);
@@ -600,9 +604,11 @@
 
         if (validLabels.size === 0) return [];
 
-        // Raise minArea now that we have a better contour tracer —
-        // tiny artefacts (door arc remnants, stair details) are reliably excluded.
-        const minAreaFinal = totalArea * 0.006;
+        // Raise minArea to filter door arc remnants and tiny artefacts,
+        // but keep it low enough that a small Bad/WC (~80px wide at 1200px)
+        // survives after the gapK sealing shrinks it.
+        // 0.002 = 0.2% of total area — at 1200×809 that's ~1940px = ~44×44px minimum.
+        const minAreaFinal = totalArea * 0.002;
 
         // --- Steps 9–11: Extract, simplify, normalise each region ---
         const polygons = [];
