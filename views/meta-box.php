@@ -30,43 +30,55 @@
     <input type="hidden" name="fp360_hotspots" id="fp360_hotspots_data" value="<?php echo esc_attr( $hotspots_json ); ?>">
 
     <div class="fp360-toolbar">
-        <button type="button" class="button" id="fp360-undo-point">
-            <span class="dashicons dashicons-undo" style="padding-top:4px;"></span>
-            <?php esc_html_e( 'Undo Last Point', 'wp-floorplan-360' ); ?>
-        </button>
 
-        <button type="button" class="button" id="fp360-seed-mode">
-            <span class="dashicons dashicons-location" style="padding-top:4px;"></span>
-            <?php esc_html_e( 'Seed Rooms', 'wp-floorplan-360' ); ?>
-        </button>
+        <span class="fp360-toolbar-group">
+            <button type="button" class="button" id="fp360-rect-tool">
+                <span class="dashicons dashicons-grid-view" style="padding-top:4px;"></span>
+                <?php esc_html_e( 'Rectangle', 'wp-floorplan-360' ); ?>
+            </button>
+            <button type="button" class="button" id="fp360-undo-point">
+                <span class="dashicons dashicons-undo" style="padding-top:4px;"></span>
+                <?php esc_html_e( 'Undo', 'wp-floorplan-360' ); ?>
+            </button>
+        </span>
 
-        <button type="button" class="button button-primary" id="fp360-run-fill" disabled>
-            <span class="dashicons dashicons-superhero" style="padding-top:4px;"></span>
-            <?php esc_html_e( 'Run Fill', 'wp-floorplan-360' ); ?>
-        </button>
+        <span class="fp360-toolbar-sep"></span>
 
-        <button type="button" class="button" id="fp360-clear-seeds">
-            <span class="dashicons dashicons-marker" style="padding-top:4px;"></span>
-            <?php esc_html_e( 'Clear Seeds', 'wp-floorplan-360' ); ?>
-        </button>
+        <span class="fp360-toolbar-group">
+            <button type="button" class="button" id="fp360-seed-mode">
+                <span class="dashicons dashicons-location" style="padding-top:4px;"></span>
+                <?php esc_html_e( 'Seed Rooms', 'wp-floorplan-360' ); ?>
+            </button>
+            <button type="button" class="button button-primary" id="fp360-run-fill" disabled>
+                <span class="dashicons dashicons-superhero" style="padding-top:4px;"></span>
+                <?php esc_html_e( 'Run Fill', 'wp-floorplan-360' ); ?>
+            </button>
+            <button type="button" class="button" id="fp360-clear-seeds">
+                <span class="dashicons dashicons-marker" style="padding-top:4px;"></span>
+                <?php esc_html_e( 'Clear Seeds', 'wp-floorplan-360' ); ?>
+            </button>
+        </span>
 
-        <button type="button" class="button" id="fp360-detect-rooms">
-            <span class="dashicons dashicons-search" style="padding-top:4px;"></span>
-            <?php esc_html_e( 'Auto-Detect', 'wp-floorplan-360' ); ?>
-        </button>
+        <span class="fp360-toolbar-sep"></span>
 
-        <button type="button" class="button" id="fp360-clear-rooms">
-            <span class="dashicons dashicons-trash" style="padding-top:4px;"></span>
-            <?php esc_html_e( 'Clear All Rooms', 'wp-floorplan-360' ); ?>
-        </button>
+        <span class="fp360-toolbar-group">
+            <button type="button" class="button" id="fp360-detect-rooms">
+                <span class="dashicons dashicons-search" style="padding-top:4px;"></span>
+                <?php esc_html_e( 'Auto-Detect', 'wp-floorplan-360' ); ?>
+            </button>
+            <button type="button" class="button" id="fp360-clear-rooms">
+                <span class="dashicons dashicons-trash" style="padding-top:4px;"></span>
+                <?php esc_html_e( 'Clear All', 'wp-floorplan-360' ); ?>
+            </button>
+            <label class="fp360-tolerance-label">
+                <?php esc_html_e( 'Sensitivity:', 'wp-floorplan-360' ); ?>
+                <input type="range"
+                       id="fp360-detect-tolerance"
+                       min="2" max="8" value="3" step="1">
+                <span id="fp360-detect-tolerance-val">3</span>
+            </label>
+        </span>
 
-        <label class="fp360-tolerance-label">
-            <?php esc_html_e( 'Sensitivity:', 'wp-floorplan-360' ); ?>
-            <input type="range"
-                   id="fp360-detect-tolerance"
-                   min="2" max="8" value="3" step="1">
-            <span id="fp360-detect-tolerance-val">3</span>
-        </label>
     </div>
 
     <p id="fp360-detect-status" style="display:none;"></p>
@@ -74,12 +86,13 @@
     <div id="fp360-hotspot-list-admin" style="margin-top:20px;">
         <h4 style="margin-bottom:5px;"><?php esc_html_e( 'Rooms & 360° Views', 'wp-floorplan-360' ); ?></h4>
         <p class="description" style="margin-bottom:8px;">
-            <?php esc_html_e( 'Click "Seed Rooms", click once inside each room on the floorplan, then click "Run Fill".', 'wp-floorplan-360' ); ?>
+            <strong><?php esc_html_e( 'Rectangle tool:', 'wp-floorplan-360' ); ?></strong>
+            <?php esc_html_e( 'Click and drag over a room — edges snap to walls automatically.', 'wp-floorplan-360' ); ?>
         </p>
         <ul id="fp360-hotspot-items"></ul>
         <p class="description">
             <strong><?php esc_html_e( 'Pro Tip:', 'wp-floorplan-360' ); ?></strong>
-            <?php esc_html_e( 'Double-click the last point to quickly close a room shape.', 'wp-floorplan-360' ); ?>
+            <?php esc_html_e( 'Double-click the last point to quickly close a polygon shape.', 'wp-floorplan-360' ); ?>
         </p>
     </div>
 </div>

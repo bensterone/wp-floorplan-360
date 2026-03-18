@@ -44,6 +44,8 @@ class Assets {
                     'seedModeHint'       => __( 'Click once inside each room, then click Run Fill.', 'wp-floorplan-360' ),
                     'runFill'            => __( 'Run Fill', 'wp-floorplan-360' ),
                     'clearSeeds'         => __( 'Clear Seeds', 'wp-floorplan-360' ),
+                    'rectTool'           => __( 'Rectangle', 'wp-floorplan-360' ),
+                    'rectModeActive'     => __( '✕ Cancel Rectangle', 'wp-floorplan-360' ),
                 ],
             ] );
         }
