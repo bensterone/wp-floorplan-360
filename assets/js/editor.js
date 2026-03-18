@@ -672,68 +672,62 @@
 
         if (validLabels.size === 0) return [];
 
-        // --- Steps 9–11: Constrained expand, trace, snap, normalise ---
+        // --- Step 9: Multi-label competitive expansion (watershed) ---
         //
-        // CONSTRAINED FLOOD-FILL (Gemini / Groq suggestion implemented):
-        // Instead of dilating each sealed region by a fixed gapK (which overshoots
-        // walls and causes bleed between rooms), we flood-fill from a seed pixel
-        // in the sealed region outward onto the original `binary` image, stopping
-        // the moment we hit a dark wall pixel. This snaps the polygon boundary
-        // precisely to the actual wall lines of the floorplan — no overshoot possible.
+        // The sealed regions are correctly separated but too small (shrunk by gapK).
+        // We expand all regions simultaneously outward, one pixel per round,
+        // for gapK rounds. Rules:
+        //   - A pixel can only be claimed if it is light in `opened` (not a wall).
+        //   - First region to reach a pixel wins; ties are ignored (boundary stays dark).
+        //   - Dark wall pixels are never claimed.
         //
-        // MANHATTAN SNAPPING (Gemini suggestion):
-        // After RDP simplification, any polygon edge within 15° of horizontal or
-        // vertical is forced to be exactly so. Architectural rooms are almost always
-        // rectilinear; this makes the SVG polygons look professional rather than wobbly.
+        // Because all regions expand at the same rate, no region can bleed through
+        // a door gap into an adjacent room — both sides of the gap expand toward
+        // each other and meet in the middle, stopping there.
         //
+        // This is equivalent to a constrained dilation that respects the original
+        // wall geometry without any of the leakage problems of flood-fill.
+        //
+        const expanded = new Int32Array(W * H).fill(-1);
+
+        // Seed the expansion from the sealed regions.
+        for (let i = 0; i < W * H; i++) {
+            if (labels[i] >= 0) expanded[i] = labels[i];
+        }
+
+        // Expand gapK times — each round grows every region by 1 pixel.
+        for (let round = 0; round < gapK; round++) {
+            const next = expanded.slice(); // copy current state
+            for (let i = 0; i < W * H; i++) {
+                if (expanded[i] >= 0) continue;  // already claimed
+                if (opened[i] !== 255) continue;  // wall pixel — never claim
+                const x = i % W;
+                const y = Math.floor(i / W);
+                // Check 4 neighbours — first labelled one wins.
+                if (y > 0     && expanded[i - W] >= 0) { next[i] = expanded[i - W]; continue; }
+                if (y < H - 1 && expanded[i + W] >= 0) { next[i] = expanded[i + W]; continue; }
+                if (x > 0     && expanded[i - 1] >= 0) { next[i] = expanded[i - 1]; continue; }
+                if (x < W - 1 && expanded[i + 1] >= 0) { next[i] = expanded[i + 1]; }
+            }
+            expanded.set(next);
+        }
+
+        // --- Steps 10–11: Trace, snap, normalise each expanded region ---
         const polygons = [];
 
         validLabels.forEach(function (label) {
-            // Find one seed pixel from this sealed region.
-            let seedIdx = -1;
-            for (let i = 0; i < W * H; i++) {
-                if (labels[i] === label) { seedIdx = i; break; }
-            }
-            if (seedIdx === -1) return;
-
-            // --- Constrained flood-fill onto original binary ---
-            // Grows from the seed across all light pixels in `binary`, stopping
-            // at dark (wall) pixels. The wall pixels act as a perfect containment
-            // field — the fill can never cross a real wall.
-            const visited = new Uint8Array(W * H);
-            const fq      = [seedIdx];
-            visited[seedIdx] = 1;
-            let fqi = 0;
-
-            while (fqi < fq.length) {
-                const idx = fq[fqi++];
-                const x   = idx % W;
-                const y   = Math.floor(idx / W);
-                // 4-connected expansion — stops at wall pixels (binary[n] === 0)
-                if (y > 0     && binary[idx - W] === 255 && !visited[idx - W]) { visited[idx - W] = 1; fq.push(idx - W); }
-                if (y < H - 1 && binary[idx + W] === 255 && !visited[idx + W]) { visited[idx + W] = 1; fq.push(idx + W); }
-                if (x > 0     && binary[idx - 1] === 255 && !visited[idx - 1]) { visited[idx - 1] = 1; fq.push(idx - 1); }
-                if (x < W - 1 && binary[idx + 1] === 255 && !visited[idx + 1]) { visited[idx + 1] = 1; fq.push(idx + 1); }
-            }
-
-            // If the fill covered more than 75% of the image it leaked into
-            // the exterior — discard this region.
-            if (fq.length > W * H * 0.75) return;
-            // If the fill is tiny it's an artefact — discard.
-            if (fq.length < W * H * 0.002) return;
-
-            // Build label array for mooreTrace from the visited mask.
+            // Build label array for mooreTrace from the expanded region.
             const TARGET       = 0;
             const regionLabels = new Int32Array(W * H).fill(-1);
             let   traceStart   = -1;
             for (let i = 0; i < W * H; i++) {
-                if (!visited[i]) continue;
+                if (expanded[i] !== label) continue;
                 regionLabels[i] = TARGET;
                 if (traceStart === -1) traceStart = i;
             }
             if (traceStart === -1) return;
 
-            // Moore contour trace on the flood-filled region.
+            // Moore contour trace on the expanded region.
             const boundary = mooreTrace(regionLabels, W, H, TARGET, traceStart);
             if (boundary.length < 6) return;
 
@@ -747,27 +741,18 @@
             if (simplified.length < 3) return;
 
             // --- Manhattan snapping ---
-            // For each polygon edge, if it's within SNAP_DEG degrees of
-            // horizontal or vertical, force it to be exactly so.
-            // This makes rectilinear rooms look clean and professional.
-            const SNAP_DEG  = 15;
-            const SNAP_RAD  = SNAP_DEG * Math.PI / 180;
-            const snapped   = simplified.map(function (pt) { return { x: pt.x, y: pt.y }; });
+            // Edges within 15° of horizontal or vertical are forced to be exactly so.
+            const SNAP_RAD = 15 * Math.PI / 180;
+            const snapped  = simplified.map(function (pt) { return { x: pt.x, y: pt.y }; });
 
             for (let i = 0; i < snapped.length; i++) {
                 const a   = snapped[i];
                 const b   = snapped[(i + 1) % snapped.length];
-                const dx  = b.x - a.x;
-                const dy  = b.y - a.y;
-                const ang = Math.abs(Math.atan2(dy, dx));
-
-                // Within SNAP_DEG of horizontal (0 or π) → force same Y
+                const ang = Math.abs(Math.atan2(b.y - a.y, b.x - a.x));
                 if (ang < SNAP_RAD || ang > Math.PI - SNAP_RAD) {
-                    b.y = a.y;
-                }
-                // Within SNAP_DEG of vertical (π/2) → force same X
-                else if (Math.abs(ang - Math.PI / 2) < SNAP_RAD) {
-                    b.x = a.x;
+                    b.y = a.y; // force horizontal
+                } else if (Math.abs(ang - Math.PI / 2) < SNAP_RAD) {
+                    b.x = a.x; // force vertical
                 }
             }
 
