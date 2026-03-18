@@ -727,15 +727,17 @@
         // Gap sealing (closes doorway openings)
         const sealed = morphErode(opened, W, H, gapK);
 
-        // --- Exterior flood-fill on `opened` ---
-        // Mark all pixels reachable from the image border without crossing a wall.
-        // These are outside the building. We exclude them from seed search and
-        // watershed so a seed near an outer wall can never claim the exterior.
+        // --- Exterior flood-fill on `sealed` ---
+        // We use `sealed` (not `opened`) because sealed has door gaps closed.
+        // Flood-filling on `opened` leaks through every doorway into room
+        // interiors, falsely marking them as exterior.
+        // The exterior mask is then applied to the watershed on `opened`
+        // to prevent seeds near outer walls from escaping the building.
         const exterior = new Uint8Array(W * H);
         const extQ     = [];
 
         function seedExt(idx) {
-            if (opened[idx] === 255 && !exterior[idx]) {
+            if (sealed[idx] === 255 && !exterior[idx]) {
                 exterior[idx] = 1;
                 extQ.push(idx);
             }
@@ -747,10 +749,10 @@
         while (eqi < extQ.length) {
             const i = extQ[eqi++];
             const x = i%W, y = Math.floor(i/W);
-            if (y > 0     && opened[i-W] === 255 && !exterior[i-W]) { exterior[i-W] = 1; extQ.push(i-W); }
-            if (y < H-1   && opened[i+W] === 255 && !exterior[i+W]) { exterior[i+W] = 1; extQ.push(i+W); }
-            if (x > 0     && opened[i-1] === 255 && !exterior[i-1]) { exterior[i-1] = 1; extQ.push(i-1); }
-            if (x < W-1   && opened[i+1] === 255 && !exterior[i+1]) { exterior[i+1] = 1; extQ.push(i+1); }
+            if (y > 0     && sealed[i-W] === 255 && !exterior[i-W]) { exterior[i-W] = 1; extQ.push(i-W); }
+            if (y < H-1   && sealed[i+W] === 255 && !exterior[i+W]) { exterior[i+W] = 1; extQ.push(i+W); }
+            if (x > 0     && sealed[i-1] === 255 && !exterior[i-1]) { exterior[i-1] = 1; extQ.push(i-1); }
+            if (x < W-1   && sealed[i+1] === 255 && !exterior[i+1]) { exterior[i+1] = 1; extQ.push(i+1); }
         }
 
         // Initialise the label map with -1 (unclaimed).
