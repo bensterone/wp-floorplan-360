@@ -24,7 +24,7 @@ $(document).ready(function () {
         hotspots:      [],
         drawing:       false,
         currentPoints: [],
-        selectedId:    null,
+        selectedIds:   new Set(), // supports multi-select for merge
         mousePos:      { x: 0, y: 0 },
         needsRedraw:   false,
         // Vertex dragging state
@@ -35,9 +35,9 @@ $(document).ready(function () {
         seedMode:      false,
         seeds:         [],
         // Rectangle tool state
-        rectMode:      false,  // true when rectangle tool is active
-        rectStart:     null,   // {x,y} normalised — where the drag began
-        rectCurrent:   null    // {x,y} normalised — current mouse position
+        rectMode:      false,
+        rectStart:     null,
+        rectCurrent:   null
     };
 
     try {
@@ -102,7 +102,7 @@ $(document).ready(function () {
             if (!hs.points || hs.points.length < 3) return;
 
             const color      = hs.color || COLORS[0];
-            const isSelected = hs.id === state.selectedId;
+            const isSelected = state.selectedIds.has(hs.id);
             const pts        = hs.points.map(p => `${p.x * 100},${p.y * 100}`).join(' ');
             const poly       = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
 
@@ -115,18 +115,29 @@ $(document).ready(function () {
 
             poly.addEventListener('click', (e) => {
                 e.stopPropagation();
-                state.selectedId = hs.id;
+                if (e.shiftKey) {
+                    // Shift-click: toggle this room in/out of selection
+                    if (state.selectedIds.has(hs.id)) {
+                        state.selectedIds.delete(hs.id);
+                    } else {
+                        state.selectedIds.add(hs.id);
+                    }
+                } else {
+                    // Normal click: select only this room
+                    state.selectedIds.clear();
+                    state.selectedIds.add(hs.id);
+                }
                 requestRedraw();
                 renderHotspotList();
+                // Scroll first selected item into view
                 document.querySelector('.hs-item.is-active')
                     ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             });
 
             svg.appendChild(poly);
 
-            // Render drag handles on the selected polygon.
-            // Each vertex gets a circle the editor can grab and drag.
-            if (isSelected) {
+            // Render drag handles on selected polygons (single selection only).
+            if (isSelected && state.selectedIds.size === 1) {
                 hs.points.forEach((p, idx) => {
                     const handle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                     handle.setAttribute('cx',     p.x * 100);
@@ -246,8 +257,12 @@ $(document).ready(function () {
     function renderHotspotList() {
         const $ul = $('#fp360-hotspot-items').empty();
 
+        // Show merge button only when exactly 2 rooms are selected.
+        const showMerge = state.selectedIds.size === 2;
+        $('#fp360-merge-rooms').toggle(showMerge);
+
         state.hotspots.forEach(hs => {
-            const isSelected = hs.id === state.selectedId;
+            const isSelected = state.selectedIds.has(hs.id);
             const color      = hs.color || COLORS[0];
             const $li        = $('<li>').addClass('hs-item').toggleClass('is-active', isSelected);
 
@@ -464,7 +479,7 @@ $(document).ready(function () {
         if (confirm(fp360Admin.i18n.deleteRoomConfirm)) {
             const id = $(this).data('id');
             state.hotspots = state.hotspots.filter(h => h.id !== id);
-            if (state.selectedId === id) state.selectedId = null;
+            state.selectedIds.delete(id);
             saveHotspots();
             renderHotspotList();
             requestRedraw();
@@ -492,7 +507,7 @@ $(document).ready(function () {
                 return;
             }
             state.hotspots  = [];
-            state.selectedId = null;
+            state.selectedIds.clear();
             saveHotspots();
             renderHotspotList();
             requestRedraw();
@@ -506,7 +521,7 @@ $(document).ready(function () {
         if (state.hotspots.length === 0) return;
         if (confirm(fp360Admin.i18n.clearAllConfirm || 'Delete all rooms?')) {
             state.hotspots   = [];
-            state.selectedId = null;
+            state.selectedIds.clear();
             saveHotspots();
             renderHotspotList();
             requestRedraw();
@@ -516,6 +531,40 @@ $(document).ready(function () {
     // Tolerance slider — update displayed value in real time
     $('#fp360-detect-tolerance').on('input', function () {
         $('#fp360-detect-tolerance-val').text($(this).val());
+    });
+
+    // --- Merge Rooms button ---
+    // Visible only when exactly 2 rooms are selected (shift-click to multi-select).
+    // Computes the outer boundary of two axis-aligned rectangles to produce
+    // an L-shaped polygon — the classic Flur shape.
+    $('#fp360-merge-rooms').on('click', function () {
+        if (state.selectedIds.size !== 2) return;
+
+        const ids = [...state.selectedIds];
+        const a   = state.hotspots.find(h => h.id === ids[0]);
+        const b   = state.hotspots.find(h => h.id === ids[1]);
+        if (!a || !b) return;
+
+        const merged = mergePolygons(a, b);
+        if (!merged) {
+            alert(fp360Admin.i18n.mergeError || 'Rooms must overlap or share an edge to merge.');
+            return;
+        }
+
+        // Replace both hotspots with the merged one, keeping the first room's label and color.
+        state.hotspots = state.hotspots.filter(h => !state.selectedIds.has(h.id));
+        state.hotspots.push({
+            id:       generateId(),
+            points:   merged,
+            label:    a.label || fp360Admin.i18n.newRoom || 'New Room',
+            image360: a.image360 || '',
+            color:    a.color || nextColor()
+        });
+
+        state.selectedIds.clear();
+        saveHotspots();
+        renderHotspotList();
+        requestRedraw();
     });
 
     // --- Seed mode toggle ---
@@ -590,7 +639,128 @@ $(document).ready(function () {
     renderHotspotList();
     requestRedraw();
 
-    // --- 6. RECTANGLE TOOL ---
+    // --- 6. MERGE ALGORITHM ---
+
+    /**
+     * Merges two axis-aligned rectangular hotspots into one polygon.
+     * Works for overlapping or touching rectangles — produces the correct
+     * outer boundary regardless of which is the L-shape's orientation.
+     *
+     * Returns null if the rectangles don't overlap or touch (no merge possible).
+     *
+     * @param  {Object} a  Hotspot with .points array
+     * @param  {Object} b  Hotspot with .points array
+     * @return {Array<{x,y}>|null}
+     */
+    function mergePolygons(a, b) {
+        // Get axis-aligned bounding box of each polygon.
+        function bbox(hs) {
+            const xs = hs.points.map(p => p.x);
+            const ys = hs.points.map(p => p.y);
+            return {
+                x1: Math.min(...xs), y1: Math.min(...ys),
+                x2: Math.max(...xs), y2: Math.max(...ys)
+            };
+        }
+
+        const A = bbox(a);
+        const B = bbox(b);
+
+        // Check they overlap or touch on both axes.
+        const overlapX = A.x1 <= B.x2 + 0.005 && B.x1 <= A.x2 + 0.005;
+        const overlapY = A.y1 <= B.y2 + 0.005 && B.y1 <= A.y2 + 0.005;
+        if (!overlapX || !overlapY) return null;
+
+        // Union bounding box.
+        const x1 = Math.min(A.x1, B.x1);
+        const y1 = Math.min(A.y1, B.y1);
+        const x2 = Math.max(A.x2, B.x2);
+        const y2 = Math.max(A.y2, B.y2);
+
+        // Collect all unique X and Y coordinates.
+        // The union boundary passes through these grid lines.
+        const xs = [...new Set([A.x1, A.x2, B.x1, B.x2])].sort((a, b) => a - b);
+        const ys = [...new Set([A.y1, A.y2, B.y1, B.y2])].sort((a, b) => a - b);
+
+        // A cell (i,j) is inside the union if it overlaps with A or B.
+        // We rasterise the union on the xs/ys grid and trace the outer boundary.
+        function inUnion(cx, cy) {
+            const EPS = 0.001;
+            const inA = cx >= A.x1 - EPS && cx <= A.x2 + EPS && cy >= A.y1 - EPS && cy <= A.y2 + EPS;
+            const inB = cx >= B.x1 - EPS && cx <= B.x2 + EPS && cy >= B.y1 - EPS && cy <= B.y2 + EPS;
+            return inA || inB;
+        }
+
+        // Walk the outer boundary clockwise.
+        // Strategy: collect all boundary edges (between inside and outside cells),
+        // then sort them into a connected polygon.
+        const edges = [];
+        for (let i = 0; i < xs.length - 1; i++) {
+            for (let j = 0; j < ys.length - 1; j++) {
+                const cx = (xs[i] + xs[i+1]) / 2;
+                const cy = (ys[j] + ys[j+1]) / 2;
+                if (!inUnion(cx, cy)) continue;
+
+                // Check each of the 4 neighbours — if outside, this is a boundary edge.
+                // Top edge
+                if (j === 0 || !inUnion(cx, (ys[j-1] + ys[j]) / 2))
+                    edges.push({ x1: xs[i], y1: ys[j], x2: xs[i+1], y2: ys[j] });
+                // Bottom edge
+                if (j === ys.length-2 || !inUnion(cx, (ys[j+1] + ys[j+2]) / 2))
+                    edges.push({ x1: xs[i+1], y1: ys[j+1], x2: xs[i], y2: ys[j+1] });
+                // Left edge
+                if (i === 0 || !inUnion((xs[i-1] + xs[i]) / 2, cy))
+                    edges.push({ x1: xs[i], y1: ys[j+1], x2: xs[i], y2: ys[j] });
+                // Right edge
+                if (i === xs.length-2 || !inUnion((xs[i+1] + xs[i+2]) / 2, cy))
+                    edges.push({ x1: xs[i+1], y1: ys[j], x2: xs[i+1], y2: ys[j+1] });
+            }
+        }
+
+        if (edges.length === 0) return null;
+
+        // Chain edges into an ordered polygon by matching endpoints.
+        const poly = [{ x: edges[0].x1, y: edges[0].y1 },
+                      { x: edges[0].x2, y: edges[0].y2 }];
+        const used = new Set([0]);
+
+        for (let step = 0; step < edges.length - 1; step++) {
+            const last = poly[poly.length - 1];
+            let found  = false;
+            for (let k = 0; k < edges.length; k++) {
+                if (used.has(k)) continue;
+                const e = edges[k];
+                if (Math.abs(e.x1 - last.x) < 0.0001 && Math.abs(e.y1 - last.y) < 0.0001) {
+                    poly.push({ x: e.x2, y: e.y2 });
+                    used.add(k);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) break;
+        }
+
+        // Remove the closing duplicate (last point == first point).
+        if (poly.length > 1) {
+            const first = poly[0], last = poly[poly.length - 1];
+            if (Math.abs(first.x - last.x) < 0.0001 && Math.abs(first.y - last.y) < 0.0001) {
+                poly.pop();
+            }
+        }
+
+        // Remove collinear points (where two consecutive edges are parallel).
+        const simplified = poly.filter((pt, i) => {
+            const prev = poly[(i + poly.length - 1) % poly.length];
+            const next = poly[(i + 1) % poly.length];
+            const dx1 = pt.x - prev.x, dy1 = pt.y - prev.y;
+            const dx2 = next.x - pt.x, dy2 = next.y - pt.y;
+            return Math.abs(dx1 * dy2 - dy1 * dx2) > 0.000001; // cross product != 0
+        });
+
+        return simplified.length >= 3 ? simplified : null;
+    }
+
+    // --- 7. RECTANGLE TOOL ---
 
     /**
      * Called when the editor finishes a rectangle drag.

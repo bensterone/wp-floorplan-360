@@ -36,6 +36,10 @@
                 <span class="dashicons dashicons-grid-view" style="padding-top:4px;"></span>
                 <?php esc_html_e( 'Rectangle', 'wp-floorplan-360' ); ?>
             </button>
+            <button type="button" class="button" id="fp360-merge-rooms" style="display:none;">
+                <span class="dashicons dashicons-editor-contract" style="padding-top:4px;"></span>
+                <?php esc_html_e( 'Merge', 'wp-floorplan-360' ); ?>
+            </button>
             <button type="button" class="button" id="fp360-undo-point">
                 <span class="dashicons dashicons-undo" style="padding-top:4px;"></span>
                 <?php esc_html_e( 'Undo', 'wp-floorplan-360' ); ?>
@@ -87,7 +91,7 @@
         <h4 style="margin-bottom:5px;"><?php esc_html_e( 'Rooms & 360° Views', 'wp-floorplan-360' ); ?></h4>
         <p class="description" style="margin-bottom:8px;">
             <strong><?php esc_html_e( 'Rectangle tool:', 'wp-floorplan-360' ); ?></strong>
-            <?php esc_html_e( 'Click and drag over a room — edges snap to walls automatically.', 'wp-floorplan-360' ); ?>
+            <?php esc_html_e( 'Drag over a room — edges snap to walls. Shift-click two rooms to select both, then click Merge for L-shapes.', 'wp-floorplan-360' ); ?>
         </p>
         <ul id="fp360-hotspot-items"></ul>
         <p class="description">

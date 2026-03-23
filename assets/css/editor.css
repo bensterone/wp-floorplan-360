@@ -39,9 +39,12 @@
 }
 
 .hs-item.is-active {
-    background: #f7f9fc;
+    background: #dceeff;
     border-color: var(--hs-color, #2271b1);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    border-left-width: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    outline: 2px solid var(--hs-color, #2271b1);
+    outline-offset: -1px;
 }
 
 /* Room header row — swatch dot + label input side by side */
