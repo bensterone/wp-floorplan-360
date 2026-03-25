@@ -43,9 +43,13 @@ class Editor {
     public function render_settings( $post ) {
         $auto_rotate     = get_post_meta( $post->ID, '_fp360_auto_rotate', true );
         $highlight_color = get_post_meta( $post->ID, '_fp360_highlight_color', true );
+        $start_angle     = get_post_meta( $post->ID, '_fp360_start_angle', true );
 
         if ( empty( $highlight_color ) ) {
             $highlight_color = '#0078ff';
+        }
+        if ( $start_angle === '' ) {
+            $start_angle = '0';
         }
         ?>
         <p>
@@ -68,6 +72,20 @@ class Editor {
                    style="margin-top:6px; width:48px; height:28px; cursor:pointer; border:1px solid #ccc; border-radius:3px;" />
             <span style="margin-left:6px; font-size:12px; color:#666;">
                 <?php esc_html_e( 'Colour of the selected room polygon', 'wp-floorplan-360' ); ?>
+            </span>
+        </p>
+        <p>
+            <label for="fp360_start_angle">
+                <strong><?php esc_html_e( 'Panorama start angle:', 'wp-floorplan-360' ); ?></strong>
+            </label><br>
+            <input type="number"
+                   id="fp360_start_angle"
+                   name="fp360_start_angle"
+                   value="<?php echo esc_attr( $start_angle ); ?>"
+                   min="-180" max="180" step="1"
+                   style="margin-top:6px; width:80px;" />
+            <span style="margin-left:6px; font-size:12px; color:#666;">
+                <?php esc_html_e( 'Horizontal rotation when panorama first loads (-180 to 180)', 'wp-floorplan-360' ); ?>
             </span>
         </p>
         <?php
@@ -161,6 +179,12 @@ class Editor {
             if ( $color ) {
                 update_post_meta( $post_id, '_fp360_highlight_color', $color );
             }
+        }
+
+        if ( isset( $_POST['fp360_start_angle'] ) ) {
+            $angle = (int) $_POST['fp360_start_angle'];
+            $angle = max( -180, min( 180, $angle ) ); // clamp to valid range
+            update_post_meta( $post_id, '_fp360_start_angle', (string) $angle );
         }
     }
 }

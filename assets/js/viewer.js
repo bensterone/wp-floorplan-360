@@ -24,6 +24,7 @@
         // Per-floorplan viewer settings stored as data attributes on the wrapper
         const autoRotate     = wrap.dataset.autoRotate === '1';
         const highlightColor = wrap.dataset.highlight || null;
+        const startAngle     = wrap.dataset.startAngle || '0';
 
         // Apply the highlight colour as a CSS variable on the SVG element so
         // viewer.css can use it for the active polygon state across all rooms.
@@ -100,6 +101,7 @@
                 frame.style.display = 'block';
                 let src = viewerBaseUrl + '&img=' + encodeURIComponent(hs.image360);
                 if (autoRotate) src += '&autorotate=1';
+                if (startAngle && startAngle !== '0') src += '&angle=' + encodeURIComponent(startAngle);
                 frame.src = src;
             } else {
                 if (isIframeReady) {

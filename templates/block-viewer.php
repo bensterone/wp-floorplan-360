@@ -15,7 +15,8 @@ defined( 'ABSPATH' ) || exit;
 <div id="fp360-wrap-<?php echo esc_attr( $post_id ); ?>"
      class="fp360-wrap"
      data-auto-rotate="<?php echo esc_attr( $auto_rotate ); ?>"
-     data-highlight="<?php echo esc_attr( $highlight_color ); ?>">
+     data-highlight="<?php echo esc_attr( $highlight_color ); ?>"
+     data-start-angle="<?php echo esc_attr( $start_angle ); ?>">
     <div class="fp360-left">
         <?php if ( $floorplan_img ) : ?>
             <img id="fp360-floorplan-img-<?php echo esc_attr( $post_id ); ?>"

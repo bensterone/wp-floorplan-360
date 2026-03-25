@@ -50,6 +50,8 @@ class Block {
         $hotspots_json   = get_post_meta( $post_id, '_fp360_hotspots', true );
         $auto_rotate     = get_post_meta( $post_id, '_fp360_auto_rotate', true );
         $highlight_color = get_post_meta( $post_id, '_fp360_highlight_color', true ) ?: '#0078ff';
+        $start_angle     = get_post_meta( $post_id, '_fp360_start_angle', true );
+        if ( $start_angle === '' ) $start_angle = '0';
 
         if ( ! $hotspots_json ) {
             $hotspots_json = '[]';

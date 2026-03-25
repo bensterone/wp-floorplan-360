@@ -87,6 +87,9 @@
     <script>
         const allowedOrigin = <?php echo wp_json_encode( \Floorplan360\Core\Ajax::get_allowed_origin() ); ?>;
         const autoRotate    = <?php echo isset( $_GET['autorotate'] ) && $_GET['autorotate'] === '1' ? 'true' : 'false'; ?>;
+        // Start angle: horizontal rotation applied to the sky when the scene loads.
+        // Lets editors set a better default view direction per floorplan.
+        const startAngle    = <?php echo (int) ( $_GET['angle'] ?? 0 ); ?>;
 
         function signalReady() {
             window.parent.postMessage({ type: 'FP360_VIEWER_READY' }, allowedOrigin);
@@ -135,6 +138,18 @@
             if (scene.hasLoaded) signalReady();
             else scene.addEventListener('loaded', signalReady, { once: true });
 
+            // Apply the start angle once the scene is ready.
+            // We rotate the sky rather than the camera so the camera stays at
+            // the correct pitch (0) and the horizon line remains level.
+            if (startAngle !== 0) {
+                const applyAngle = () => {
+                    const sky = document.getElementById('fp360-sky');
+                    if (sky) sky.setAttribute('rotation', `0 ${startAngle} 0`);
+                };
+                if (scene.hasLoaded) applyAngle();
+                else scene.addEventListener('loaded', applyAngle, { once: true });
+            }
+
             if (autoRotate) {
                 let rotating   = true;
                 let rafId      = null;
@@ -172,8 +187,9 @@
         <a-assets>
             <img id="fp360-room-img" src="<?php echo esc_url( $img ); ?>" crossorigin="anonymous">
         </a-assets>
-        <a-sky id="fp360-sky" src="#fp360-room-img" rotation="0 -130 0"></a-sky>
-        <a-entity camera look-controls="magicWindowTrackingEnabled: false; touchEnabled: true;"></a-entity>
+        <a-sky id="fp360-sky" src="#fp360-room-img" rotation="0 0 0"></a-sky>
+        <a-entity camera="fov: 90;"
+                  look-controls="sensitivity: 0.5; magicWindowTrackingEnabled: false; touchEnabled: true;"></a-entity>
     </a-scene>
 </body>
 </html>

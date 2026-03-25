@@ -6,6 +6,8 @@ $floorplan_img   = get_post_meta( $post_id, '_fp360_image', true );
 $hotspots_json   = get_post_meta( $post_id, '_fp360_hotspots', true );
 $auto_rotate     = get_post_meta( $post_id, '_fp360_auto_rotate', true );
 $highlight_color = get_post_meta( $post_id, '_fp360_highlight_color', true ) ?: '#0078ff';
+$start_angle     = get_post_meta( $post_id, '_fp360_start_angle', true );
+if ( $start_angle === '' ) $start_angle = '0';
 
 if ( ! $hotspots_json ) {
     $hotspots_json = '[]';
@@ -14,7 +16,8 @@ if ( ! $hotspots_json ) {
 <div id="fp360-wrap"
      class="fp360-wrap"
      data-auto-rotate="<?php echo esc_attr( $auto_rotate ); ?>"
-     data-highlight="<?php echo esc_attr( $highlight_color ); ?>">
+     data-highlight="<?php echo esc_attr( $highlight_color ); ?>"
+     data-start-angle="<?php echo esc_attr( $start_angle ); ?>">
     <div id="fp360-left" class="fp360-left">
         <?php if ( $floorplan_img ) : ?>
             <img id="fp360-floorplan-img"
