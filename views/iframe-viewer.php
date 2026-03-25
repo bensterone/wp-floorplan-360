@@ -11,10 +11,76 @@
             color: white; font-family: sans-serif; z-index: 100; pointer-events: none;
             background: rgba(0,0,0,0.7); padding: 10px 20px; border-radius: 5px;
         }
+        /* WebGL fallback message — shown only when WebGL is unavailable */
+        #fp360-no-webgl {
+            display: none;
+            position: fixed; inset: 0;
+            background: #111;
+            color: #fff;
+            font-family: sans-serif;
+            font-size: 16px;
+            text-align: center;
+            padding: 40px 20px;
+            z-index: 200;
+        }
+        #fp360-no-webgl svg {
+            display: block;
+            margin: 0 auto 16px;
+            opacity: 0.5;
+        }
+        #fp360-no-webgl p { margin: 0; opacity: 0.8; }
+        #fp360-no-webgl small { display: block; margin-top: 8px; opacity: 0.5; font-size: 12px; }
     </style>
 </head>
 <body>
+    <!-- WebGL unavailable fallback — hidden until the JS check below shows it -->
+    <div id="fp360-no-webgl" role="alert">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <p><?php esc_html_e( '360° viewing is not supported by your browser or device.', 'wp-floorplan-360' ); ?></p>
+        <small><?php esc_html_e( 'WebGL is required. Try a modern desktop browser such as Chrome or Firefox.', 'wp-floorplan-360' ); ?></small>
+    </div>
+
     <div id="loading" style="display:none;"><?php esc_html_e( 'Loading Panorama...', 'wp-floorplan-360' ); ?></div>
+
+    <noscript>
+        <div style="color:#fff;font-family:sans-serif;padding:40px;text-align:center;background:#111;position:fixed;inset:0;">
+            <?php esc_html_e( 'JavaScript is required to view 360° panoramas.', 'wp-floorplan-360' ); ?>
+        </div>
+    </noscript>
+
+    <script>
+    // --- WebGL availability check ---
+    // Run before loading A-Frame (8MB). If WebGL is unavailable there is no
+    // point downloading the library — show the fallback and stop here.
+    (function () {
+        function hasWebGL() {
+            try {
+                var canvas = document.createElement('canvas');
+                return !!(
+                    window.WebGLRenderingContext &&
+                    ( canvas.getContext('webgl') || canvas.getContext('experimental-webgl') )
+                );
+            } catch (e) {
+                return false;
+            }
+        }
+
+        if (!hasWebGL()) {
+            document.getElementById('fp360-no-webgl').style.display = 'block';
+            // Signal the parent so it can show an appropriate message instead
+            // of a permanent loading spinner.
+            var origin = <?php echo wp_json_encode( \Floorplan360\Core\Ajax::get_allowed_origin() ); ?>;
+            try {
+                window.parent.postMessage({ type: 'FP360_IMAGE_ERROR', reason: 'no-webgl' }, origin);
+            } catch (e) {}
+            // Stop — do not load A-Frame or register any further listeners.
+            throw new Error('FP360: WebGL unavailable — 360° viewer cannot start.');
+        }
+    })();
+    </script>
 
     <script src="<?php echo esc_url( FP360_URL . 'assets/js/aframe.min.js' ); ?>"></script>
 
@@ -69,44 +135,32 @@
             if (scene.hasLoaded) signalReady();
             else scene.addEventListener('loaded', signalReady, { once: true });
 
-            // Auto-rotate — slowly spin the camera when enabled.
-            // Stops immediately when the user interacts with the viewer.
             if (autoRotate) {
                 let rotating   = true;
                 let rafId      = null;
                 let lastTime   = null;
-                const DEG_PER_SEC = 8; // one full rotation every 45 seconds
+                const DEG_PER_SEC = 8;
 
                 function stopRotation() {
                     rotating = false;
                     if (rafId) cancelAnimationFrame(rafId);
                 }
 
-                // Any touch or mouse interaction cancels auto-rotation
-                document.addEventListener('mousedown', stopRotation, { once: true });
+                document.addEventListener('mousedown',  stopRotation, { once: true });
                 document.addEventListener('touchstart', stopRotation, { once: true });
 
                 function tick(timestamp) {
                     if (!rotating) return;
                     rafId = requestAnimationFrame(tick);
-
                     if (!lastTime) { lastTime = timestamp; return; }
-                    const delta = (timestamp - lastTime) / 1000; // seconds
+                    const delta = (timestamp - lastTime) / 1000;
                     lastTime = timestamp;
-
                     const camera = document.querySelector('[camera]');
                     if (!camera) return;
-
                     const rot = camera.getAttribute('rotation') || { x: 0, y: 0, z: 0 };
-                    camera.setAttribute('rotation', {
-                        x: rot.x,
-                        y: rot.y + (DEG_PER_SEC * delta),
-                        z: rot.z
-                    });
+                    camera.setAttribute('rotation', { x: rot.x, y: rot.y + (DEG_PER_SEC * delta), z: rot.z });
                 }
 
-                // Start rotating once the scene is ready
-                const scene = document.querySelector('a-scene');
                 const startWhenReady = () => requestAnimationFrame(tick);
                 if (scene.hasLoaded) startWhenReady();
                 else scene.addEventListener('loaded', startWhenReady, { once: true });

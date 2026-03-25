@@ -44,7 +44,6 @@ class Editor {
         $auto_rotate     = get_post_meta( $post->ID, '_fp360_auto_rotate', true );
         $highlight_color = get_post_meta( $post->ID, '_fp360_highlight_color', true );
 
-        // Default highlight colour — a clear, accessible blue
         if ( empty( $highlight_color ) ) {
             $highlight_color = '#0078ff';
         }
@@ -74,6 +73,33 @@ class Editor {
         <?php
     }
 
+    /**
+     * Validates a hotspot ID.
+     *
+     * Accepts standard UUIDs (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) and
+     * the legacy fallback format (hs_<timestamp>_<random>). Rejects anything
+     * else to prevent injection via crafted IDs.
+     *
+     * Using sanitize_key() was insufficient — it lowercases and strips
+     * non-alphanumeric characters, which would mangle any future ID format
+     * and could silently produce duplicate IDs if two values collide after
+     * stripping. Explicit validation is safer.
+     *
+     * @param  string $id  Raw ID string from JSON payload.
+     * @return string      Validated ID, or empty string if invalid.
+     */
+    private function validate_hotspot_id( string $id ): string {
+        // Standard UUID v4: 8-4-4-4-12 hex groups separated by hyphens.
+        if ( preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id ) ) {
+            return strtolower( $id );
+        }
+        // Legacy fallback ID format: hs_<digits>_<alphanumeric>
+        if ( preg_match( '/^hs_[0-9]+_[a-z0-9]+$/i', $id ) ) {
+            return $id;
+        }
+        return '';
+    }
+
     public function save_meta( $post_id, $post ) {
         // Security checks
         if ( ! isset( $_POST['fp360_nonce_field'] ) || ! wp_verify_nonce( $_POST['fp360_nonce_field'], 'fp360_save_action' ) ) {
@@ -91,9 +117,9 @@ class Editor {
 
         // Save Hotspot JSON data
         if ( isset( $_POST['fp360_hotspots'] ) ) {
-            $raw = wp_unslash( $_POST['fp360_hotspots'] );
+            $raw     = wp_unslash( $_POST['fp360_hotspots'] );
             $decoded = json_decode( $raw, true );
-            
+
             if ( is_array( $decoded ) ) {
                 $clean_hotspots = [];
                 foreach ( $decoded as $hotspot ) {
@@ -108,12 +134,13 @@ class Editor {
                     }
                     if ( count( $clean_points ) < 3 ) continue;
 
+                    $validated_id = $this->validate_hotspot_id( $hotspot['id'] ?? '' );
+                    if ( empty( $validated_id ) ) continue; // discard hotspots with invalid IDs
+
                     $clean_hotspots[] = [
-                        'id'       => sanitize_key( $hotspot['id'] ?? '' ),
+                        'id'       => $validated_id,
                         'label'    => sanitize_text_field( $hotspot['label'] ?? '' ),
                         'image360' => esc_url_raw( $hotspot['image360'] ?? '' ),
-                        // Colour is a hex value — sanitize_hex_color() returns '' for
-                        // invalid input, so we fall back to a safe default blue.
                         'color'    => sanitize_hex_color( $hotspot['color'] ?? '' ) ?: '#4fa8e8',
                         'points'   => $clean_points,
                     ];
@@ -121,6 +148,7 @@ class Editor {
                 update_post_meta( $post_id, '_fp360_hotspots', wp_json_encode( $clean_hotspots ) );
             }
         }
+
         // Save viewer settings
         update_post_meta(
             $post_id,

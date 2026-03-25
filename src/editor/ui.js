@@ -64,7 +64,7 @@ export function initUI() {
             state.mousePos = pos;
             if (state.currentPoints.length >= 3) {
                 const first = state.currentPoints[0];
-                svg.classList.toggle('snap-active',
+                svg.classList.toggle('fp360-snap-active',
                     Math.hypot(pos.x - first.x, pos.y - first.y) < SNAP_DISTANCE);
             }
             requestRedraw();
@@ -146,7 +146,7 @@ export function initUI() {
         state.currentPoints.pop();
         if (state.currentPoints.length === 0) {
             state.drawing = false;
-            if (svg) svg.classList.remove('snap-active');
+            if (svg) svg.classList.remove('fp360-snap-active');
         }
         requestRedraw();
     });
@@ -157,7 +157,7 @@ export function initUI() {
             state.drawing = false;
             state.currentPoints = [];
             state.seedMode = false;
-            if (svg) svg.classList.remove('snap-active');
+            if (svg) svg.classList.remove('fp360-snap-active');
             $('#fp360-seed-mode').removeClass('is-active')
                 .text(fp360Admin.i18n.seedMode || 'Seed Rooms');
             $(this).addClass('is-active')
@@ -201,7 +201,7 @@ export function initUI() {
         if (state.seedMode) {
             state.drawing       = false;
             state.currentPoints = [];
-            if (svg) svg.classList.remove('snap-active');
+            if (svg) svg.classList.remove('fp360-snap-active');
             $(this).addClass('is-active')
                 .text(fp360Admin.i18n.seedModeActive || 'Cancel Seed Mode');
             if (svg) svg.style.cursor = 'crosshair';
@@ -264,7 +264,7 @@ export function initUI() {
 
     // --- Delegated handlers ---
 
-    $(document).on('click', '.hs-pick-360', function (e) {
+    $(document).on('click', '.fp360-hs-pick360', function (e) {
         e.preventDefault();
         const id    = $(this).data('id');
         const frame = wp.media({ title: 'Select 360 Image', multiple: false });
@@ -276,7 +276,7 @@ export function initUI() {
         frame.open();
     });
 
-    $(document).on('click', '.hs-delete', function () {
+    $(document).on('click', '.fp360-hs-delete', function () {
         if (confirm(fp360Admin.i18n.deleteRoomConfirm)) {
             const id = $(this).data('id');
             state.hotspots = state.hotspots.filter(h => h.id !== id);
@@ -287,12 +287,12 @@ export function initUI() {
         }
     });
 
-    $(document).on('input', '.hs-label, .hs-img360', function () {
+    $(document).on('input', '.fp360-hs-label, .fp360-hs-img360', function () {
         const id = $(this).data('id');
         const hs = state.hotspots.find(h => h.id === id);
         if (hs) {
-            hs.label    = $(`.hs-label[data-id="${id}"]`).val();
-            hs.image360 = $(`.hs-img360[data-id="${id}"]`).val();
+            hs.label    = $(`.fp360-hs-label[data-id="${id}"]`).val();
+            hs.image360 = $(`.fp360-hs-img360[data-id="${id}"]`).val();
             saveHotspots();
             requestRedraw();
         }

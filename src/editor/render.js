@@ -30,7 +30,7 @@ export function renderSVG() {
         poly.setAttribute('fill',         isSelected ? color + 'cc' : color + '40');
         poly.setAttribute('stroke',       color);
         poly.setAttribute('stroke-width', isSelected ? '0.6' : '0.3');
-        poly.setAttribute('class',        isSelected ? 'hs-poly active' : 'hs-poly');
+        poly.setAttribute('class',        isSelected ? 'fp360-hs-poly active' : 'fp360-hs-poly');
         poly.style.setProperty('vector-effect', 'non-scaling-stroke');
 
         poly.addEventListener('click', (e) => {
@@ -44,7 +44,7 @@ export function renderSVG() {
             }
             requestRedraw();
             renderHotspotList();
-            document.querySelector('.hs-item.is-active')
+            document.querySelector('.fp360-hs-item.is-active')
                 ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
 
@@ -57,7 +57,7 @@ export function renderSVG() {
                 handle.setAttribute('cx',     p.x * 100);
                 handle.setAttribute('cy',     p.y * 100);
                 handle.setAttribute('r',      '1.6');
-                handle.setAttribute('class',  'hs-handle');
+                handle.setAttribute('class',  'fp360-hs-handle');
                 handle.setAttribute('fill',   '#fff');
                 handle.setAttribute('stroke', color);
                 handle.setAttribute('stroke-width', '0.5');
@@ -102,7 +102,7 @@ export function renderSVG() {
         const pts  = pointsWithMouse.map(p => `${p.x * 100},${p.y * 100}`).join(' ');
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
         line.setAttribute('points', pts);
-        line.setAttribute('class',  'drawing-line');
+        line.setAttribute('class',  'fp360-drawing-line');
         svg.appendChild(line);
 
         state.currentPoints.forEach((p, i) => {
@@ -110,7 +110,7 @@ export function renderSVG() {
             c.setAttribute('cx',    p.x * 100);
             c.setAttribute('cy',    p.y * 100);
             c.setAttribute('r',     i === 0 ? 1.5 : 0.8);
-            c.setAttribute('class', i === 0 ? 'node node-first' : 'node');
+            c.setAttribute('class', i === 0 ? 'fp360-node fp360-node--first' : 'fp360-node');
             svg.appendChild(c);
         });
     }
@@ -177,30 +177,30 @@ export function renderHotspotList() {
     state.hotspots.forEach(hs => {
         const isSelected = state.selectedIds.has(hs.id);
         const color      = hs.color || COLORS[0];
-        const $li        = $('<li>').addClass('hs-item').toggleClass('is-active', isSelected);
+        const $li        = $('<li>').addClass('fp360-hs-item').toggleClass('is-active', isSelected);
 
         $li[0].style.setProperty('--hs-color', color);
 
-        const $swatch   = $('<span>').addClass('hs-color-swatch').css('background-color', color);
+        const $swatch   = $('<span>').addClass('fp360-hs-swatch').css('background-color', color);
         const $label    = $('<input>', {
-            type: 'text', class: 'hs-label', 'data-id': hs.id,
+            type: 'text', class: 'fp360-hs-label', 'data-id': hs.id,
             placeholder: fp360Admin.i18n.roomLabel || 'Room Label',
         }).val(hs.label);
-        const $row      = $('<div>').addClass('hs-input-row');
+        const $row      = $('<div>').addClass('fp360-hs-input-row');
         const $urlInput = $('<input>', {
-            type: 'text', class: 'hs-img360', 'data-id': hs.id,
+            type: 'text', class: 'fp360-hs-img360', 'data-id': hs.id,
             placeholder: '360 Image URL',
         }).val(hs.image360);
         const $pickBtn  = $('<button>', {
-            type: 'button', class: 'button hs-pick-360', 'data-id': hs.id,
+            type: 'button', class: 'button fp360-hs-pick360', 'data-id': hs.id,
             text: fp360Admin.i18n.pick360,
         });
         const $deleteBtn = $('<button>', {
-            type: 'button', class: 'button button-link-delete hs-delete', 'data-id': hs.id,
+            type: 'button', class: 'button button-link-delete fp360-hs-delete', 'data-id': hs.id,
             text: fp360Admin.i18n.deleteRoom,
         });
 
-        const $header = $('<div>').addClass('hs-header').append($swatch, $label);
+        const $header = $('<div>').addClass('fp360-hs-header').append($swatch, $label);
         $row.append($urlInput, $pickBtn);
         $li.append($header, $row, $deleteBtn);
         $ul.append($li);

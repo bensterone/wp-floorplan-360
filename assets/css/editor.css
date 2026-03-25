@@ -29,7 +29,7 @@
 
 #fp360-hotspot-items { list-style: none; padding: 0; margin: 20px 0; }
 
-.hs-item {
+.fp360-hs-item {
     border: 1px solid #ddd;
     /* Left accent bar uses the room's own colour, stored as --hs-color by editor.js */
     border-left: 4px solid var(--hs-color, #2271b1);
@@ -38,7 +38,7 @@
     background: #fff;
 }
 
-.hs-item.is-active {
+.fp360-hs-item.is-active {
     background: #dceeff;
     border-color: var(--hs-color, #2271b1);
     border-left-width: 6px;
@@ -48,7 +48,7 @@
 }
 
 /* Room header row — swatch dot + label input side by side */
-.hs-header {
+.fp360-hs-header {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -56,7 +56,7 @@
 }
 
 /* Colour swatch dot shown next to each room label */
-.hs-color-swatch {
+.fp360-hs-swatch {
     display: inline-block;
     width: 14px;
     height: 14px;
@@ -65,9 +65,9 @@
     border: 1px solid rgba(0, 0, 0, 0.15);
 }
 
-.hs-item .hs-label { flex: 1; font-weight: 600; }
-.hs-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
-.hs-input-row .hs-img360 { flex-grow: 1; }
+.fp360-hs-item .fp360-hs-label { flex: 1; font-weight: 600; }
+.fp360-hs-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.fp360-hs-input-row .fp360-hs-img360 { flex-grow: 1; }
 
 /* Toolbar — three groups of related buttons */
 .fp360-toolbar {
@@ -134,7 +134,7 @@
 /* SVG Drawing Elements */
 /* Individual polygon colours are set via inline attributes in editor.js —
    these rules only handle drawing-in-progress elements. */
-.hs-poly {
+.fp360-hs-poly {
     vector-effect: non-scaling-stroke;
     cursor: pointer;
     transition: fill 0.15s ease;
@@ -152,18 +152,18 @@
     background: #135e96;
     border-color: #135e96;
 }
-.hs-handle {
+.fp360-hs-handle {
     vector-effect: non-scaling-stroke;
     cursor: move;
     transition: r 0.1s ease;
 }
-.hs-handle:hover {
+.fp360-hs-handle:hover {
     r: 2.2;
 }
 
-.drawing-line { fill: none; stroke: #ffcc00; stroke-width: 0.5; vector-effect: non-scaling-stroke; }
-.node { fill: #ffcc00; stroke: #000; stroke-width: 0.2; vector-effect: non-scaling-stroke; }
-.node-first { fill: #00e04b; animation: fp360-pulse 2s infinite; }
+.fp360-drawing-line { fill: none; stroke: #ffcc00; stroke-width: 0.5; vector-effect: non-scaling-stroke; }
+.fp360-node { fill: #ffcc00; stroke: #000; stroke-width: 0.2; vector-effect: non-scaling-stroke; }
+.fp360-node--first { fill: #00e04b; animation: fp360-pulse 2s infinite; }
 
 @keyframes fp360-pulse {
     0%   { opacity: 1;   fill: #00e04b; }
@@ -171,5 +171,5 @@
     100% { opacity: 1;   fill: #00e04b; }
 }
 
-.snap-active { cursor: crosshair; }
-.snap-active .node-first { fill: #00ff55; stroke-width: 0.5; stroke: #fff; animation: none; }
+.fp360-snap-active { cursor: crosshair; }
+.fp360-snap-active .fp360-node--first { fill: #00ff55; stroke-width: 0.5; stroke: #fff; animation: none; }
