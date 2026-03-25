@@ -30,4 +30,6 @@ export const state = {
     rectMode:      false,
     rectStart:     null,
     rectCurrent:   null,
+    // Polygon tool (explicit mode — canvas clicks only draw when active)
+    polyMode:      false,
 };

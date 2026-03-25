@@ -114,12 +114,17 @@ export function initUI() {
             if (!imgEl || !imgEl.src || ($emptyState && $emptyState.is(':visible'))) return;
             const pos = getNormalizedPos(e);
 
+            // Seed mode click
             if (state.seedMode) {
                 state.seeds.push({ x: pos.x, y: pos.y });
                 $('#fp360-run-fill').prop('disabled', false);
                 requestRedraw();
                 return;
             }
+
+            // Polygon drawing — only active when polyMode is on.
+            // Without this guard any accidental canvas click starts drawing.
+            if (!state.polyMode) return;
 
             if (state.drawing && state.currentPoints.length >= 3) {
                 const first = state.currentPoints[0];
@@ -151,15 +156,46 @@ export function initUI() {
         requestRedraw();
     });
 
+    // Polygon tool toggle
+    $('#fp360-poly-tool').on('click', function () {
+        state.polyMode = !state.polyMode;
+        if (state.polyMode) {
+            // Exit other active modes
+            state.rectMode      = false;
+            state.seedMode      = false;
+            state.rectStart     = null;
+            state.rectCurrent   = null;
+            $('#fp360-rect-tool').removeClass('is-active')
+                .text(fp360Admin.i18n.rectTool || 'Rectangle');
+            $('#fp360-seed-mode').removeClass('is-active')
+                .text(fp360Admin.i18n.seedMode || 'Seed Rooms');
+            $(this).addClass('is-active')
+                .text(fp360Admin.i18n.polyModeActive || '✕ Cancel Polygon');
+            if (svg) svg.style.cursor = 'crosshair';
+        } else {
+            // Cancelling — discard any in-progress drawing
+            state.drawing       = false;
+            state.currentPoints = [];
+            if (svg) svg.classList.remove('fp360-snap-active');
+            $(this).removeClass('is-active')
+                .text(fp360Admin.i18n.polyTool || 'Polygon');
+            if (svg) svg.style.cursor = '';
+        }
+        requestRedraw();
+    });
+
     $('#fp360-rect-tool').on('click', function () {
         state.rectMode = !state.rectMode;
         if (state.rectMode) {
-            state.drawing = false;
+            state.drawing       = false;
             state.currentPoints = [];
-            state.seedMode = false;
+            state.seedMode      = false;
+            state.polyMode      = false;
             if (svg) svg.classList.remove('fp360-snap-active');
             $('#fp360-seed-mode').removeClass('is-active')
                 .text(fp360Admin.i18n.seedMode || 'Seed Rooms');
+            $('#fp360-poly-tool').removeClass('is-active')
+                .text(fp360Admin.i18n.polyTool || 'Polygon');
             $(this).addClass('is-active')
                 .text(fp360Admin.i18n.rectModeActive || 'Cancel Rectangle');
             if (svg) svg.style.cursor = 'crosshair';
@@ -169,6 +205,17 @@ export function initUI() {
             if (svg) svg.style.cursor = '';
         }
         requestRedraw();
+    });
+
+    // Experimental panel toggle
+    $('#fp360-experimental-toggle').on('click', function () {
+        const $panel = $('#fp360-experimental-panel');
+        const open   = $panel.is(':visible');
+        $panel.toggle(!open);
+        $(this)
+            .toggleClass('is-active', !open)
+            .find('.fp360-exp-arrow')
+            .text(open ? '▾' : '▴');
     });
 
     $('#fp360-merge-rooms').on('click', function () {
@@ -201,7 +248,10 @@ export function initUI() {
         if (state.seedMode) {
             state.drawing       = false;
             state.currentPoints = [];
+            state.polyMode      = false;
             if (svg) svg.classList.remove('fp360-snap-active');
+            $('#fp360-poly-tool').removeClass('is-active')
+                .text(fp360Admin.i18n.polyTool || 'Polygon');
             $(this).addClass('is-active')
                 .text(fp360Admin.i18n.seedModeActive || 'Cancel Seed Mode');
             if (svg) svg.style.cursor = 'crosshair';

@@ -46,6 +46,8 @@ class Assets {
                     'clearSeeds'         => __( 'Clear Seeds', 'wp-floorplan-360' ),
                     'rectTool'           => __( 'Rectangle', 'wp-floorplan-360' ),
                     'rectModeActive'     => __( '✕ Cancel Rectangle', 'wp-floorplan-360' ),
+                    'polyTool'           => __( 'Polygon', 'wp-floorplan-360' ),
+                    'polyModeActive'     => __( '✕ Cancel Polygon', 'wp-floorplan-360' ),
                     'mergeRooms'         => __( 'Merge', 'wp-floorplan-360' ),
                     'mergeError'         => __( 'Rooms must overlap or share an edge to merge.', 'wp-floorplan-360' ),
                     'mergeRooms'         => __( 'Merge', 'wp-floorplan-360' ),

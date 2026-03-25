@@ -36,6 +36,10 @@
                 <span class="dashicons dashicons-grid-view" style="padding-top:4px;"></span>
                 <?php esc_html_e( 'Rectangle', 'wp-floorplan-360' ); ?>
             </button>
+            <button type="button" class="button" id="fp360-poly-tool">
+                <span class="dashicons dashicons-edit" style="padding-top:4px;"></span>
+                <?php esc_html_e( 'Polygon', 'wp-floorplan-360' ); ?>
+            </button>
             <button type="button" class="button" id="fp360-merge-rooms" style="display:none;">
                 <span class="dashicons dashicons-editor-contract" style="padding-top:4px;"></span>
                 <?php esc_html_e( 'Merge', 'wp-floorplan-360' ); ?>
@@ -44,45 +48,56 @@
                 <span class="dashicons dashicons-undo" style="padding-top:4px;"></span>
                 <?php esc_html_e( 'Undo', 'wp-floorplan-360' ); ?>
             </button>
-        </span>
-
-        <span class="fp360-toolbar-sep"></span>
-
-        <span class="fp360-toolbar-group">
-            <button type="button" class="button" id="fp360-seed-mode">
-                <span class="dashicons dashicons-location" style="padding-top:4px;"></span>
-                <?php esc_html_e( 'Seed Rooms', 'wp-floorplan-360' ); ?>
-            </button>
-            <button type="button" class="button button-primary" id="fp360-run-fill" disabled>
-                <span class="dashicons dashicons-superhero" style="padding-top:4px;"></span>
-                <?php esc_html_e( 'Run Fill', 'wp-floorplan-360' ); ?>
-            </button>
-            <button type="button" class="button" id="fp360-clear-seeds">
-                <span class="dashicons dashicons-marker" style="padding-top:4px;"></span>
-                <?php esc_html_e( 'Clear Seeds', 'wp-floorplan-360' ); ?>
-            </button>
-        </span>
-
-        <span class="fp360-toolbar-sep"></span>
-
-        <span class="fp360-toolbar-group">
-            <button type="button" class="button" id="fp360-detect-rooms">
-                <span class="dashicons dashicons-search" style="padding-top:4px;"></span>
-                <?php esc_html_e( 'Auto-Detect', 'wp-floorplan-360' ); ?>
-            </button>
             <button type="button" class="button" id="fp360-clear-rooms">
                 <span class="dashicons dashicons-trash" style="padding-top:4px;"></span>
                 <?php esc_html_e( 'Clear All', 'wp-floorplan-360' ); ?>
             </button>
-            <label class="fp360-tolerance-label">
-                <?php esc_html_e( 'Sensitivity:', 'wp-floorplan-360' ); ?>
-                <input type="range"
-                       id="fp360-detect-tolerance"
-                       min="2" max="8" value="3" step="1">
-                <span id="fp360-detect-tolerance-val">3</span>
-            </label>
         </span>
 
+        <span class="fp360-toolbar-sep"></span>
+
+        <button type="button" class="button" id="fp360-experimental-toggle">
+            <span class="dashicons dashicons-flask" style="padding-top:4px;"></span>
+            <?php esc_html_e( 'Experimental', 'wp-floorplan-360' ); ?>
+            <span class="fp360-exp-arrow">▾</span>
+        </button>
+
+    </div>
+
+    <div id="fp360-experimental-panel" style="display:none; margin-top:8px; padding:10px 12px; background:#f9f9f9; border:1px solid #e0e0e0; border-radius:3px;">
+        <p style="margin:0 0 8px; font-size:12px; color:#666; font-style:italic;">
+            <?php esc_html_e( 'These tools use automatic image analysis and may not work reliably on all floorplans. Manual drawing is always the fallback.', 'wp-floorplan-360' ); ?>
+        </p>
+        <div class="fp360-toolbar" style="margin-top:0;">
+            <span class="fp360-toolbar-group">
+                <button type="button" class="button" id="fp360-seed-mode">
+                    <span class="dashicons dashicons-location" style="padding-top:4px;"></span>
+                    <?php esc_html_e( 'Seed Rooms', 'wp-floorplan-360' ); ?>
+                </button>
+                <button type="button" class="button button-primary" id="fp360-run-fill" disabled>
+                    <span class="dashicons dashicons-superhero" style="padding-top:4px;"></span>
+                    <?php esc_html_e( 'Run Fill', 'wp-floorplan-360' ); ?>
+                </button>
+                <button type="button" class="button" id="fp360-clear-seeds">
+                    <span class="dashicons dashicons-marker" style="padding-top:4px;"></span>
+                    <?php esc_html_e( 'Clear Seeds', 'wp-floorplan-360' ); ?>
+                </button>
+            </span>
+            <span class="fp360-toolbar-sep"></span>
+            <span class="fp360-toolbar-group">
+                <button type="button" class="button" id="fp360-detect-rooms">
+                    <span class="dashicons dashicons-search" style="padding-top:4px;"></span>
+                    <?php esc_html_e( 'Auto-Detect', 'wp-floorplan-360' ); ?>
+                </button>
+                <label class="fp360-tolerance-label">
+                    <?php esc_html_e( 'Sensitivity:', 'wp-floorplan-360' ); ?>
+                    <input type="range"
+                           id="fp360-detect-tolerance"
+                           min="2" max="8" value="3" step="1">
+                    <span id="fp360-detect-tolerance-val">3</span>
+                </label>
+            </span>
+        </div>
     </div>
 
     <p id="fp360-detect-status" style="display:none;"></p>
@@ -90,8 +105,11 @@
     <div id="fp360-hotspot-list-admin" style="margin-top:20px;">
         <h4 style="margin-bottom:5px;"><?php esc_html_e( 'Rooms & 360° Views', 'wp-floorplan-360' ); ?></h4>
         <p class="description" style="margin-bottom:8px;">
-            <strong><?php esc_html_e( 'Rectangle tool:', 'wp-floorplan-360' ); ?></strong>
-            <?php esc_html_e( 'Drag over a room — edges snap to walls. Shift-click two rooms to select both, then click Merge for L-shapes.', 'wp-floorplan-360' ); ?>
+            <strong><?php esc_html_e( 'Rectangle:', 'wp-floorplan-360' ); ?></strong>
+            <?php esc_html_e( 'Drag over a room — edges snap to walls automatically.', 'wp-floorplan-360' ); ?>
+            <strong><?php esc_html_e( 'Polygon:', 'wp-floorplan-360' ); ?></strong>
+            <?php esc_html_e( 'Click to place points, double-click to close.', 'wp-floorplan-360' ); ?>
+            <?php esc_html_e( 'Shift-click two rooms then Merge for L-shapes.', 'wp-floorplan-360' ); ?>
         </p>
         <ul id="fp360-hotspot-items"></ul>
         <p class="description">

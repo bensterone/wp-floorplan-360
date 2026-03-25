@@ -780,23 +780,30 @@ function renderSVG() {
     poly.setAttribute('fill', isSelected ? color + 'cc' : color + '40');
     poly.setAttribute('stroke', color);
     poly.setAttribute('stroke-width', isSelected ? '0.6' : '0.3');
-    poly.setAttribute('class', isSelected ? 'hs-poly active' : 'hs-poly');
+    poly.setAttribute('class', isSelected ? 'fp360-hs-poly active' : 'fp360-hs-poly');
     poly.style.setProperty('vector-effect', 'non-scaling-stroke');
     poly.addEventListener('click', function (e) {
-      var _document$querySelect;
       e.stopPropagation();
       if (e.shiftKey) {
+        // Shift-click: toggle in/out of selection for merge.
+        // No scroll — the editor is building a multi-selection,
+        // not looking for the room in the list.
         if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.has(hs.id)) _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds["delete"](hs.id);else _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.add(hs.id);
       } else {
         _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.clear();
         _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.add(hs.id);
+        // Only scroll when selecting a single room normally —
+        // makes it easy to find the room in the list to assign a 360° image.
+        requestAnimationFrame(function () {
+          var _document$querySelect;
+          (_document$querySelect = document.querySelector('.fp360-hs-item.is-active')) === null || _document$querySelect === void 0 || _document$querySelect.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest'
+          });
+        });
       }
       (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
       renderHotspotList();
-      (_document$querySelect = document.querySelector('.hs-item.is-active')) === null || _document$querySelect === void 0 || _document$querySelect.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest'
-      });
     });
     _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.appendChild(poly);
 
@@ -807,7 +814,7 @@ function renderSVG() {
         handle.setAttribute('cx', p.x * 100);
         handle.setAttribute('cy', p.y * 100);
         handle.setAttribute('r', '1.6');
-        handle.setAttribute('class', 'hs-handle');
+        handle.setAttribute('class', 'fp360-hs-handle');
         handle.setAttribute('fill', '#fff');
         handle.setAttribute('stroke', color);
         handle.setAttribute('stroke-width', '0.5');
@@ -850,14 +857,14 @@ function renderSVG() {
     }).join(' ');
     var line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
     line.setAttribute('points', pts);
-    line.setAttribute('class', 'drawing-line');
+    line.setAttribute('class', 'fp360-drawing-line');
     _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.appendChild(line);
     _state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints.forEach(function (p, i) {
       var c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       c.setAttribute('cx', p.x * 100);
       c.setAttribute('cy', p.y * 100);
       c.setAttribute('r', i === 0 ? 1.5 : 0.8);
-      c.setAttribute('class', i === 0 ? 'node node-first' : 'node');
+      c.setAttribute('class', i === 0 ? 'fp360-node fp360-node--first' : 'fp360-node');
       _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.appendChild(c);
     });
   }
@@ -918,35 +925,35 @@ function renderHotspotList() {
   _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.forEach(function (hs) {
     var isSelected = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.has(hs.id);
     var color = hs.color || _state_js__WEBPACK_IMPORTED_MODULE_0__.COLORS[0];
-    var $li = $('<li>').addClass('hs-item').toggleClass('is-active', isSelected);
+    var $li = $('<li>').addClass('fp360-hs-item').toggleClass('is-active', isSelected);
     $li[0].style.setProperty('--hs-color', color);
-    var $swatch = $('<span>').addClass('hs-color-swatch').css('background-color', color);
+    var $swatch = $('<span>').addClass('fp360-hs-swatch').css('background-color', color);
     var $label = $('<input>', {
       type: 'text',
-      "class": 'hs-label',
+      "class": 'fp360-hs-label',
       'data-id': hs.id,
       placeholder: fp360Admin.i18n.roomLabel || 'Room Label'
     }).val(hs.label);
-    var $row = $('<div>').addClass('hs-input-row');
+    var $row = $('<div>').addClass('fp360-hs-input-row');
     var $urlInput = $('<input>', {
       type: 'text',
-      "class": 'hs-img360',
+      "class": 'fp360-hs-img360',
       'data-id': hs.id,
       placeholder: '360 Image URL'
     }).val(hs.image360);
     var $pickBtn = $('<button>', {
       type: 'button',
-      "class": 'button hs-pick-360',
+      "class": 'button fp360-hs-pick360',
       'data-id': hs.id,
       text: fp360Admin.i18n.pick360
     });
     var $deleteBtn = $('<button>', {
       type: 'button',
-      "class": 'button button-link-delete hs-delete',
+      "class": 'button button-link-delete fp360-hs-delete',
       'data-id': hs.id,
       text: fp360Admin.i18n.deleteRoom
     });
-    var $header = $('<div>').addClass('hs-header').append($swatch, $label);
+    var $header = $('<div>').addClass('fp360-hs-header').append($swatch, $label);
     $row.append($urlInput, $pickBtn);
     $li.append($header, $row, $deleteBtn);
     $ul.append($li);
@@ -999,7 +1006,9 @@ var state = {
   // Rectangle tool
   rectMode: false,
   rectStart: null,
-  rectCurrent: null
+  rectCurrent: null,
+  // Polygon tool (explicit mode — canvas clicks only draw when active)
+  polyMode: false
 };
 
 /***/ },
@@ -1436,7 +1445,7 @@ function initUI() {
       _state_js__WEBPACK_IMPORTED_MODULE_0__.state.mousePos = pos;
       if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints.length >= 3) {
         var first = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints[0];
-        _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.classList.toggle('snap-active', Math.hypot(pos.x - first.x, pos.y - first.y) < _state_js__WEBPACK_IMPORTED_MODULE_0__.SNAP_DISTANCE);
+        _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.classList.toggle('fp360-snap-active', Math.hypot(pos.x - first.x, pos.y - first.y) < _state_js__WEBPACK_IMPORTED_MODULE_0__.SNAP_DISTANCE);
       }
       (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
     });
@@ -1481,6 +1490,8 @@ function initUI() {
       if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.dragging || _state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectMode) return;
       if (!_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl || !_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl.src || _helpers_js__WEBPACK_IMPORTED_MODULE_1__.$emptyState && _helpers_js__WEBPACK_IMPORTED_MODULE_1__.$emptyState.is(':visible')) return;
       var pos = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.getNormalizedPos)(e);
+
+      // Seed mode click
       if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.seedMode) {
         _state_js__WEBPACK_IMPORTED_MODULE_0__.state.seeds.push({
           x: pos.x,
@@ -1490,6 +1501,10 @@ function initUI() {
         (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
         return;
       }
+
+      // Polygon drawing — only active when polyMode is on.
+      // Without this guard any accidental canvas click starts drawing.
+      if (!_state_js__WEBPACK_IMPORTED_MODULE_0__.state.polyMode) return;
       if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.drawing && _state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints.length >= 3) {
         var first = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints[0];
         if (Math.hypot(pos.x - first.x, pos.y - first.y) < _state_js__WEBPACK_IMPORTED_MODULE_0__.SNAP_DISTANCE) {
@@ -1514,7 +1529,31 @@ function initUI() {
     _state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints.pop();
     if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints.length === 0) {
       _state_js__WEBPACK_IMPORTED_MODULE_0__.state.drawing = false;
-      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.classList.remove('snap-active');
+      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.classList.remove('fp360-snap-active');
+    }
+    (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
+  });
+
+  // Polygon tool toggle
+  $('#fp360-poly-tool').on('click', function () {
+    _state_js__WEBPACK_IMPORTED_MODULE_0__.state.polyMode = !_state_js__WEBPACK_IMPORTED_MODULE_0__.state.polyMode;
+    if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.polyMode) {
+      // Exit other active modes
+      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectMode = false;
+      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.seedMode = false;
+      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectStart = null;
+      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectCurrent = null;
+      $('#fp360-rect-tool').removeClass('is-active').text(fp360Admin.i18n.rectTool || 'Rectangle');
+      $('#fp360-seed-mode').removeClass('is-active').text(fp360Admin.i18n.seedMode || 'Seed Rooms');
+      $(this).addClass('is-active').text(fp360Admin.i18n.polyModeActive || '✕ Cancel Polygon');
+      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = 'crosshair';
+    } else {
+      // Cancelling — discard any in-progress drawing
+      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.drawing = false;
+      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints = [];
+      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.classList.remove('fp360-snap-active');
+      $(this).removeClass('is-active').text(fp360Admin.i18n.polyTool || 'Polygon');
+      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = '';
     }
     (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
   });
@@ -1524,8 +1563,10 @@ function initUI() {
       _state_js__WEBPACK_IMPORTED_MODULE_0__.state.drawing = false;
       _state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints = [];
       _state_js__WEBPACK_IMPORTED_MODULE_0__.state.seedMode = false;
-      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.classList.remove('snap-active');
+      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.polyMode = false;
+      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.classList.remove('fp360-snap-active');
       $('#fp360-seed-mode').removeClass('is-active').text(fp360Admin.i18n.seedMode || 'Seed Rooms');
+      $('#fp360-poly-tool').removeClass('is-active').text(fp360Admin.i18n.polyTool || 'Polygon');
       $(this).addClass('is-active').text(fp360Admin.i18n.rectModeActive || 'Cancel Rectangle');
       if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = 'crosshair';
     } else {
@@ -1533,6 +1574,14 @@ function initUI() {
       if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = '';
     }
     (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
+  });
+
+  // Experimental panel toggle
+  $('#fp360-experimental-toggle').on('click', function () {
+    var $panel = $('#fp360-experimental-panel');
+    var open = $panel.is(':visible');
+    $panel.toggle(!open);
+    $(this).toggleClass('is-active', !open).find('.fp360-exp-arrow').text(open ? '▾' : '▴');
   });
   $('#fp360-merge-rooms').on('click', function () {
     if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.size !== 2) return;
@@ -1569,7 +1618,9 @@ function initUI() {
     if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.seedMode) {
       _state_js__WEBPACK_IMPORTED_MODULE_0__.state.drawing = false;
       _state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints = [];
-      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.classList.remove('snap-active');
+      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.polyMode = false;
+      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.classList.remove('fp360-snap-active');
+      $('#fp360-poly-tool').removeClass('is-active').text(fp360Admin.i18n.polyTool || 'Polygon');
       $(this).addClass('is-active').text(fp360Admin.i18n.seedModeActive || 'Cancel Seed Mode');
       if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = 'crosshair';
       $('#fp360-run-fill').prop('disabled', _state_js__WEBPACK_IMPORTED_MODULE_0__.state.seeds.length === 0);
@@ -1624,7 +1675,7 @@ function initUI() {
 
   // --- Delegated handlers ---
 
-  $(document).on('click', '.hs-pick-360', function (e) {
+  $(document).on('click', '.fp360-hs-pick360', function (e) {
     e.preventDefault();
     var id = $(this).data('id');
     var frame = wp.media({
@@ -1644,7 +1695,7 @@ function initUI() {
     });
     frame.open();
   });
-  $(document).on('click', '.hs-delete', function () {
+  $(document).on('click', '.fp360-hs-delete', function () {
     if (confirm(fp360Admin.i18n.deleteRoomConfirm)) {
       var id = $(this).data('id');
       _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.filter(function (h) {
@@ -1656,14 +1707,14 @@ function initUI() {
       (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
     }
   });
-  $(document).on('input', '.hs-label, .hs-img360', function () {
+  $(document).on('input', '.fp360-hs-label, .fp360-hs-img360', function () {
     var id = $(this).data('id');
     var hs = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.find(function (h) {
       return h.id === id;
     });
     if (hs) {
-      hs.label = $(".hs-label[data-id=\"".concat(id, "\"]")).val();
-      hs.image360 = $(".hs-img360[data-id=\"".concat(id, "\"]")).val();
+      hs.label = $(".fp360-hs-label[data-id=\"".concat(id, "\"]")).val();
+      hs.image360 = $(".fp360-hs-img360[data-id=\"".concat(id, "\"]")).val();
       (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
       (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
     }

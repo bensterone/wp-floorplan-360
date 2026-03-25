@@ -140,18 +140,24 @@
     transition: fill 0.15s ease;
 }
 
-/* Seed mode toggle — highlighted when active */
+/* Active tool buttons */
 #fp360-rect-tool.is-active,
+#fp360-poly-tool.is-active,
 #fp360-seed-mode.is-active {
     background: #2271b1;
     border-color: #2271b1;
     color: #fff;
 }
 #fp360-rect-tool.is-active:hover,
+#fp360-poly-tool.is-active:hover,
 #fp360-seed-mode.is-active:hover {
     background: #135e96;
     border-color: #135e96;
 }
+
+/* Experimental toggle */
+#fp360-experimental-toggle { color: #666; }
+#fp360-experimental-toggle .fp360-exp-arrow { font-size: 10px; margin-left: 3px; }
 .fp360-hs-handle {
     vector-effect: non-scaling-stroke;
     cursor: move;

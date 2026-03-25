@@ -36,16 +36,23 @@ export function renderSVG() {
         poly.addEventListener('click', (e) => {
             e.stopPropagation();
             if (e.shiftKey) {
+                // Shift-click: toggle in/out of selection for merge.
+                // No scroll — the editor is building a multi-selection,
+                // not looking for the room in the list.
                 if (state.selectedIds.has(hs.id)) state.selectedIds.delete(hs.id);
                 else state.selectedIds.add(hs.id);
             } else {
                 state.selectedIds.clear();
                 state.selectedIds.add(hs.id);
+                // Only scroll when selecting a single room normally —
+                // makes it easy to find the room in the list to assign a 360° image.
+                requestAnimationFrame(() => {
+                    document.querySelector('.fp360-hs-item.is-active')
+                        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
             }
             requestRedraw();
             renderHotspotList();
-            document.querySelector('.fp360-hs-item.is-active')
-                ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
 
         svg.appendChild(poly);
