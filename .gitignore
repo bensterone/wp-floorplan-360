@@ -30,6 +30,7 @@ assets/js/*.js
 !assets/js/editor.js
 !assets/js/block-editor.js
 !assets/js/aframe.min.js
+!assets/js/viewer.js
 
 # --- A-Frame binary ---
 # Large vendored binary — keep it if you want the repo self-contained,
