@@ -27,7 +27,7 @@ if ( version_compare( PHP_VERSION, '7.4', '<' ) ) {
     return;
 }
 
-define( 'FP360_VERSION', '1.5.0' );
+define( 'FP360_VERSION', '1.7.0' );
 define( 'FP360_PATH', plugin_dir_path( __FILE__ ) );
 define( 'FP360_URL', plugin_dir_url( __FILE__ ) );
 define( 'FP360_CPT', 'floorplan' );
