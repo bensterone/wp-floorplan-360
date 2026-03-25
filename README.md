@@ -1,22 +1,36 @@
 # Floorplan 360 Viewer
 
-A WordPress plugin for housing cooperatives and property managers. Upload a floorplan image, draw interactive room polygons directly in the editor, assign a 360° panorama to each room, and embed the result anywhere on your site — as a dedicated page or as a Gutenberg block inside any post or page.
+A WordPress plugin for housing cooperatives and property managers. Upload a floorplan image, draw room polygons in the admin editor, assign a 360° panorama to each room, and embed the result anywhere on your site — as a dedicated page or as a Gutenberg block inside any post or page.
 
-![Plugin Version](https://img.shields.io/badge/version-1.4.0-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
+![Plugin Version](https://img.shields.io/badge/version-1.7.0-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
 
 ---
 
 ## Features
 
-- **Visual hotspot editor** — click directly on the floorplan to draw room polygons. Snap-to-start closing, undo support, and real-time SVG preview.
-- **Color-coded rooms** — each room is automatically assigned a distinct colour from a palette, visible in both the editor and the frontend viewer.
-- **360° panorama viewer** — powered by A-Frame. Visitors click a room and the panorama loads in an inline viewer without leaving the page.
+### Admin editor
+- **Rectangle tool** — click and drag to draw a room rectangle. Edges snap automatically to the nearest wall pixel in the floorplan image. The primary tool for most workflows.
+- **Polygon tool** — click to place points, double-click to close. For rooms with irregular shapes or diagonal walls.
+- **Vertex drag editing** — click any polygon to select it, then drag its corner handles to fine-tune the shape without redrawing.
+- **Merge tool** — shift-click two overlapping rectangles and click Merge to combine them into a single L-shaped polygon. Designed for hallways and open-plan layouts.
+- **Colour-coded rooms** — each room is automatically assigned a distinct colour from a 12-colour palette, visible in both the editor and the frontend viewer.
 - **Viewer settings** — per-floorplan options for auto-rotating the panorama and choosing the active room highlight colour.
-- **Gutenberg block** — embed any floorplan into any post or page with the `Floorplan 360 Viewer` block. Select the floorplan from the block settings panel.
+- **Experimental tools** — auto room detection and click-to-seed fill are available behind an Experimental panel for supported floorplan types.
+
+### Frontend viewer
+- **360° panorama viewer** — powered by A-Frame. Visitors click a room and the panorama loads in an inline viewer without leaving the page.
+- **Gutenberg block** — embed any floorplan into any post or page with the `Floorplan 360 Viewer` block.
 - **Multiple instances** — place the block several times on the same page with different floorplans. Each viewer operates independently.
 - **Responsive layout** — two-column floorplan/viewer layout on desktop, single-column stack on mobile with a scrollable room list.
 - **Accessible** — all room polygons are keyboard-navigable (`Tab` to focus, `Enter` or `Space` to open). ARIA roles and labels throughout.
-- **Secure** — iframe-based viewer with strict `postMessage` origin validation, `X-Frame-Options`, and `Content-Security-Policy` headers. Panorama URLs must be hosted on the same domain.
+- **WebGL fallback** — if the visitor's browser does not support WebGL, a clear error message is shown instead of a black box.
+
+### Security and architecture
+- **Iframe-based viewer** — A-Frame runs in a sandboxed iframe with strict `postMessage` origin validation, `X-Frame-Options`, and `Content-Security-Policy` headers.
+- **CDN-compatible image validation** — panorama URLs are validated against the WordPress media library, so setups using CDNs or object storage work correctly.
+- **UUID validation** — hotspot IDs are validated against a strict regex rather than passed through `sanitize_key`, preventing silent data corruption.
+- **Modern PHP** — namespaced classes with PSR-4-style autoloading.
+- **Modular JavaScript** — editor logic is split into ES modules under `src/editor/` and compiled to a single bundle by webpack.
 - **Translatable** — full i18n support. German (`de_DE`) translation included.
 
 ---
@@ -36,7 +50,7 @@ A WordPress plugin for housing cooperatives and property managers. Upload a floo
    wp-content/plugins/wp-floorplan-360/
    ```
 
-2. `aframe.min.js` (v1.7.1) is bundled in the repository at `assets/js/aframe.min.js` and will be copied automatically. No separate download is needed.
+2. `aframe.min.js` (v1.7.1) is bundled in the repository at `assets/js/aframe.min.js`. No separate download is needed.
 
 3. Activate the plugin in **Plugins > Installed Plugins**.
 
@@ -49,49 +63,96 @@ A WordPress plugin for housing cooperatives and property managers. Upload a floo
 ### Creating a floorplan
 
 1. Go to **Floorplans > Add New** and enter a title.
-2. In the **Floorplan Editor** meta box, click **Select Floorplan Image** and choose an image from the Media Library (PNG, JPG, or SVG).
-3. The image appears in the editor canvas.
+2. In the **Floorplan Editor** meta box, click **Select Floorplan Image** and choose an image from the Media Library (PNG or JPG recommended).
+3. The image appears in the editor canvas, scaled to fit the available width.
 
-### Drawing room hotspots
+### Drawing rooms — Rectangle tool (recommended)
 
-1. Click anywhere on the floorplan to place the first point — it pulses green.
-2. Continue clicking to outline the room perimeter.
-3. Close the shape by either:
-   - Clicking back near the pulsing green first point, or
-   - **Double-clicking** anywhere to close automatically.
-4. Use **Undo Last Point** to remove the most recent point if needed.
-5. The finished shape appears in the **Rooms & 360° Views** list below the canvas.
+The rectangle tool is the primary workflow for standard apartments.
+
+1. Click **Rectangle** in the toolbar — the button turns blue.
+2. Click and drag over a room on the floorplan.
+3. Release — the rectangle edges snap automatically to the nearest wall lines. A coloured polygon appears.
+4. Repeat for each room.
+5. For L-shaped rooms (e.g. a hallway): draw two overlapping rectangles, shift-click both to select them, then click **Merge**.
+
+### Drawing rooms — Polygon tool
+
+For irregular rooms or rooms the rectangle tool cannot capture cleanly.
+
+1. Click **Polygon** in the toolbar — the button turns blue.
+2. Click to place points around the room perimeter.
+3. Close the shape by clicking near the first point (green pulse) or **double-clicking**.
+4. Click **Polygon** again to exit polygon mode without saving.
+
+### Editing rooms
+
+- **Move a vertex** — click a polygon to select it, then drag any of the white circle handles at its corners.
+- **Undo** — removes the last point while drawing in polygon mode.
+- **Delete** — click the Delete button next to a room in the list below the canvas.
+- **Clear All** — removes all rooms at once (with confirmation).
 
 ### Assigning panoramas
 
-1. In the **Rooms & 360° Views** list, enter a descriptive **Room Label** for each shape.
-2. Click **Pick 360** next to a room to select its panorama image from the Media Library.
+1. In the **Rooms & 360° Views** list below the canvas, enter a **Room Label** for each polygon.
+2. Click **Pick 360** to select the corresponding panorama image from the Media Library.
 3. Publish or update the floorplan post.
 
 ### Viewing on the frontend
 
-The floorplan post has its own dedicated URL (e.g. `/floorplan/my-apartment/`). Visitors click a room polygon on the left — the 360° panorama loads in the viewer panel on the right. Room polygons are also keyboard-navigable.
+The floorplan post has its own dedicated URL (e.g. `/floorplan/apartment-3b/`). Visitors click a room polygon — the 360° panorama loads in the viewer panel. Rooms are also keyboard-navigable.
 
 ### Embedding with the Gutenberg block
 
 1. Open any post or page in the block editor.
 2. Add the **Floorplan 360 Viewer** block (found under the Media category).
-3. In the block settings panel on the right, select the floorplan to display.
+3. In the block settings panel, select the floorplan to display.
 4. Set the block alignment to **Wide width** for best results on themes with a narrow content column.
+
+### Viewer settings
+
+Each floorplan has a **Viewer Settings** meta box in the admin sidebar:
+
+- **Auto-rotate panorama** — slowly rotates the camera when the panorama loads. Stops on user interaction.
+- **Active room colour** — the highlight colour used for the selected room polygon on the frontend.
+
+---
+
+## Experimental tools
+
+The **Experimental** button in the toolbar reveals two automatic room detection tools. These work best on clean black-and-white floorplans. Results on complex or colour-filled plans will vary.
+
+### Seed fill
+
+The more reliable of the two methods.
+
+1. Click **Seed Rooms** — the cursor changes to a crosshair.
+2. Click once inside each room. Numbered markers appear.
+3. Click **Run Fill** — the algorithm generates polygons from the marked regions.
+4. Review results, delete false positives, and draw any missed rooms manually.
+5. **Clear Seeds** removes all markers without running the fill.
+
+### Auto-detect
+
+Attempts to detect all rooms automatically with no clicks required. Click **Auto-Detect** and the algorithm runs immediately.
+
+The **Sensitivity** slider (2–8) controls how aggressively thin features (text, furniture, door arcs) are removed before detection. Higher values remove more features but may also erode small rooms.
 
 ---
 
 ## How it works
 
-**Coordinate storage** — Hotspot points are stored as normalised coordinates between `0` and `1` rather than fixed pixels. This ensures room outlines remain perfectly aligned with the floorplan image at any screen size.
+**Coordinate storage** — hotspot points are stored as normalised coordinates between `0` and `1` rather than fixed pixels. Room outlines stay perfectly aligned with the floorplan image at any screen size.
 
-**Secure iframe viewer** — When a visitor clicks a room, the plugin loads an A-Frame panorama viewer inside a sandboxed iframe served via `admin-ajax.php`. The parent page and iframe communicate through a `postMessage` handshake:
+**Secure iframe viewer** — when a visitor clicks a room, the plugin loads an A-Frame panorama viewer inside a sandboxed iframe served via `admin-ajax.php`. The parent page and iframe communicate through a `postMessage` handshake:
 
 1. The iframe signals `FP360_VIEWER_READY` when A-Frame has initialised.
 2. The parent sends `FP360_LOAD_IMAGE` with the panorama URL.
 3. The iframe confirms `FP360_IMAGE_LOADED` on success, or `FP360_IMAGE_ERROR` on failure.
 
 All messages are validated against the site's own origin. Panorama URLs from external domains are rejected at both the PHP and JavaScript level.
+
+**Wall snapping** — when a rectangle is drawn, the plugin rasterises the floorplan image, applies a morphological opening to remove thin features, then searches outward from each edge for the nearest dark wall pixel and snaps to it.
 
 ---
 
@@ -100,13 +161,14 @@ All messages are validated against the site's own origin. Panorama URLs from ext
 | Measure | Detail |
 |---|---|
 | Origin validation | `postMessage` events accepted only from the site's own origin |
-| URL validation | Panorama URLs must share the same host as the WordPress installation |
-| Frame protection | Iframe response includes `X-Frame-Options: SAMEORIGIN` and `CSP: frame-ancestors 'self'` |
-| Input sanitisation | All saved data is sanitised server-side (`esc_url_raw`, `sanitize_text_field`, coordinate clamping) |
+| URL validation | Panorama URLs validated against local media library — CDN-compatible |
+| Frame protection | Iframe includes `X-Frame-Options: SAMEORIGIN` and `CSP: frame-ancestors 'self'` |
+| Input sanitisation | `esc_url_raw`, `sanitize_text_field`, UUID regex validation, coordinate clamping |
 | Nonce verification | All meta box saves verified with `wp_verify_nonce` |
 | Capability checks | `current_user_can('edit_post')` enforced on every save |
+| WebGL check | A-Frame not loaded if WebGL unavailable — clear error shown instead |
 
-> **Note:** Panorama images must be hosted on the same domain as your WordPress site. External URLs are intentionally blocked.
+> **Note:** Panorama images must be accessible from the WordPress server. External URLs from unrelated domains are intentionally blocked.
 
 ---
 
@@ -116,71 +178,104 @@ All messages are validated against the site's own origin. Panorama URLs from ext
 wp-floorplan-360/
 ├── assets/
 │   ├── css/
-│   │   ├── block-editor.css     # Gutenberg editor preview styles
-│   │   ├── editor.css           # Admin floorplan editor styles
-│   │   └── viewer.css           # Frontend viewer styles (singular + block)
+│   │   ├── block-editor.css
+│   │   ├── editor.css
+│   │   └── viewer.css
 │   └── js/
-│       ├── aframe.min.js        # A-Frame 1.7.1 VR library (bundled, MIT licensed)
+│       ├── aframe.min.js        # A-Frame 1.7.1 (bundled, MIT)
 │       ├── block-editor.asset.php
-│       ├── block-editor.js      # Compiled Gutenberg block (from src/)
-│       ├── editor.js            # Admin hotspot drawing editor
-│       └── viewer.js            # Frontend multi-instance viewer
+│       ├── block-editor.js      # Compiled Gutenberg block
+│       ├── editor.js            # Compiled admin editor
+│       └── viewer.js            # Frontend viewer
 ├── includes/
 │   ├── Admin/
-│   │   ├── Assets.php           # Admin script/style enqueue
-│   │   └── Editor.php           # Meta box registration and save logic
+│   │   ├── Assets.php
+│   │   └── Editor.php
 │   ├── Block/
-│   │   └── Block.php            # Gutenberg block registration and render callback
+│   │   └── Block.php
 │   ├── Core/
-│   │   ├── Ajax.php             # Iframe viewer AJAX endpoint
-│   │   ├── Plugin.php           # Plugin bootstrap
-│   │   └── PostType.php         # Custom post type registration
+│   │   ├── Ajax.php
+│   │   ├── Plugin.php
+│   │   └── PostType.php
 │   ├── Frontend/
-│   │   ├── Assets.php           # Frontend script/style enqueue
-│   │   └── Viewer.php           # Template loader for singular floorplan posts
-│   └── AutoLoader.php           # PSR-4 class autoloader
+│   │   ├── Assets.php
+│   │   └── Viewer.php
+│   └── AutoLoader.php
 ├── languages/
-│   ├── wp-floorplan-360.pot     # Translation template
+│   ├── wp-floorplan-360.pot
 │   ├── wp-floorplan-360-de_DE.po
 │   └── wp-floorplan-360-de_DE.mo
 ├── src/
-│   └── block-editor.js          # Gutenberg block source (compile with npm)
+│   ├── block-editor.js
+│   └── editor/
+│       ├── state.js
+│       ├── helpers.js
+│       ├── render.js
+│       ├── ui.js
+│       ├── tools/
+│       │   ├── polygon.js
+│       │   ├── rectangle.js
+│       │   └── merge.js
+│       └── detection/
+│           ├── image.js
+│           ├── auto.js
+│           └── seed.js
 ├── templates/
-│   ├── block-viewer.php         # Frontend template for the Gutenberg block
-│   └── floorplan-template.php   # Singular floorplan post template
+│   ├── block-viewer.php
+│   └── floorplan-template.php
 ├── views/
-│   ├── iframe-viewer.php        # A-Frame viewer served inside the iframe
-│   └── meta-box.php             # Admin editor UI
-├── block.json                   # Gutenberg block manifest
-├── package.json                 # npm build configuration
-├── uninstall.php                # Clean uninstall hook
-└── wp-floorplan-360.php         # Plugin entry point
+│   ├── iframe-viewer.php
+│   └── meta-box.php
+├── block.json
+├── package.json
+├── webpack.editor.js
+├── uninstall.php
+└── wp-floorplan-360.php
 ```
 
 ---
 
 ## Development
 
-### Building the Gutenberg block
-
-The block editor UI is written in modern JavaScript using `@wordpress/scripts`. The compiled output (`assets/js/block-editor.js`) is committed to the repository, so a build step is only needed if you modify `src/block-editor.js`.
+### Building
 
 ```bash
 npm install
-npm run build
+npm run build           # builds both editor and block
+npm run build:editor    # builds assets/js/editor.js only
+npm run build:block     # builds assets/js/block-editor.js only
+npm run start:editor    # watch mode for editor development
 ```
 
-### Regenerating the translation template
-
-Requires PHP and WP-CLI (`wp-cli.phar`).
+### Regenerating translations
 
 ```bash
 php wp-cli.phar i18n make-pot . languages/wp-floorplan-360.pot --domain=wp-floorplan-360 --exclude=block.json
 ```
 
-### Theme compatibility
+Then open `languages/wp-floorplan-360-de_DE.po` in Poedit, update from the POT file, translate new strings, save, and commit both `.po` and `.mo`.
 
-The plugin uses a two-column flex layout. On themes with a narrow content column (such as Twenty Twenty-Five, which defaults to 645px), set the Gutenberg block alignment to **Wide width** in the editor. The singular floorplan post template automatically expands to the theme's wide width setting.
+---
+
+## Troubleshooting
+
+**The 360° viewer shows a black box**
+- Confirm `assets/js/aframe.min.js` exists in the plugin folder.
+- Ensure the panorama image is hosted on the same domain or in the WordPress media library.
+- Check the browser console for CSP or origin errors.
+
+**Clicking a room does nothing**
+- Confirm the room has a valid 360° image URL assigned in the admin.
+- Ensure the polygon has at least three points.
+- Re-save the floorplan post.
+
+**The rectangle tool does not snap to walls**
+- The image must be in the WordPress Media Library — pixel data cannot be read from cross-origin images.
+- Try adjusting the sensitivity slider if walls are being eroded or missed.
+
+**Auto-detect / Seed fill produces poor results**
+- These tools work best on clean black-and-white floorplans without furniture or colour fills.
+- Use the Rectangle or Polygon tool as the reliable fallback.
 
 ---
 
@@ -188,13 +283,13 @@ The plugin uses a two-column flex layout. On themes with a narrow content column
 
 | Library | Version | License | Usage |
 |---|---|---|---|
-| [A-Frame](https://aframe.io) | 1.7.1 | MIT | 360° panorama rendering inside the iframe viewer |
+| [A-Frame](https://aframe.io) | 1.7.1 | MIT | 360° panorama rendering |
 
 ---
 
 ## License
 
-This plugin is licensed under the [GPL-2.0+](https://www.gnu.org/licenses/gpl-2.0.html).
+GPL-2.0+
 
 ---
 
