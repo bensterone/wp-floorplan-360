@@ -2,11 +2,11 @@
 # This file is distributed under the GPL-2.0+.
 msgid ""
 msgstr ""
-"Project-Id-Version: Floorplan 360 Viewer 1.4.0\n"
+"Project-Id-Version: Floorplan 360 Viewer 1.7.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-"
 "floorplan-360-1.3\n"
-"POT-Creation-Date: 2026-03-17T14:04:22+00:00\n"
-"PO-Revision-Date: 2026-03-17 15:07+0100\n"
+"POT-Creation-Date: 2026-03-25T11:47:23+00:00\n"
+"PO-Revision-Date: 2026-03-25 12:56+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: de\n"
@@ -26,7 +26,7 @@ msgstr "Grundriss 360°-Viewer"
 #: wp-floorplan-360.php
 msgid "Interactive floorplans with polygon hotspots and 360° room viewer."
 msgstr ""
-"Interaktive Grundrisse mit polygonalen Hotspots und 360° Raumbetrachter"
+"Interaktive Grundrisse mit polygonalen Hotspots und 360° Raumbetrachter."
 
 #. Author of the plugin
 #: wp-floorplan-360.php
@@ -47,11 +47,103 @@ msgstr "Diesen Raum löschen?"
 
 #: includes/Admin/Assets.php:31
 msgid "New Room"
-msgstr "Neuer Raum"
+msgstr "Neues Zimmer"
 
 #: includes/Admin/Assets.php:32
 msgid "Room Label"
 msgstr "Raum Label"
+
+#: includes/Admin/Assets.php:33
+msgid "Detect Rooms"
+msgstr "Räume erkennen"
+
+#: includes/Admin/Assets.php:34
+msgid "Detecting…"
+msgstr "Wird gesucht…"
+
+#: includes/Admin/Assets.php:35
+#, fuzzy
+msgid "Detected {n} room(s). Review polygons and assign 360° images."
+msgstr "Detected {n} room(s). Review polygons and assign 360° images."
+
+#: includes/Admin/Assets.php:36
+#, fuzzy
+msgid ""
+"No rooms detected. Try a lower sensitivity value, or draw rooms manually."
+msgstr ""
+"No rooms detected. Try a lower sensitivity value, or draw rooms manually."
+
+#: includes/Admin/Assets.php:37
+msgid "Please upload a floorplan image first."
+msgstr "Kein Grundriss-Bild hochgeladen."
+
+#: includes/Admin/Assets.php:38
+#, fuzzy
+msgid "Detection failed. Please draw rooms manually."
+msgstr "Detection failed. Please draw rooms manually."
+
+#: includes/Admin/Assets.php:39
+#, fuzzy
+msgid "Clear existing rooms and re-detect?"
+msgstr "Clear existing rooms and re-detect?"
+
+#: includes/Admin/Assets.php:40
+msgid "Delete all rooms? This cannot be undone until you save."
+msgstr ""
+"Alle Räume löschen? Kann nicht rückgängig gemacht werden bis zum "
+"Speichern."
+
+#: includes/Admin/Assets.php:41
+msgid "Clear All Rooms"
+msgstr "Alle Räume löschen"
+
+#: includes/Admin/Assets.php:42 views/meta-box.php:75
+msgid "Seed Rooms"
+msgstr "Seed Räume"
+
+#: includes/Admin/Assets.php:43
+msgid "✕ Cancel Seed Mode"
+msgstr "✕ Abbrechen"
+
+#: includes/Admin/Assets.php:44
+msgid "Click once inside each room, then click Run Fill."
+msgstr "In einzelne Räume klicken. Dann Füllen."
+
+#: includes/Admin/Assets.php:45 views/meta-box.php:79
+msgid "Run Fill"
+msgstr "Füllen"
+
+#: includes/Admin/Assets.php:46 views/meta-box.php:83
+#, fuzzy
+msgid "Clear Seeds"
+msgstr "Clear Seed"
+
+#: includes/Admin/Assets.php:47 views/meta-box.php:37
+msgid "Rectangle"
+msgstr "Rechteck"
+
+#: includes/Admin/Assets.php:48
+msgid "✕ Cancel Rectangle"
+msgstr "✕ Rechteck abbrechen"
+
+#: includes/Admin/Assets.php:49 views/meta-box.php:41
+msgid "Polygon"
+msgstr "Polygon"
+
+#: includes/Admin/Assets.php:50
+msgid "✕ Cancel Polygon"
+msgstr "✕ Polygon abbrechen"
+
+#: includes/Admin/Assets.php:51 includes/Admin/Assets.php:53
+#: views/meta-box.php:45
+msgid "Merge"
+msgstr "Zusammenführen"
+
+#: includes/Admin/Assets.php:52 includes/Admin/Assets.php:54
+msgid "Rooms must overlap or share an edge to merge."
+msgstr ""
+"Räume müssen überlappen oder sich eine Kante teilen, um zusammengeführt "
+"werden zu können."
 
 #: includes/Admin/Editor.php:13
 msgid "Floorplan Editor"
@@ -59,17 +151,17 @@ msgstr "Grundriss Editor"
 
 #: includes/Admin/Editor.php:22
 msgid "Viewer Settings"
-msgstr "Viewer-Einstellungen"
+msgstr "Betrachter Einstellungen"
 
-#: includes/Admin/Editor.php:58
+#: includes/Admin/Editor.php:57
 msgid "Auto-rotate panorama"
-msgstr "Lade Panorama..."
+msgstr "Auto-Rotation Panorama"
 
-#: includes/Admin/Editor.php:63
+#: includes/Admin/Editor.php:62
 msgid "Active room colour:"
 msgstr "Aktiver Raum Farbe:"
 
-#: includes/Admin/Editor.php:71
+#: includes/Admin/Editor.php:70
 msgid "Colour of the selected room polygon"
 msgstr "Farbe des ausgewählten Polygons"
 
@@ -129,9 +221,25 @@ msgstr "360°-Raumviewer"
 msgid "Room list"
 msgstr "Liste der Räume"
 
-#: views/iframe-viewer.php:17
+#: views/iframe-viewer.php:42
+#, fuzzy
+msgid "360° viewing is not supported by your browser or device."
+msgstr "360° viewing is not supported by your browser or device."
+
+#: views/iframe-viewer.php:43
+#, fuzzy
+msgid ""
+"WebGL is required. Try a modern desktop browser such as Chrome or Firefox."
+msgstr ""
+"WebGL is required. Try a modern desktop browser such as Chrome or Firefox."
+
+#: views/iframe-viewer.php:46
 msgid "Loading Panorama..."
 msgstr "Lade Panorama..."
+
+#: views/iframe-viewer.php:50
+msgid "JavaScript is required to view 360° panoramas."
+msgstr "JavaScript wird benötigt um 360°-Panoramas anzuzeigen."
 
 #: views/meta-box.php:4
 msgid "Floorplan Image"
@@ -149,23 +257,69 @@ msgstr "Grundriss-Bild auswählen"
 msgid "Floorplan preview will appear here."
 msgstr "Grundriss Vorschau wird hier angezeigt."
 
-#: views/meta-box.php:33
-msgid "Undo Last Point"
-msgstr "Letzten Punkt rückgängig"
+#: views/meta-box.php:49
+msgid "Undo"
+msgstr "Rückgängig"
 
-#: views/meta-box.php:38
+#: views/meta-box.php:53
+msgid "Clear All"
+msgstr "Alle löschen"
+
+#: views/meta-box.php:61
+msgid "Experimental"
+msgstr "Experimentell"
+
+#: views/meta-box.php:69
+#, fuzzy
+msgid ""
+"These tools use automatic image analysis and may not work reliably on all "
+"floorplans. Manual drawing is always the fallback."
+msgstr ""
+"These tools use automatic image analysis and may not work reliably on all "
+"floorplans. Manual drawing is always the fallback."
+
+#: views/meta-box.php:90
+#, fuzzy
+msgid "Auto-Detect"
+msgstr "Auto-Detect"
+
+#: views/meta-box.php:93
+msgid "Sensitivity:"
+msgstr "Sensitivität:"
+
+#: views/meta-box.php:106
 msgid "Rooms & 360° Views"
 msgstr "Räume & 360° Ansichten"
 
-#: views/meta-box.php:41
+#: views/meta-box.php:108
+msgid "Rectangle:"
+msgstr "Rechteck:"
+
+#: views/meta-box.php:109
+#, fuzzy
+msgid "Drag over a room — edges snap to walls automatically."
+msgstr "Drag over a room — edges snap to walls automatically."
+
+#: views/meta-box.php:110
+msgid "Polygon:"
+msgstr "Polygon:"
+
+#: views/meta-box.php:111
+msgid "Click to place points, double-click to close."
+msgstr "Klick zum platzieren, doppel-klick zum schließen."
+
+#: views/meta-box.php:112
+msgid "Shift-click two rooms then Merge for L-shapes."
+msgstr "Shift-Klick auf zwei Räume um sie L-förmig zusammenzuführen."
+
+#: views/meta-box.php:116
 msgid "Pro Tip:"
 msgstr "Pro Tip:"
 
-#: views/meta-box.php:42
-msgid "Double-click the last point to quickly close a room shape."
+#: views/meta-box.php:117
+msgid "Double-click the last point to quickly close a polygon shape."
 msgstr ""
-"Doppelklick auf den letzten Punkt, um eine Raumform schnell zu "
-"schließen."
+"Doppelklick auf den letzten Punkt, um eine Raumform schnell zu schließen."
 
 #: wp-floorplan-360.php:24
 msgid ""
