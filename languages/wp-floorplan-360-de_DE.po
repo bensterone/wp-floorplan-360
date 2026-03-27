@@ -5,8 +5,8 @@ msgstr ""
 "Project-Id-Version: Floorplan 360 Viewer 1.7.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-"
 "floorplan-360-1.3\n"
-"POT-Creation-Date: 2026-03-25T11:47:23+00:00\n"
-"PO-Revision-Date: 2026-03-25 12:56+0100\n"
+"POT-Creation-Date: 2026-03-27T09:22:25+00:00\n"
+"PO-Revision-Date: 2026-03-27 10:30+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: de\n"
@@ -37,109 +37,107 @@ msgstr "Ben Sturm / WBG Zentrum eG"
 msgid "Pick 360"
 msgstr "360° auswählen"
 
-#: includes/Admin/Assets.php:29
+#: includes/Admin/Assets.php:29 views/meta-box.php:10
+msgid "Select Floorplan Image"
+msgstr "Grundriss-Bild auswählen"
+
+#: includes/Admin/Assets.php:30
 msgid "Delete Room"
 msgstr "Raum löschen"
 
-#: includes/Admin/Assets.php:30
+#: includes/Admin/Assets.php:31
 msgid "Delete this room?"
 msgstr "Diesen Raum löschen?"
 
-#: includes/Admin/Assets.php:31
+#: includes/Admin/Assets.php:32
 msgid "New Room"
 msgstr "Neues Zimmer"
 
-#: includes/Admin/Assets.php:32
+#: includes/Admin/Assets.php:33
 msgid "Room Label"
 msgstr "Raum Label"
 
-#: includes/Admin/Assets.php:33
+#: includes/Admin/Assets.php:34
 msgid "Detect Rooms"
 msgstr "Räume erkennen"
 
-#: includes/Admin/Assets.php:34
-msgid "Detecting…"
-msgstr "Wird gesucht…"
-
 #: includes/Admin/Assets.php:35
-#, fuzzy
-msgid "Detected {n} room(s). Review polygons and assign 360° images."
-msgstr "Detected {n} room(s). Review polygons and assign 360° images."
+msgid "Detecting…"
+msgstr "Erkennung..."
 
 #: includes/Admin/Assets.php:36
-#, fuzzy
+msgid "Detected {n} room(s). Review polygons and assign 360° images."
+msgstr "{n} Räume erkannt. Bitte Polygone prüfen und 360° Bild zuordnen."
+
+#: includes/Admin/Assets.php:37
 msgid ""
 "No rooms detected. Try a lower sensitivity value, or draw rooms manually."
 msgstr ""
-"No rooms detected. Try a lower sensitivity value, or draw rooms manually."
+"Keine Räume erkannt. Sensitivität verringern oder Räume manuell zeichnen."
 
-#: includes/Admin/Assets.php:37
+#: includes/Admin/Assets.php:38
 msgid "Please upload a floorplan image first."
 msgstr "Kein Grundriss-Bild hochgeladen."
 
-#: includes/Admin/Assets.php:38
-#, fuzzy
-msgid "Detection failed. Please draw rooms manually."
-msgstr "Detection failed. Please draw rooms manually."
-
 #: includes/Admin/Assets.php:39
-#, fuzzy
-msgid "Clear existing rooms and re-detect?"
-msgstr "Clear existing rooms and re-detect?"
+msgid "Detection failed. Please draw rooms manually."
+msgstr "Erkennung gescheitert. Bitte Räume manuell zeichnen."
 
 #: includes/Admin/Assets.php:40
+msgid "Clear existing rooms and re-detect?"
+msgstr "Alle Räume löschen und neu erkennen?"
+
+#: includes/Admin/Assets.php:41
 msgid "Delete all rooms? This cannot be undone until you save."
 msgstr ""
 "Alle Räume löschen? Kann nicht rückgängig gemacht werden bis zum "
 "Speichern."
 
-#: includes/Admin/Assets.php:41
+#: includes/Admin/Assets.php:42
 msgid "Clear All Rooms"
 msgstr "Alle Räume löschen"
 
-#: includes/Admin/Assets.php:42 views/meta-box.php:75
+#: includes/Admin/Assets.php:43 views/meta-box.php:75
 msgid "Seed Rooms"
 msgstr "Seed Räume"
 
-#: includes/Admin/Assets.php:43
+#: includes/Admin/Assets.php:44
 msgid "✕ Cancel Seed Mode"
 msgstr "✕ Abbrechen"
 
-#: includes/Admin/Assets.php:44
+#: includes/Admin/Assets.php:45
 msgid "Click once inside each room, then click Run Fill."
 msgstr "In einzelne Räume klicken. Dann Füllen."
 
-#: includes/Admin/Assets.php:45 views/meta-box.php:79
+#: includes/Admin/Assets.php:46 views/meta-box.php:79
 msgid "Run Fill"
 msgstr "Füllen"
 
-#: includes/Admin/Assets.php:46 views/meta-box.php:83
-#, fuzzy
+#: includes/Admin/Assets.php:47 views/meta-box.php:83
 msgid "Clear Seeds"
-msgstr "Clear Seed"
+msgstr "Alle löschen"
 
-#: includes/Admin/Assets.php:47 views/meta-box.php:37
+#: includes/Admin/Assets.php:48 views/meta-box.php:37
 msgid "Rectangle"
 msgstr "Rechteck"
 
-#: includes/Admin/Assets.php:48
+#: includes/Admin/Assets.php:49
 msgid "✕ Cancel Rectangle"
 msgstr "✕ Rechteck abbrechen"
 
-#: includes/Admin/Assets.php:49 views/meta-box.php:41
+#: includes/Admin/Assets.php:50 views/meta-box.php:41
 msgid "Polygon"
 msgstr "Polygon"
 
-#: includes/Admin/Assets.php:50
+#: includes/Admin/Assets.php:51
 msgid "✕ Cancel Polygon"
 msgstr "✕ Polygon abbrechen"
 
-#: includes/Admin/Assets.php:51 includes/Admin/Assets.php:53
-#: views/meta-box.php:45
+#: includes/Admin/Assets.php:52 views/meta-box.php:45
 msgid "Merge"
 msgstr "Zusammenführen"
 
-#: includes/Admin/Assets.php:52 includes/Admin/Assets.php:54
+#: includes/Admin/Assets.php:53
 msgid "Rooms must overlap or share an edge to merge."
 msgstr ""
 "Räume müssen überlappen oder sich eine Kante teilen, um zusammengeführt "
@@ -153,27 +151,35 @@ msgstr "Grundriss Editor"
 msgid "Viewer Settings"
 msgstr "Betrachter Einstellungen"
 
-#: includes/Admin/Editor.php:57
+#: includes/Admin/Editor.php:61
 msgid "Auto-rotate panorama"
 msgstr "Auto-Rotation Panorama"
 
-#: includes/Admin/Editor.php:62
+#: includes/Admin/Editor.php:66
 msgid "Active room colour:"
 msgstr "Aktiver Raum Farbe:"
 
-#: includes/Admin/Editor.php:70
+#: includes/Admin/Editor.php:74
 msgid "Colour of the selected room polygon"
 msgstr "Farbe des ausgewählten Polygons"
 
-#: includes/Block/Block.php:68 includes/Frontend/Assets.php:20
+#: includes/Admin/Editor.php:79
+msgid "Panorama start angle:"
+msgstr "Ausgangswinkel:"
+
+#: includes/Admin/Editor.php:88
+msgid "Horizontal rotation when panorama first loads (-180 to 180)"
+msgstr "Horizontale Ausgangssicht bei Laden des Panoramas (-180 bis 180)"
+
+#: includes/Block/Block.php:70 includes/Frontend/Assets.php:20
 msgid "View room"
 msgstr "Raum anzeigen"
 
-#: includes/Block/Block.php:69 includes/Frontend/Assets.php:21
+#: includes/Block/Block.php:71 includes/Frontend/Assets.php:21
 msgid "No 360° image assigned to this room."
 msgstr "Kein 360°-Bild diesem Raum zugewiesen."
 
-#: includes/Block/Block.php:70 includes/Frontend/Assets.php:22
+#: includes/Block/Block.php:72 includes/Frontend/Assets.php:22
 msgid "The 360° image could not be loaded."
 msgstr "Das 360°-Bild konnte nicht geladen werden."
 
@@ -197,41 +203,41 @@ msgstr "Grundriss bearbeiten"
 msgid "Search Floorplans"
 msgstr "Grundrisse suchen"
 
-#: templates/block-viewer.php:32 templates/floorplan-template.php:31
+#: templates/block-viewer.php:33 templates/floorplan-template.php:34
 msgid "No floorplan image uploaded."
 msgstr "Kein Grundriss-Bild hochgeladen."
 
-#: templates/block-viewer.php:39 templates/floorplan-template.php:36
+#: templates/block-viewer.php:40 templates/floorplan-template.php:39
 msgid "360 degree room view"
 msgstr "360 Grad Raumansicht"
 
-#: templates/block-viewer.php:42 templates/floorplan-template.php:38
+#: templates/block-viewer.php:43 templates/floorplan-template.php:41
 msgid "Select a room on the floorplan to view it in 360°"
 msgstr "Klicken Sie auf einen Raum im Grundriss für die 360°-Ansicht"
 
-#: templates/block-viewer.php:45 templates/floorplan-template.php:41
+#: templates/block-viewer.php:46 templates/floorplan-template.php:44
 msgid "Loading viewer..."
 msgstr "Lade Betrachter..."
 
-#: templates/block-viewer.php:51 templates/floorplan-template.php:48
+#: templates/block-viewer.php:53 templates/floorplan-template.php:52
 msgid "360 degree room viewer"
 msgstr "360°-Raumviewer"
 
-#: templates/block-viewer.php:57 templates/floorplan-template.php:54
+#: templates/block-viewer.php:59 templates/floorplan-template.php:58
 msgid "Room list"
 msgstr "Liste der Räume"
 
 #: views/iframe-viewer.php:42
-#, fuzzy
 msgid "360° viewing is not supported by your browser or device."
-msgstr "360° viewing is not supported by your browser or device."
+msgstr ""
+"360° Ansichten werden von Ihrem Browser oder Gerät nicht unterstützt."
 
 #: views/iframe-viewer.php:43
-#, fuzzy
 msgid ""
 "WebGL is required. Try a modern desktop browser such as Chrome or Firefox."
 msgstr ""
-"WebGL is required. Try a modern desktop browser such as Chrome or Firefox."
+"WebGL wird benötigt. Bitte modernen Browser wie z.B. Chrome oder Firefox "
+"benutzen."
 
 #: views/iframe-viewer.php:46
 msgid "Loading Panorama..."
@@ -248,10 +254,6 @@ msgstr "Grundriss Bild"
 #: views/meta-box.php:9
 msgid "Change Image"
 msgstr "Bild ändern"
-
-#: views/meta-box.php:10
-msgid "Select Floorplan Image"
-msgstr "Grundriss-Bild auswählen"
 
 #: views/meta-box.php:17
 msgid "Floorplan preview will appear here."
@@ -270,18 +272,16 @@ msgid "Experimental"
 msgstr "Experimentell"
 
 #: views/meta-box.php:69
-#, fuzzy
 msgid ""
 "These tools use automatic image analysis and may not work reliably on all "
 "floorplans. Manual drawing is always the fallback."
 msgstr ""
-"These tools use automatic image analysis and may not work reliably on all "
-"floorplans. Manual drawing is always the fallback."
+"Experimentelle Werkzeuge benutzen automatische Bilderkennung und könnten "
+"nicht zuverlässig funktionieren. Manuelles Zeichnen wird empfohlen."
 
 #: views/meta-box.php:90
-#, fuzzy
 msgid "Auto-Detect"
-msgstr "Auto-Detect"
+msgstr "Auto-Rotation Panorama"
 
 #: views/meta-box.php:93
 msgid "Sensitivity:"
@@ -296,9 +296,9 @@ msgid "Rectangle:"
 msgstr "Rechteck:"
 
 #: views/meta-box.php:109
-#, fuzzy
 msgid "Drag over a room — edges snap to walls automatically."
-msgstr "Drag over a room — edges snap to walls automatically."
+msgstr ""
+"Über Raum ziehen - Kanten richten sich automatisch an den Wänden aus."
 
 #: views/meta-box.php:110
 msgid "Polygon:"
@@ -333,7 +333,7 @@ msgstr "— Grundriss auswählen —"
 
 #: assets/js/block-editor.js:1 src/block-editor.js:32
 msgid "(no title)"
-msgstr "(no title)"
+msgstr "(kein Titel)"
 
 #: assets/js/block-editor.js:1 src/block-editor.js:58
 msgid "No floorplans found. Create one under Floorplans > Add New first."

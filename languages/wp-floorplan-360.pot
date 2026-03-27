@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-03-25T11:47:23+00:00\n"
+"POT-Creation-Date: 2026-03-27T09:22:25+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-floorplan-360\n"
@@ -39,106 +39,109 @@ msgid "Pick 360"
 msgstr ""
 
 #: includes/Admin/Assets.php:29
-msgid "Delete Room"
+#: views/meta-box.php:10
+msgid "Select Floorplan Image"
 msgstr ""
 
 #: includes/Admin/Assets.php:30
-msgid "Delete this room?"
+msgid "Delete Room"
 msgstr ""
 
 #: includes/Admin/Assets.php:31
-msgid "New Room"
+msgid "Delete this room?"
 msgstr ""
 
 #: includes/Admin/Assets.php:32
-msgid "Room Label"
+msgid "New Room"
 msgstr ""
 
 #: includes/Admin/Assets.php:33
-msgid "Detect Rooms"
+msgid "Room Label"
 msgstr ""
 
 #: includes/Admin/Assets.php:34
-msgid "Detecting…"
+msgid "Detect Rooms"
 msgstr ""
 
 #: includes/Admin/Assets.php:35
-msgid "Detected {n} room(s). Review polygons and assign 360° images."
+msgid "Detecting…"
 msgstr ""
 
 #: includes/Admin/Assets.php:36
-msgid "No rooms detected. Try a lower sensitivity value, or draw rooms manually."
+msgid "Detected {n} room(s). Review polygons and assign 360° images."
 msgstr ""
 
 #: includes/Admin/Assets.php:37
-msgid "Please upload a floorplan image first."
+msgid "No rooms detected. Try a lower sensitivity value, or draw rooms manually."
 msgstr ""
 
 #: includes/Admin/Assets.php:38
-msgid "Detection failed. Please draw rooms manually."
+msgid "Please upload a floorplan image first."
 msgstr ""
 
 #: includes/Admin/Assets.php:39
-msgid "Clear existing rooms and re-detect?"
+msgid "Detection failed. Please draw rooms manually."
 msgstr ""
 
 #: includes/Admin/Assets.php:40
-msgid "Delete all rooms? This cannot be undone until you save."
+msgid "Clear existing rooms and re-detect?"
 msgstr ""
 
 #: includes/Admin/Assets.php:41
-msgid "Clear All Rooms"
+msgid "Delete all rooms? This cannot be undone until you save."
 msgstr ""
 
 #: includes/Admin/Assets.php:42
+msgid "Clear All Rooms"
+msgstr ""
+
+#: includes/Admin/Assets.php:43
 #: views/meta-box.php:75
 msgid "Seed Rooms"
 msgstr ""
 
-#: includes/Admin/Assets.php:43
+#: includes/Admin/Assets.php:44
 msgid "✕ Cancel Seed Mode"
 msgstr ""
 
-#: includes/Admin/Assets.php:44
+#: includes/Admin/Assets.php:45
 msgid "Click once inside each room, then click Run Fill."
 msgstr ""
 
-#: includes/Admin/Assets.php:45
+#: includes/Admin/Assets.php:46
 #: views/meta-box.php:79
 msgid "Run Fill"
 msgstr ""
 
-#: includes/Admin/Assets.php:46
+#: includes/Admin/Assets.php:47
 #: views/meta-box.php:83
 msgid "Clear Seeds"
 msgstr ""
 
-#: includes/Admin/Assets.php:47
+#: includes/Admin/Assets.php:48
 #: views/meta-box.php:37
 msgid "Rectangle"
 msgstr ""
 
-#: includes/Admin/Assets.php:48
+#: includes/Admin/Assets.php:49
 msgid "✕ Cancel Rectangle"
 msgstr ""
 
-#: includes/Admin/Assets.php:49
+#: includes/Admin/Assets.php:50
 #: views/meta-box.php:41
 msgid "Polygon"
 msgstr ""
 
-#: includes/Admin/Assets.php:50
+#: includes/Admin/Assets.php:51
 msgid "✕ Cancel Polygon"
 msgstr ""
 
-#: includes/Admin/Assets.php:51
-#: includes/Admin/Assets.php:53
+#: includes/Admin/Assets.php:52
 #: views/meta-box.php:45
 msgid "Merge"
 msgstr ""
 
-#: includes/Admin/Assets.php:52
-#: includes/Admin/Assets.php:54
+#: includes/Admin/Assets.php:53
 msgid "Rooms must overlap or share an edge to merge."
 msgstr ""
 
@@ -150,29 +153,37 @@ msgstr ""
 msgid "Viewer Settings"
 msgstr ""
 
-#: includes/Admin/Editor.php:57
+#: includes/Admin/Editor.php:61
 msgid "Auto-rotate panorama"
 msgstr ""
 
-#: includes/Admin/Editor.php:62
+#: includes/Admin/Editor.php:66
 msgid "Active room colour:"
 msgstr ""
 
-#: includes/Admin/Editor.php:70
+#: includes/Admin/Editor.php:74
 msgid "Colour of the selected room polygon"
 msgstr ""
 
-#: includes/Block/Block.php:68
+#: includes/Admin/Editor.php:79
+msgid "Panorama start angle:"
+msgstr ""
+
+#: includes/Admin/Editor.php:88
+msgid "Horizontal rotation when panorama first loads (-180 to 180)"
+msgstr ""
+
+#: includes/Block/Block.php:70
 #: includes/Frontend/Assets.php:20
 msgid "View room"
 msgstr ""
 
-#: includes/Block/Block.php:69
+#: includes/Block/Block.php:71
 #: includes/Frontend/Assets.php:21
 msgid "No 360° image assigned to this room."
 msgstr ""
 
-#: includes/Block/Block.php:70
+#: includes/Block/Block.php:72
 #: includes/Frontend/Assets.php:22
 msgid "The 360° image could not be loaded."
 msgstr ""
@@ -198,33 +209,33 @@ msgstr ""
 msgid "Search Floorplans"
 msgstr ""
 
-#: templates/block-viewer.php:32
-#: templates/floorplan-template.php:31
+#: templates/block-viewer.php:33
+#: templates/floorplan-template.php:34
 msgid "No floorplan image uploaded."
 msgstr ""
 
-#: templates/block-viewer.php:39
-#: templates/floorplan-template.php:36
+#: templates/block-viewer.php:40
+#: templates/floorplan-template.php:39
 msgid "360 degree room view"
 msgstr ""
 
-#: templates/block-viewer.php:42
-#: templates/floorplan-template.php:38
+#: templates/block-viewer.php:43
+#: templates/floorplan-template.php:41
 msgid "Select a room on the floorplan to view it in 360°"
 msgstr ""
 
-#: templates/block-viewer.php:45
-#: templates/floorplan-template.php:41
+#: templates/block-viewer.php:46
+#: templates/floorplan-template.php:44
 msgid "Loading viewer..."
 msgstr ""
 
-#: templates/block-viewer.php:51
-#: templates/floorplan-template.php:48
+#: templates/block-viewer.php:53
+#: templates/floorplan-template.php:52
 msgid "360 degree room viewer"
 msgstr ""
 
-#: templates/block-viewer.php:57
-#: templates/floorplan-template.php:54
+#: templates/block-viewer.php:59
+#: templates/floorplan-template.php:58
 msgid "Room list"
 msgstr ""
 
@@ -250,10 +261,6 @@ msgstr ""
 
 #: views/meta-box.php:9
 msgid "Change Image"
-msgstr ""
-
-#: views/meta-box.php:10
-msgid "Select Floorplan Image"
 msgstr ""
 
 #: views/meta-box.php:17
