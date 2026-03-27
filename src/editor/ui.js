@@ -21,20 +21,30 @@ import { runSeedFill } from './detection/seed.js';
 export function initUI() {
     const $ = window.jQuery;
 
-    // --- Image picker ---
+    // --- Media frames ---
+    // wp.media() frames are expensive — each call creates a new Backbone view
+    // that accumulates in memory. We create each frame once and reuse it.
+    // The per-room 360° picker reuses a single frame by swapping the select
+    // callback each time so the correct room ID is always captured.
+
+    let floorplanFrame = null;
+
     $('#fp360_pick_image').on('click', function (e) {
         e.preventDefault();
         if (typeof wp === 'undefined' || !wp.media) return;
-        const frame = wp.media({ title: 'Select Floorplan', multiple: false });
-        frame.on('select', function () {
-            const attachment = frame.state().get('selection').first().toJSON();
-            $imageUrlInput.val(attachment.url);
-            if (imgEl) { imgEl.src = attachment.url; $(imgEl).show(); }
-            if (svg) $(svg).show();
-            if ($emptyState) $emptyState.hide();
-            requestRedraw();
-        });
-        frame.open();
+
+        if ( ! floorplanFrame ) {
+            floorplanFrame = wp.media({ title: fp360Admin.i18n.selectFloorplan || 'Select Floorplan', multiple: false });
+            floorplanFrame.on('select', function () {
+                const attachment = floorplanFrame.state().get('selection').first().toJSON();
+                $imageUrlInput.val(attachment.url);
+                if (imgEl) { imgEl.src = attachment.url; $(imgEl).show(); }
+                if (svg) $(svg).show();
+                if ($emptyState) $emptyState.hide();
+                requestRedraw();
+            });
+        }
+        floorplanFrame.open();
     });
 
     // --- SVG mouse events ---
@@ -314,16 +324,26 @@ export function initUI() {
 
     // --- Delegated handlers ---
 
+    let pick360Frame    = null;
+    let pick360Handler  = null;
+
     $(document).on('click', '.fp360-hs-pick360', function (e) {
         e.preventDefault();
-        const id    = $(this).data('id');
-        const frame = wp.media({ title: 'Select 360 Image', multiple: false });
-        frame.on('select', function () {
-            const attachment = frame.state().get('selection').first().toJSON();
+        const id = $(this).data('id');
+
+        if ( ! pick360Frame ) {
+            pick360Frame = wp.media({ title: fp360Admin.i18n.pick360 || 'Select 360 Image', multiple: false });
+        }
+
+        // Remove the previous select handler and attach one for this room.
+        if (pick360Handler) pick360Frame.off('select', pick360Handler);
+        pick360Handler = function () {
+            const attachment = pick360Frame.state().get('selection').first().toJSON();
             const hs = state.hotspots.find(h => h.id === id);
             if (hs) { hs.image360 = attachment.url; saveHotspots(); renderHotspotList(); }
-        });
-        frame.open();
+        };
+        pick360Frame.on('select', pick360Handler);
+        pick360Frame.open();
     });
 
     $(document).on('click', '.fp360-hs-delete', function () {

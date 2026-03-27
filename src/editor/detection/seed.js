@@ -82,9 +82,14 @@ function runSeedFillCore(img, seeds, tolerancePx) {
 
     if (validSeedCount === 0) return [];
 
-    // BFS watershed on `opened`, respecting exterior mask
-    const expanded = labels.slice();
-    const wQueue   = [];
+    // BFS watershed on `opened`, respecting exterior mask.
+    // A retry counter per pixel prevents an infinite loop when isolated interior
+    // pixels have no labelled neighbours yet — they get re-queued, but only up
+    // to MAX_RETRIES times before being silently dropped.
+    const MAX_RETRIES = 4;
+    const expanded  = labels.slice();
+    const retries   = new Uint8Array(W * H); // retry count per pixel, zero-initialised
+    const wQueue    = [];
 
     for (let i = 0; i < W*H; i++) {
         if (expanded[i] < 0) continue;
@@ -105,7 +110,12 @@ function runSeedFillCore(img, seeds, tolerancePx) {
         else if (y<H-1 && expanded[i+W]>=0) lbl = expanded[i+W];
         else if (x>0   && expanded[i-1]>=0) lbl = expanded[i-1];
         else if (x<W-1 && expanded[i+1]>=0) lbl = expanded[i+1];
-        if (lbl < 0) { wQueue.push(i); continue; }
+
+        if (lbl < 0) {
+            // No labelled neighbour yet — retry later, but only up to MAX_RETRIES.
+            if (retries[i] < MAX_RETRIES) { retries[i]++; wQueue.push(i); }
+            continue;
+        }
         expanded[i] = lbl;
         if (y>0   && opened[i-W]===255 && !exterior[i-W] && expanded[i-W]===-1) wQueue.push(i-W);
         if (y<H-1 && opened[i+W]===255 && !exterior[i+W] && expanded[i+W]===-1) wQueue.push(i+W);

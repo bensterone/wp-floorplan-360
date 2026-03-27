@@ -47,6 +47,7 @@ if ( ! $hotspots_json ) {
 
         <iframe id="fp360-viewer-frame"
                 class="fp360-viewer-frame"
+                sandbox="allow-scripts allow-same-origin"
                 allowfullscreen
                 title="<?php echo esc_attr__( '360 degree room viewer', 'wp-floorplan-360' ); ?>">
         </iframe>

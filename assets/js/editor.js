@@ -608,8 +608,13 @@ function runSeedFillCore(img, seeds, tolerancePx) {
   });
   if (validSeedCount === 0) return [];
 
-  // BFS watershed on `opened`, respecting exterior mask
+  // BFS watershed on `opened`, respecting exterior mask.
+  // A retry counter per pixel prevents an infinite loop when isolated interior
+  // pixels have no labelled neighbours yet — they get re-queued, but only up
+  // to MAX_RETRIES times before being silently dropped.
+  var MAX_RETRIES = 4;
   var expanded = labels.slice();
+  var retries = new Uint8Array(W * H); // retry count per pixel, zero-initialised
   var wQueue = [];
   for (var i = 0; i < W * H; i++) {
     if (expanded[i] < 0) continue;
@@ -629,7 +634,11 @@ function runSeedFillCore(img, seeds, tolerancePx) {
     var lbl = -1;
     if (_y > 0 && expanded[_i - W] >= 0) lbl = expanded[_i - W];else if (_y < H - 1 && expanded[_i + W] >= 0) lbl = expanded[_i + W];else if (_x > 0 && expanded[_i - 1] >= 0) lbl = expanded[_i - 1];else if (_x < W - 1 && expanded[_i + 1] >= 0) lbl = expanded[_i + 1];
     if (lbl < 0) {
-      wQueue.push(_i);
+      // No labelled neighbour yet — retry later, but only up to MAX_RETRIES.
+      if (retries[_i] < MAX_RETRIES) {
+        retries[_i]++;
+        wQueue.push(_i);
+      }
       continue;
     }
     expanded[_i] = lbl;
@@ -1397,26 +1406,34 @@ function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length)
 function initUI() {
   var $ = window.jQuery;
 
-  // --- Image picker ---
+  // --- Media frames ---
+  // wp.media() frames are expensive — each call creates a new Backbone view
+  // that accumulates in memory. We create each frame once and reuse it.
+  // The per-room 360° picker reuses a single frame by swapping the select
+  // callback each time so the correct room ID is always captured.
+
+  var floorplanFrame = null;
   $('#fp360_pick_image').on('click', function (e) {
     e.preventDefault();
     if (typeof wp === 'undefined' || !wp.media) return;
-    var frame = wp.media({
-      title: 'Select Floorplan',
-      multiple: false
-    });
-    frame.on('select', function () {
-      var attachment = frame.state().get('selection').first().toJSON();
-      _helpers_js__WEBPACK_IMPORTED_MODULE_1__.$imageUrlInput.val(attachment.url);
-      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl) {
-        _helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl.src = attachment.url;
-        $(_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl).show();
-      }
-      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) $(_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg).show();
-      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.$emptyState) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.$emptyState.hide();
-      (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
-    });
-    frame.open();
+    if (!floorplanFrame) {
+      floorplanFrame = wp.media({
+        title: fp360Admin.i18n.selectFloorplan || 'Select Floorplan',
+        multiple: false
+      });
+      floorplanFrame.on('select', function () {
+        var attachment = floorplanFrame.state().get('selection').first().toJSON();
+        _helpers_js__WEBPACK_IMPORTED_MODULE_1__.$imageUrlInput.val(attachment.url);
+        if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl) {
+          _helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl.src = attachment.url;
+          $(_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl).show();
+        }
+        if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) $(_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg).show();
+        if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.$emptyState) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.$emptyState.hide();
+        (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
+      });
+    }
+    floorplanFrame.open();
   });
 
   // --- SVG mouse events ---
@@ -1675,15 +1692,22 @@ function initUI() {
 
   // --- Delegated handlers ---
 
+  var pick360Frame = null;
+  var pick360Handler = null;
   $(document).on('click', '.fp360-hs-pick360', function (e) {
     e.preventDefault();
     var id = $(this).data('id');
-    var frame = wp.media({
-      title: 'Select 360 Image',
-      multiple: false
-    });
-    frame.on('select', function () {
-      var attachment = frame.state().get('selection').first().toJSON();
+    if (!pick360Frame) {
+      pick360Frame = wp.media({
+        title: fp360Admin.i18n.pick360 || 'Select 360 Image',
+        multiple: false
+      });
+    }
+
+    // Remove the previous select handler and attach one for this room.
+    if (pick360Handler) pick360Frame.off('select', pick360Handler);
+    pick360Handler = function pick360Handler() {
+      var attachment = pick360Frame.state().get('selection').first().toJSON();
       var hs = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.find(function (h) {
         return h.id === id;
       });
@@ -1692,8 +1716,9 @@ function initUI() {
         (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
         (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
       }
-    });
-    frame.open();
+    };
+    pick360Frame.on('select', pick360Handler);
+    pick360Frame.open();
   });
   $(document).on('click', '.fp360-hs-delete', function () {
     if (confirm(fp360Admin.i18n.deleteRoomConfirm)) {
