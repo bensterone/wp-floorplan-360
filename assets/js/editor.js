@@ -1190,7 +1190,7 @@ function closeShape() {
   _state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints = [];
   _state_js__WEBPACK_IMPORTED_MODULE_0__.state.drawing = false;
   var svg = document.getElementById('fp360-svg-overlay');
-  if (svg) svg.classList.remove('snap-active');
+  if (svg) svg.classList.remove('fp360-snap-active');
   (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
   (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
   (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();

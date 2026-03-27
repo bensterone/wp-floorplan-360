@@ -22,7 +22,7 @@ export function closeShape() {
     state.drawing = false;
 
     const svg = document.getElementById('fp360-svg-overlay');
-    if (svg) svg.classList.remove('snap-active');
+    if (svg) svg.classList.remove('fp360-snap-active');
 
     saveHotspots();
     renderHotspotList();
