@@ -26,6 +26,7 @@ class Assets {
             wp_localize_script( 'fp360-admin', 'fp360Admin', [
                 'i18n' => [
                     'pick360'            => __( 'Pick 360', 'wp-floorplan-360' ),
+                    'selectFloorplan'    => __( 'Select Floorplan Image', 'wp-floorplan-360' ),
                     'deleteRoom'         => __( 'Delete Room', 'wp-floorplan-360' ),
                     'deleteRoomConfirm'  => __( 'Delete this room?', 'wp-floorplan-360' ),
                     'newRoom'            => __( 'New Room', 'wp-floorplan-360' ),
