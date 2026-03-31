@@ -163,7 +163,7 @@ class Editor {
                         'points'   => $clean_points,
                     ];
                 }
-                update_post_meta( $post_id, '_fp360_hotspots', wp_json_encode( $clean_hotspots ) );
+                update_post_meta( $post_id, '_fp360_hotspots', wp_json_encode( $clean_hotspots, JSON_UNESCAPED_UNICODE ) );
             }
         }
 
