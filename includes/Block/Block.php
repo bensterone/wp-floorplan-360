@@ -1,7 +1,7 @@
 <?php
 namespace Floorplan360\Block;
 
-use Floorplan360\Core\Ajax;
+use Floorplan360\Frontend\Assets;
 
 class Block {
     public function register() {
@@ -39,10 +39,9 @@ class Block {
             return '';
         }
 
-        // Do not render if the current visitor cannot read this post.
-        // This prevents private or password-protected floorplans from being
-        // exposed publicly via a block embedded on another page.
-        if ( ! current_user_can( 'read_post', $post_id ) ) {
+        // Do not render if the floorplan is password-protected and the visitor
+        // has not yet entered the correct password.
+        if ( post_password_required( $post ) ) {
             return '';
         }
 
@@ -60,18 +59,7 @@ class Block {
         // Enqueue frontend assets — needed when the block appears on a non-floorplan post
         // where Frontend\Assets::enqueue() would not have fired.
         if ( ! wp_script_is( 'fp360-viewer', 'enqueued' ) ) {
-            wp_enqueue_style( 'fp360-viewer', FP360_URL . 'assets/css/viewer.css', [], FP360_VERSION );
-            wp_enqueue_script( 'fp360-viewer', FP360_URL . 'assets/js/viewer.js', [], FP360_VERSION, true );
-
-            wp_localize_script( 'fp360-viewer', 'fp360Config', [
-                'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-                'origin'  => Ajax::get_allowed_origin(),
-                'i18n'    => [
-                    'viewRoom'           => __( 'View room', 'wp-floorplan-360' ),
-                    'noPanoramaAssigned' => __( 'No 360° image assigned to this room.', 'wp-floorplan-360' ),
-                    'viewerLoadError'    => __( 'The 360° image could not be loaded.', 'wp-floorplan-360' ),
-                ],
-            ] );
+            Assets::enqueue_viewer_assets();
         }
 
         // Capture the template output

@@ -711,7 +711,7 @@ function generateId() {
   return 'hs_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
 }
 function nextColor() {
-  return _state_js__WEBPACK_IMPORTED_MODULE_0__.COLORS[_state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.length % _state_js__WEBPACK_IMPORTED_MODULE_0__.COLORS.length];
+  return _state_js__WEBPACK_IMPORTED_MODULE_0__.COLORS[_state_js__WEBPACK_IMPORTED_MODULE_0__.state.colorIndex++ % _state_js__WEBPACK_IMPORTED_MODULE_0__.COLORS.length];
 }
 function requestRedraw() {
   if (!_state_js__WEBPACK_IMPORTED_MODULE_0__.state.needsRedraw) {
@@ -997,6 +997,8 @@ var COLORS = ['#4fa8e8', '#e8734f', '#4fe87a', '#e84f9a', '#a84fe8', '#e8d94f', 
 var SNAP_DISTANCE = 0.025;
 var state = {
   hotspots: [],
+  colorIndex: 0,
+  // monotonically incremented by nextColor() — avoids collisions after deletions
   drawing: false,
   currentPoints: [],
   selectedIds: new Set(),
@@ -1403,6 +1405,59 @@ function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length)
 
 /* global fp360Admin, wp */
 
+/**
+ * Shows a non-blocking confirmation dialog styled to match the WP admin UI.
+ * Calls onConfirm() when the user clicks OK; does nothing on Cancel.
+ *
+ * @param {string}   message    The confirmation message to display.
+ * @param {Function} onConfirm  Callback executed when the user confirms.
+ */
+function fp360Confirm(message, onConfirm) {
+  var i18n = fp360Admin.i18n;
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;';
+  var dialog = document.createElement('div');
+  dialog.style.cssText = 'background:#fff;border-radius:4px;padding:24px;max-width:420px;width:90%;box-shadow:0 4px 20px rgba(0,0,0,.3);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;';
+  var msg = document.createElement('p');
+  msg.style.cssText = 'margin:0 0 20px;font-size:14px;line-height:1.5;color:#1d2327;';
+  msg.textContent = message;
+  var btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;';
+  var cancelBtn = document.createElement('button');
+  cancelBtn.className = 'button';
+  cancelBtn.textContent = i18n.cancel || 'Cancel';
+  var okBtn = document.createElement('button');
+  okBtn.className = 'button button-primary';
+  okBtn.textContent = i18n.ok || 'OK';
+  var close = function close() {
+    return document.body.removeChild(overlay);
+  };
+  cancelBtn.addEventListener('click', close);
+  okBtn.addEventListener('click', function () {
+    close();
+    onConfirm();
+  });
+  // Allow Escape to cancel
+  overlay.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') close();
+  });
+  btnRow.append(cancelBtn, okBtn);
+  dialog.append(msg, btnRow);
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  okBtn.focus();
+}
+
+/**
+ * Shows a brief error message in the existing detect-status bar.
+ * Replaces alert() so the browser UI thread is never blocked.
+ *
+ * @param {string} message  The message to display.
+ */
+function fp360Alert(message) {
+  var $ = window.jQuery;
+  $('#fp360-detect-status').text(message).removeClass('fp360-status--info fp360-status--success fp360-status--warn').addClass('fp360-status--error').show();
+}
 function initUI() {
   var $ = window.jQuery;
 
@@ -1612,7 +1667,7 @@ function initUI() {
     if (!a || !b) return;
     var merged = (0,_tools_merge_js__WEBPACK_IMPORTED_MODULE_5__.mergePolygons)(a, b);
     if (!merged) {
-      alert(fp360Admin.i18n.mergeError || 'Rooms must overlap or share an edge.');
+      fp360Alert(fp360Admin.i18n.mergeError || 'Rooms must overlap or share an edge.');
       return;
     }
     _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.filter(function (h) {
@@ -1667,24 +1722,27 @@ function initUI() {
   $('#fp360-detect-rooms').on('click', function () {
     var tolerance = parseInt($('#fp360-detect-tolerance').val(), 10) || 3;
     if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.length > 0) {
-      if (!confirm(fp360Admin.i18n.detectConfirmClear || 'Clear existing rooms and re-detect?')) return;
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = [];
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.clear();
-      (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
-      (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
-      (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
+      fp360Confirm(fp360Admin.i18n.detectConfirmClear || 'Clear existing rooms and re-detect?', function () {
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = [];
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.clear();
+        (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
+        (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
+        (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
+        (0,_detection_auto_js__WEBPACK_IMPORTED_MODULE_6__.detectRooms)(tolerance);
+      });
+      return;
     }
     (0,_detection_auto_js__WEBPACK_IMPORTED_MODULE_6__.detectRooms)(tolerance);
   });
   $('#fp360-clear-rooms').on('click', function () {
     if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.length === 0) return;
-    if (confirm(fp360Admin.i18n.clearAllConfirm || 'Delete all rooms?')) {
+    fp360Confirm(fp360Admin.i18n.clearAllConfirm || 'Delete all rooms?', function () {
       _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = [];
       _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.clear();
       (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
       (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
       (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
-    }
+    });
   });
   $('#fp360-detect-tolerance').on('input', function () {
     $('#fp360-detect-tolerance-val').text($(this).val());
@@ -1721,8 +1779,8 @@ function initUI() {
     pick360Frame.open();
   });
   $(document).on('click', '.fp360-hs-delete', function () {
-    if (confirm(fp360Admin.i18n.deleteRoomConfirm)) {
-      var id = $(this).data('id');
+    var id = $(this).data('id');
+    fp360Confirm(fp360Admin.i18n.deleteRoomConfirm || 'Delete this room?', function () {
       _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.filter(function (h) {
         return h.id !== id;
       });
@@ -1730,7 +1788,7 @@ function initUI() {
       (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
       (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
       (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
-    }
+    });
   });
   $(document).on('input', '.fp360-hs-label, .fp360-hs-img360', function () {
     var id = $(this).data('id');

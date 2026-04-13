@@ -14,6 +14,7 @@ export const SNAP_DISTANCE = 0.025;
 
 export const state = {
     hotspots:      [],
+    colorIndex:    0,   // monotonically incremented by nextColor() — avoids collisions after deletions
     drawing:       false,
     currentPoints: [],
     selectedIds:   new Set(),

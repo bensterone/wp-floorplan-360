@@ -79,11 +79,16 @@ class Ajax {
 
     public function render_viewer() {
         // Security headers first — before any output.
-        header_remove( 'X-Frame-Options' );
         header( 'X-Frame-Options: SAMEORIGIN' );
         header( "Content-Security-Policy: frame-ancestors 'self'" );
         header( 'Content-Type: text/html; charset=utf-8' );
         send_origin_headers();
+
+        // Verify nonce to prevent CSRF and limit enumeration surface.
+        $nonce = isset( $_GET['nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['nonce'] ) ) : '';
+        if ( ! wp_verify_nonce( $nonce, 'fp360_viewer' ) ) {
+            wp_die( 'Unauthorized.', '', [ 'response' => 403 ] );
+        }
 
         $img = isset( $_GET['img'] ) ? esc_url_raw( wp_unslash( $_GET['img'] ) ) : '';
 

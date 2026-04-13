@@ -33,7 +33,7 @@ export function generateId() {
 }
 
 export function nextColor() {
-    return COLORS[ state.hotspots.length % COLORS.length ];
+    return COLORS[ state.colorIndex++ % COLORS.length ];
 }
 
 export function requestRedraw() {

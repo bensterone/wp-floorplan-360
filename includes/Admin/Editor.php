@@ -130,7 +130,7 @@ class Editor {
 
         // Save floorplan image URL
         if ( isset( $_POST['fp360_image'] ) ) {
-            update_post_meta( $post_id, '_fp360_image', esc_url_raw( $_POST['fp360_image'] ) );
+            update_post_meta( $post_id, '_fp360_image', esc_url_raw( wp_unslash( $_POST['fp360_image'] ) ) );
         }
 
         // Save Hotspot JSON data

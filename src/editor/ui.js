@@ -18,6 +18,65 @@ import { runSeedFill } from './detection/seed.js';
 
 /* global fp360Admin, wp */
 
+/**
+ * Shows a non-blocking confirmation dialog styled to match the WP admin UI.
+ * Calls onConfirm() when the user clicks OK; does nothing on Cancel.
+ *
+ * @param {string}   message    The confirmation message to display.
+ * @param {Function} onConfirm  Callback executed when the user confirms.
+ */
+function fp360Confirm(message, onConfirm) {
+    const i18n = fp360Admin.i18n;
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;';
+
+    const dialog = document.createElement('div');
+    dialog.style.cssText = 'background:#fff;border-radius:4px;padding:24px;max-width:420px;width:90%;box-shadow:0 4px 20px rgba(0,0,0,.3);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;';
+
+    const msg = document.createElement('p');
+    msg.style.cssText = 'margin:0 0 20px;font-size:14px;line-height:1.5;color:#1d2327;';
+    msg.textContent = message;
+
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'button';
+    cancelBtn.textContent = i18n.cancel || 'Cancel';
+
+    const okBtn = document.createElement('button');
+    okBtn.className = 'button button-primary';
+    okBtn.textContent = i18n.ok || 'OK';
+
+    const close = () => document.body.removeChild(overlay);
+    cancelBtn.addEventListener('click', close);
+    okBtn.addEventListener('click', () => { close(); onConfirm(); });
+    // Allow Escape to cancel
+    overlay.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+
+    btnRow.append(cancelBtn, okBtn);
+    dialog.append(msg, btnRow);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    okBtn.focus();
+}
+
+/**
+ * Shows a brief error message in the existing detect-status bar.
+ * Replaces alert() so the browser UI thread is never blocked.
+ *
+ * @param {string} message  The message to display.
+ */
+function fp360Alert(message) {
+    const $ = window.jQuery;
+    $('#fp360-detect-status')
+        .text(message)
+        .removeClass('fp360-status--info fp360-status--success fp360-status--warn')
+        .addClass('fp360-status--error')
+        .show();
+}
+
 export function initUI() {
     const $ = window.jQuery;
 
@@ -236,7 +295,7 @@ export function initUI() {
         if (!a || !b) return;
         const merged = mergePolygons(a, b);
         if (!merged) {
-            alert(fp360Admin.i18n.mergeError || 'Rooms must overlap or share an edge.');
+            fp360Alert(fp360Admin.i18n.mergeError || 'Rooms must overlap or share an edge.');
             return;
         }
         state.hotspots = state.hotspots.filter(h => !state.selectedIds.has(h.id));
@@ -297,25 +356,28 @@ export function initUI() {
     $('#fp360-detect-rooms').on('click', function () {
         const tolerance = parseInt($('#fp360-detect-tolerance').val(), 10) || 3;
         if (state.hotspots.length > 0) {
-            if (!confirm(fp360Admin.i18n.detectConfirmClear || 'Clear existing rooms and re-detect?')) return;
-            state.hotspots = [];
-            state.selectedIds.clear();
-            saveHotspots();
-            renderHotspotList();
-            requestRedraw();
+            fp360Confirm(fp360Admin.i18n.detectConfirmClear || 'Clear existing rooms and re-detect?', () => {
+                state.hotspots = [];
+                state.selectedIds.clear();
+                saveHotspots();
+                renderHotspotList();
+                requestRedraw();
+                detectRooms(tolerance);
+            });
+            return;
         }
         detectRooms(tolerance);
     });
 
     $('#fp360-clear-rooms').on('click', function () {
         if (state.hotspots.length === 0) return;
-        if (confirm(fp360Admin.i18n.clearAllConfirm || 'Delete all rooms?')) {
+        fp360Confirm(fp360Admin.i18n.clearAllConfirm || 'Delete all rooms?', () => {
             state.hotspots = [];
             state.selectedIds.clear();
             saveHotspots();
             renderHotspotList();
             requestRedraw();
-        }
+        });
     });
 
     $('#fp360-detect-tolerance').on('input', function () {
@@ -347,14 +409,14 @@ export function initUI() {
     });
 
     $(document).on('click', '.fp360-hs-delete', function () {
-        if (confirm(fp360Admin.i18n.deleteRoomConfirm)) {
-            const id = $(this).data('id');
+        const id = $(this).data('id');
+        fp360Confirm(fp360Admin.i18n.deleteRoomConfirm || 'Delete this room?', () => {
             state.hotspots = state.hotspots.filter(h => h.id !== id);
             state.selectedIds.delete(id);
             saveHotspots();
             renderHotspotList();
             requestRedraw();
-        }
+        });
     });
 
     $(document).on('input', '.fp360-hs-label, .fp360-hs-img360', function () {

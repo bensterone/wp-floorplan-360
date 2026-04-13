@@ -51,6 +51,8 @@ class Assets {
                     'polyModeActive'     => __( '✕ Cancel Polygon', 'wp-floorplan-360' ),
                     'mergeRooms'         => __( 'Merge', 'wp-floorplan-360' ),
                     'mergeError'         => __( 'Rooms must overlap or share an edge to merge.', 'wp-floorplan-360' ),
+                    'cancel'             => __( 'Cancel', 'wp-floorplan-360' ),
+                    'ok'                 => __( 'OK', 'wp-floorplan-360' ),
                 ],
             ] );
         }

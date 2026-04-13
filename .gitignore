@@ -25,7 +25,8 @@ wp-cli.phar
 # --- Compiled / generated assets ---
 # The built block editor JS is intentionally KEPT in git
 # (so users can install without running npm).
-# Only exclude source maps if you don't want them public.
+# Source maps are dev-only artifacts — exclude them from the repo.
+assets/js/*.map
 assets/js/*.js
 !assets/js/editor.js
 !assets/js/block-editor.js

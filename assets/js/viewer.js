@@ -19,7 +19,8 @@
 
         const i18n          = fp360Config?.i18n || {};
         const allowedOrigin = fp360Config?.origin || '';
-        const viewerBaseUrl = (fp360Config?.ajaxUrl || '') + '?action=fp360_viewer';
+        const viewerNonce   = fp360Config?.viewerNonce || '';
+        const viewerBaseUrl = (fp360Config?.ajaxUrl || '') + '?action=fp360_viewer&nonce=' + encodeURIComponent(viewerNonce);
 
         // Per-floorplan viewer settings stored as data attributes on the wrapper
         const autoRotate     = wrap.dataset.autoRotate === '1';
