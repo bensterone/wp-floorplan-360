@@ -2,7 +2,7 @@
 # This file is distributed under the GPL-2.0+.
 msgid ""
 msgstr ""
-"Project-Id-Version: Floorplan 360 Viewer 1.7.2\n"
+"Project-Id-Version: Floorplan 360 Viewer 1.7.3\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-floorplan-360-1.3\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -245,6 +245,14 @@ msgstr ""
 #: templates/block-viewer.php:59
 #: templates/floorplan-template.php:58
 msgid "Room list"
+msgstr ""
+
+#: views/iframe-viewer.php:50
+msgid "Enable tilt to look around"
+msgstr ""
+
+#: views/iframe-viewer.php:59
+msgid "Tilt to look"
 msgstr ""
 
 #: views/iframe-viewer.php:42

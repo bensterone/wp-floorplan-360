@@ -2,7 +2,7 @@
 
 A WordPress plugin for housing cooperatives and property managers. Upload a floorplan image, draw room polygons in the admin editor, assign a 360° panorama to each room, and embed the result anywhere on your site — as a dedicated page or as a Gutenberg block inside any post or page.
 
-![Plugin Version](https://img.shields.io/badge/version-1.7.2-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
+![Plugin Version](https://img.shields.io/badge/version-1.7.3-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
 
 ---
 
@@ -23,6 +23,8 @@ A WordPress plugin for housing cooperatives and property managers. Upload a floo
 - **Multiple instances** — place the block several times on the same page with different floorplans. Each viewer operates independently.
 - **Responsive layout** — two-column floorplan/viewer layout on desktop, single-column stack on mobile with a scrollable room list.
 - **Accessible** — all room polygons are keyboard-navigable (`Tab` to focus, `Enter` or `Space` to open). ARIA roles and labels throughout.
+- **Scroll to zoom** — mouse wheel zooms the panorama on desktop; two-finger pinch zooms on touch devices and trackpads.
+- **Gyroscope / tilt to look** — on supported mobile devices a button appears in the viewer allowing visitors to look around by tilting their phone. iOS 13+ prompts for permission via a native dialog; Android grants it silently.
 - **WebGL fallback** — if the visitor's browser does not support WebGL, a clear error message is shown instead of a black box.
 
 ### Security and architecture
