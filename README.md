@@ -2,7 +2,7 @@
 
 A WordPress plugin for housing cooperatives and property managers. Upload a floorplan image, draw room polygons in the admin editor, assign a 360° panorama to each room, and embed the result anywhere on your site — as a dedicated page or as a Gutenberg block inside any post or page.
 
-![Plugin Version](https://img.shields.io/badge/version-1.7.0-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
+![Plugin Version](https://img.shields.io/badge/version-1.7.2-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
 
 ---
 
@@ -14,8 +14,8 @@ A WordPress plugin for housing cooperatives and property managers. Upload a floo
 - **Vertex drag editing** — click any polygon to select it, then drag its corner handles to fine-tune the shape without redrawing.
 - **Merge tool** — shift-click two overlapping rectangles and click Merge to combine them into a single L-shaped polygon. Designed for hallways and open-plan layouts.
 - **Colour-coded rooms** — each room is automatically assigned a distinct colour from a 12-colour palette, visible in both the editor and the frontend viewer.
-- **Viewer settings** — per-floorplan options for auto-rotating the panorama and choosing the active room highlight colour.
-- **Experimental tools** — auto room detection and click-to-seed fill are available behind an Experimental panel for supported floorplan types.
+- **Viewer settings** — per-floorplan options for auto-rotating the panorama, choosing the active room highlight colour, and setting the panorama start angle.
+- **Experimental tools** — auto room detection and click-to-seed fill are available behind an Experimental panel. See the note below.
 
 ### Frontend viewer
 - **360° panorama viewer** — powered by A-Frame. Visitors click a room and the panorama loads in an inline viewer without leaving the page.
@@ -27,7 +27,7 @@ A WordPress plugin for housing cooperatives and property managers. Upload a floo
 
 ### Security and architecture
 - **Iframe-based viewer** — A-Frame runs in a sandboxed iframe with strict `postMessage` origin validation, `X-Frame-Options`, and `Content-Security-Policy` headers.
-- **CDN-compatible image validation** — panorama URLs are validated against the WordPress media library, so setups using CDNs or object storage work correctly.
+- **CDN-compatible** — panorama URLs are validated against the WordPress media library on the server side. The frontend viewer accepts images from any origin passed by the trusted parent window, so CDN-offloaded or S3-hosted media works correctly.
 - **UUID validation** — hotspot IDs are validated against a strict regex rather than passed through `sanitize_key`, preventing silent data corruption.
 - **Modern PHP** — namespaced classes with PSR-4-style autoloading.
 - **Modular JavaScript** — editor logic is split into ES modules under `src/editor/` and compiled to a single bundle by webpack.
@@ -39,6 +39,7 @@ A WordPress plugin for housing cooperatives and property managers. Upload a floo
 
 - WordPress 5.9 or higher
 - PHP 7.4 or higher
+- Node.js 20 or higher (development only)
 - `assets/js/aframe.min.js` v1.7.1 (bundled)
 
 ---
@@ -115,20 +116,21 @@ Each floorplan has a **Viewer Settings** meta box in the admin sidebar:
 
 - **Auto-rotate panorama** — slowly rotates the camera when the panorama loads. Stops on user interaction.
 - **Active room colour** — the highlight colour used for the selected room polygon on the frontend.
+- **Panorama start angle** — horizontal rotation applied when the panorama first loads (-180 to 180 degrees). Useful for setting the default view direction so visitors see the most relevant part of the room immediately.
 
 ---
 
 ## Experimental tools
 
-The **Experimental** button in the toolbar reveals two automatic room detection tools. These work best on clean black-and-white floorplans. Results on complex or colour-filled plans will vary.
+> **These tools are not reliably functional in the current version.** Results vary widely depending on the floorplan image. They are left in place for future development. **Use the Rectangle or Polygon tool for all production work.**
+
+The **Experimental** button in the toolbar reveals two automatic room detection tools. They work only on clean, high-contrast black-and-white floorplans without furniture, colour fills, or decorative elements. On most real-world floorplan images they will produce incorrect or no results.
 
 ### Seed fill
 
-The more reliable of the two methods.
-
 1. Click **Seed Rooms** — the cursor changes to a crosshair.
 2. Click once inside each room. Numbered markers appear.
-3. Click **Run Fill** — the algorithm generates polygons from the marked regions.
+3. Click **Run Fill** — the algorithm attempts to generate polygons from the marked regions.
 4. Review results, delete false positives, and draw any missed rooms manually.
 5. **Clear Seeds** removes all markers without running the fill.
 
@@ -136,7 +138,7 @@ The more reliable of the two methods.
 
 Attempts to detect all rooms automatically with no clicks required. Click **Auto-Detect** and the algorithm runs immediately.
 
-The **Sensitivity** slider (2–8) controls how aggressively thin features (text, furniture, door arcs) are removed before detection. Higher values remove more features but may also erode small rooms.
+The **Sensitivity** slider (2–8) controls how aggressively thin features (text, furniture, door arcs) are removed before detection. This tool is unreliable on most real-world floorplans.
 
 ---
 
@@ -150,7 +152,7 @@ The **Sensitivity** slider (2–8) controls how aggressively thin features (text
 2. The parent sends `FP360_LOAD_IMAGE` with the panorama URL.
 3. The iframe confirms `FP360_IMAGE_LOADED` on success, or `FP360_IMAGE_ERROR` on failure.
 
-All messages are validated against the site's own origin. Panorama URLs from external domains are rejected at both the PHP and JavaScript level.
+All messages are validated against the site's own origin. The iframe only accepts `postMessage` events from the trusted WordPress parent window, and only loads images with `http` or `https` protocols — this allows CDN and S3-hosted panoramas to work correctly while blocking `javascript:` and `data:` URIs.
 
 **Wall snapping** — when a rectangle is drawn, the plugin rasterises the floorplan image, applies a morphological opening to remove thin features, then searches outward from each edge for the nearest dark wall pixel and snaps to it.
 
@@ -161,14 +163,12 @@ All messages are validated against the site's own origin. Panorama URLs from ext
 | Measure | Detail |
 |---|---|
 | Origin validation | `postMessage` events accepted only from the site's own origin |
-| URL validation | Panorama URLs validated against local media library — CDN-compatible |
+| URL validation | Server-side: panorama URLs validated against local media library — CDN-compatible. Client-side: only `http`/`https` protocols accepted. |
 | Frame protection | Iframe includes `X-Frame-Options: SAMEORIGIN` and `CSP: frame-ancestors 'self'` |
 | Input sanitisation | `esc_url_raw`, `sanitize_text_field`, UUID regex validation, coordinate clamping |
 | Nonce verification | All meta box saves verified with `wp_verify_nonce` |
 | Capability checks | `current_user_can('edit_post')` enforced on every save |
 | WebGL check | A-Frame not loaded if WebGL unavailable — clear error shown instead |
-
-> **Note:** Panorama images must be accessible from the WordPress server. External URLs from unrelated domains are intentionally blocked.
 
 ---
 
@@ -261,7 +261,6 @@ Then open `languages/wp-floorplan-360-de_DE.po` in Poedit, update from the POT f
 
 **The 360° viewer shows a black box**
 - Confirm `assets/js/aframe.min.js` exists in the plugin folder.
-- Ensure the panorama image is hosted on the same domain or in the WordPress media library.
 - Check the browser console for CSP or origin errors.
 
 **Clicking a room does nothing**
@@ -269,13 +268,17 @@ Then open `languages/wp-floorplan-360-de_DE.po` in Poedit, update from the POT f
 - Ensure the polygon has at least three points.
 - Re-save the floorplan post.
 
+**The 360° image doesn't load (CDN or S3)**
+- Ensure the image URL uses `http` or `https`.
+- If the browser console shows a CORS error, confirm your CDN or storage bucket returns an `Access-Control-Allow-Origin` header.
+
 **The rectangle tool does not snap to walls**
-- The image must be in the WordPress Media Library — pixel data cannot be read from cross-origin images.
+- The image must be in the WordPress Media Library — pixel data cannot be read from cross-origin images without correct CORS headers.
 - Try adjusting the sensitivity slider if walls are being eroded or missed.
 
 **Auto-detect / Seed fill produces poor results**
-- These tools work best on clean black-and-white floorplans without furniture or colour fills.
-- Use the Rectangle or Polygon tool as the reliable fallback.
+- These tools are experimental and unreliable on most real-world floorplans.
+- Use the Rectangle or Polygon tool instead.
 
 ---
 

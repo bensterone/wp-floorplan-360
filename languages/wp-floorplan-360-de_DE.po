@@ -2,11 +2,11 @@
 # This file is distributed under the GPL-2.0+.
 msgid ""
 msgstr ""
-"Project-Id-Version: Floorplan 360 Viewer 1.7.0\n"
+"Project-Id-Version: Floorplan 360 Viewer 1.7.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-"
 "floorplan-360-1.3\n"
 "POT-Creation-Date: 2026-03-27T09:22:25+00:00\n"
-"PO-Revision-Date: 2026-03-27 10:30+0100\n"
+"PO-Revision-Date: 2026-04-13 14:04+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: de\n"
@@ -51,7 +51,7 @@ msgstr "Diesen Raum löschen?"
 
 #: includes/Admin/Assets.php:32
 msgid "New Room"
-msgstr "Neues Zimmer"
+msgstr "Neuer Raum"
 
 #: includes/Admin/Assets.php:33
 msgid "Room Label"
@@ -77,7 +77,7 @@ msgstr ""
 
 #: includes/Admin/Assets.php:38
 msgid "Please upload a floorplan image first."
-msgstr "Kein Grundriss-Bild hochgeladen."
+msgstr "Bitte Grundriss hochladen."
 
 #: includes/Admin/Assets.php:39
 msgid "Detection failed. Please draw rooms manually."
@@ -142,6 +142,14 @@ msgid "Rooms must overlap or share an edge to merge."
 msgstr ""
 "Räume müssen überlappen oder sich eine Kante teilen, um zusammengeführt "
 "werden zu können."
+
+#: includes/Admin/Assets.php:54
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: includes/Admin/Assets.php:55
+msgid "OK"
+msgstr "OK"
 
 #: includes/Admin/Editor.php:13
 msgid "Floorplan Editor"
@@ -281,7 +289,7 @@ msgstr ""
 
 #: views/meta-box.php:90
 msgid "Auto-Detect"
-msgstr "Auto-Rotation Panorama"
+msgstr "Erkennung"
 
 #: views/meta-box.php:93
 msgid "Sensitivity:"
@@ -306,7 +314,7 @@ msgstr "Polygon:"
 
 #: views/meta-box.php:111
 msgid "Click to place points, double-click to close."
-msgstr "Klick zum platzieren, doppel-klick zum schließen."
+msgstr "Klick zum platzieren, Doppel-Klick zum schließen."
 
 #: views/meta-box.php:112
 msgid "Shift-click two rooms then Merge for L-shapes."
@@ -333,7 +341,7 @@ msgstr "— Grundriss auswählen —"
 
 #: assets/js/block-editor.js:1 src/block-editor.js:32
 msgid "(no title)"
-msgstr "(kein Titel)"
+msgstr "(no title)"
 
 #: assets/js/block-editor.js:1 src/block-editor.js:58
 msgid "No floorplans found. Create one under Floorplans > Add New first."
