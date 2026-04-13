@@ -25,10 +25,9 @@ class Assets {
         wp_enqueue_script( 'fp360-viewer', FP360_URL . 'assets/js/viewer.js', [], FP360_VERSION, true );
 
         wp_localize_script( 'fp360-viewer', 'fp360Config', [
-            'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
-            'origin'      => Ajax::get_allowed_origin(),
-            'viewerNonce' => wp_create_nonce( 'fp360_viewer' ),
-            'i18n'        => [
+            'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+            'origin'  => Ajax::get_allowed_origin(),
+            'i18n'    => [
                 'viewRoom'           => __( 'View room', 'wp-floorplan-360' ),
                 'noPanoramaAssigned' => __( 'No 360° image assigned to this room.', 'wp-floorplan-360' ),
                 'viewerLoadError'    => __( 'The 360° image could not be loaded.', 'wp-floorplan-360' ),

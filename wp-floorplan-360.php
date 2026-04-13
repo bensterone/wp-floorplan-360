@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Floorplan 360 Viewer
  * Description: Interactive floorplans with polygon hotspots and 360° room viewer.
- * Version: 1.7.1
+ * Version: 1.7.2
  * Author: Ben Sturm / WBG Zentrum eG
  * License: GPL-2.0+
  * Text Domain: wp-floorplan-360
@@ -27,7 +27,7 @@ if ( version_compare( PHP_VERSION, '7.4', '<' ) ) {
     return;
 }
 
-define( 'FP360_VERSION', '1.7.1' );
+define( 'FP360_VERSION', '1.7.2' );
 define( 'FP360_PATH', plugin_dir_path( __FILE__ ) );
 define( 'FP360_URL', plugin_dir_url( __FILE__ ) );
 define( 'FP360_CPT', 'floorplan' );

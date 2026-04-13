@@ -98,8 +98,11 @@
         function isUrlSafe(url) {
             if (!url) return false;
             try {
+                // Only enforce a safe protocol — the message origin check above
+                // already guarantees this URL came from the trusted parent window,
+                // so a strict same-origin check here would break CDN-offloaded media.
                 const parsed = new URL(url, window.location.href);
-                return parsed.origin === allowedOrigin && /^https?:$/i.test(parsed.protocol);
+                return /^https?:$/i.test(parsed.protocol);
             } catch (e) { return false; }
         }
 
