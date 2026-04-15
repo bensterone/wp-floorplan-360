@@ -277,3 +277,111 @@
     border: 1px solid rgba(0, 0, 0, 0.15);
     flex-shrink: 0;
 }
+
+/* =========================================================================
+   8. Fullscreen & Back buttons
+   Injected by viewer.js into .fp360-right/.#fp360-right.
+   Both are semi-transparent pills that float above the iframe.
+   The back button is only visible in fullscreen; the fullscreen button
+   appears once the first panorama is loaded.
+   ========================================================================= */
+
+/* Shared base */
+.fp360-fullscreen-btn,
+.fp360-back-btn {
+    position: absolute;
+    z-index: 20;
+    display: none; /* shown via JS */
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+    /* Prevent pointer events bleeding into the iframe when the button isn't displayed */
+    pointer-events: auto;
+}
+
+.fp360-fullscreen-btn:hover,
+.fp360-back-btn:hover {
+    background: rgba(0, 0, 0, 0.75);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.fp360-fullscreen-btn:active,
+.fp360-back-btn:active {
+    transform: scale(0.95);
+}
+
+/* Fullscreen button — top-right corner */
+.fp360-fullscreen-btn {
+    top: 12px;
+    right: 12px;
+    /* Icon-only on desktop; the aria-label covers accessibility */
+    padding: 8px 10px;
+}
+
+/* Back button — top-left corner, shown only in fullscreen */
+.fp360-back-btn {
+    top: 12px;
+    left: 12px;
+    /* Slightly larger tap target for use while holding a tilted phone */
+    padding: 10px 16px;
+    font-size: 14px;
+}
+
+/* SVG icons inside the buttons inherit the button's colour */
+.fp360-fullscreen-btn svg,
+.fp360-back-btn svg {
+    flex-shrink: 0;
+    display: inline;
+}
+
+/* =========================================================================
+   9. Fake fullscreen — CSS fallback for iOS Safari
+   Applied by viewer.js when requestFullscreen() is unavailable.
+   ========================================================================= */
+
+.fp360-right.fp360-fake-fullscreen,
+#fp360-right.fp360-fake-fullscreen {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 999999 !important;
+    width: 100vw !important;
+    height: 100svh !important; /* svh = small viewport height — avoids iOS browser chrome */
+    max-width: none !important;
+    border-radius: 0 !important;
+}
+
+/* Prevent the page from scrolling behind the fake-fullscreen overlay */
+body.fp360-body-fullscreen {
+    overflow: hidden;
+}
+
+/* =========================================================================
+   10. DXF SVG floorplan background
+   The inline SVG from _fp360_svg_markup fills the left column exactly
+   like the raster img does.
+   ========================================================================= */
+
+.fp360-floorplan-bg {
+    display: block;
+    width: 100%;
+    line-height: 0;
+}
+
+.fp360-floorplan-bg--svg svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}

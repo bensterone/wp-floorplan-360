@@ -10,6 +10,10 @@ class Plugin {
         // Register Post Type
         ( new PostType() )->register();
 
+        // DXF support: MIME type allowance + meta field registration
+        ( new DxfUpload() )->register();
+        ( new DxfMeta() )->register();
+
         // AJAX Handling (Viewer Iframe)
         ( new Ajax() )->register();
 

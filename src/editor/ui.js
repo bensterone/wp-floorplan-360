@@ -15,6 +15,7 @@ import { finishRect } from './tools/rectangle.js';
 import { mergePolygons } from './tools/merge.js';
 import { detectRooms } from './detection/auto.js';
 import { runSeedFill } from './detection/seed.js';
+import { setFloorplanBackground } from './helpers/floorplan-background.js';
 
 /* global fp360Admin, wp */
 
@@ -77,6 +78,75 @@ function fp360Alert(message) {
         .show();
 }
 
+/**
+ * Clear _fp360_svg_markup (and related DXF meta) on the current post via REST.
+ * Called when the user picks a raster image to replace the vector floorplan.
+ */
+async function clearSvgMeta() {
+    const postId = fp360Admin.postId;
+    if (!postId) return;
+    return wp.apiFetch({
+        path:   `/wp/v2/floorplan/${postId}`,
+        method: 'POST',
+        data:   {
+            meta: {
+                _fp360_svg_markup:        '',
+                _fp360_dxf_attachment_id: 0,
+                _fp360_dxf_layers:        '',
+            },
+        },
+    });
+}
+
+/**
+ * Upload a DXF File object to the WordPress media library.
+ * Returns the new attachment ID (integer).
+ *
+ * @param {File}   file
+ * @param {number} postId  Attach the media to this post.
+ * @returns {Promise<number>}
+ */
+async function uploadDxfToMedia(file, postId) {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (postId) formData.append('post', String(postId));
+
+    const response = await wp.apiFetch({
+        path:   '/wp/v2/media',
+        method: 'POST',
+        body:   formData,
+    });
+
+    const attachmentId = response && response.id ? response.id : 0;
+
+    if (attachmentId && postId) {
+        await wp.apiFetch({
+            path:   `/wp/v2/floorplan/${postId}`,
+            method: 'POST',
+            data:   { meta: { _fp360_dxf_attachment_id: attachmentId } },
+        });
+    }
+    return attachmentId;
+}
+
+/**
+ * Build a tiny placeholder rectangle around a normalised centre point.
+ * Used when pre-populating rooms from DXF text labels.
+ *
+ * @param {number} cx  0-1 normalised X
+ * @param {number} cy  0-1 normalised Y
+ * @returns {Array<{x:number, y:number}>}
+ */
+function centreToRect(cx, cy) {
+    const hw = 0.06, hh = 0.04;
+    return [
+        { x: cx - hw, y: cy - hh },
+        { x: cx + hw, y: cy - hh },
+        { x: cx + hw, y: cy + hh },
+        { x: cx - hw, y: cy + hh },
+    ];
+}
+
 export function initUI() {
     const $ = window.jQuery;
 
@@ -97,13 +167,92 @@ export function initUI() {
             floorplanFrame.on('select', function () {
                 const attachment = floorplanFrame.state().get('selection').first().toJSON();
                 $imageUrlInput.val(attachment.url);
-                if (imgEl) { imgEl.src = attachment.url; $(imgEl).show(); }
-                if (svg) $(svg).show();
-                if ($emptyState) $emptyState.hide();
-                requestRedraw();
+
+                // Raster replaces vector: clear SVG meta via REST then update the canvas
+                clearSvgMeta().finally(() => {
+                    const container = document.getElementById('fp360-canvas-container');
+                    setFloorplanBackground(container, { imageUrl: attachment.url });
+                    requestRedraw();
+                });
             });
         }
         floorplanFrame.open();
+    });
+
+    // --- Import DXF button ---
+    $('#fp360-import-dxf').on('click', async function () {
+        const { mountDxfImporter } = await import('./dxf/index.js');
+        const container = document.getElementById('fp360-canvas-container');
+
+        mountDxfImporter(document.body, {
+            onCancel() { /* modal already removed itself */ },
+            async onApply(svgMarkup, rooms, dxfFile, layersJson) {
+                const i18n   = fp360Admin.i18n;
+                const postId = fp360Admin.postId;
+
+                setDetectionStatus('processing');
+                $('#fp360-detect-status').text(i18n.dxfSaving || 'Saving…').show();
+
+                try {
+                    // 1. Save SVG markup + clear raster image URL
+                    await wp.apiFetch({
+                        path:   `/wp/v2/floorplan/${postId}`,
+                        method: 'POST',
+                        data:   {
+                            meta: {
+                                _fp360_svg_markup: svgMarkup,
+                                _fp360_dxf_layers: layersJson,
+                                _fp360_image:      '',
+                            },
+                        },
+                    });
+
+                    // 2. Upload DXF to media library for archival (non-blocking)
+                    if (dxfFile) {
+                        uploadDxfToMedia(dxfFile, postId).catch(err => {
+                            console.warn('[fp360-dxf] DXF media upload failed (archival only):', err);
+                        });
+                    }
+
+                    // 3. Update the editor canvas
+                    $imageUrlInput.val('');
+                    setFloorplanBackground(container, { svgMarkup });
+                    requestRedraw();
+
+                    // 4. Pre-populate rooms if list is empty
+                    if (rooms.length > 0 && state.hotspots.length === 0) {
+                        rooms.forEach(room => {
+                            state.hotspots.push({
+                                id:       generateId(),
+                                label:    room.label,
+                                image360: '',
+                                color:    nextColor(),
+                                points:   centreToRect(room.normX, room.normY),
+                            });
+                        });
+                        saveHotspots();
+                        renderHotspotList();
+                        requestRedraw();
+                    }
+
+                    setDetectionStatus('idle');
+                    $('#fp360-detect-status')
+                        .text(i18n.dxfSaved || 'DXF floorplan saved.')
+                        .removeClass('fp360-status--error fp360-status--info')
+                        .addClass('fp360-status--success')
+                        .show();
+
+                } catch (err) {
+                    console.error('[fp360-dxf] Save error:', err);
+                    setDetectionStatus('idle');
+                    $('#fp360-detect-status')
+                        .text(i18n.dxfSaveError || 'Failed to save the DXF floorplan. Please try again.')
+                        .removeClass('fp360-status--success fp360-status--info')
+                        .addClass('fp360-status--error')
+                        .show();
+                }
+            },
+        });
     });
 
     // --- SVG mouse events ---

@@ -31,6 +31,9 @@ class Assets {
                 'viewRoom'           => __( 'View room', 'wp-floorplan-360' ),
                 'noPanoramaAssigned' => __( 'No 360° image assigned to this room.', 'wp-floorplan-360' ),
                 'viewerLoadError'    => __( 'The 360° image could not be loaded.', 'wp-floorplan-360' ),
+                'enterFullscreen'    => __( 'Enter fullscreen', 'wp-floorplan-360' ),
+                'exitFullscreen'     => __( 'Exit fullscreen', 'wp-floorplan-360' ),
+                'back'               => __( 'Back', 'wp-floorplan-360' ),
             ],
         ] );
     }

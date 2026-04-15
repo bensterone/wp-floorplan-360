@@ -31,6 +31,7 @@ class Editor {
         wp_nonce_field( 'fp360_save_action', 'fp360_nonce_field' );
 
         $floorplan_img = get_post_meta( $post->ID, '_fp360_image', true );
+        $svg_markup    = get_post_meta( $post->ID, '_fp360_svg_markup', true );
         $hotspots_json = get_post_meta( $post->ID, '_fp360_hotspots', true );
 
         if ( ! $hotspots_json ) {

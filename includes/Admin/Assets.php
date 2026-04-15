@@ -18,12 +18,15 @@ class Assets {
             wp_enqueue_script(
                 'fp360-admin',
                 FP360_URL . 'assets/js/editor.js',
-                [ 'jquery', 'media-views' ],
+                [ 'jquery', 'media-views', 'wp-api-fetch' ],
                 FP360_VERSION,
                 true
             );
 
             wp_localize_script( 'fp360-admin', 'fp360Admin', [
+                'postId'   => get_the_ID(),
+                'restUrl'  => esc_url_raw( rest_url() ),
+                'nonce'    => wp_create_nonce( 'wp_rest' ),
                 'i18n' => [
                     'pick360'            => __( 'Pick 360', 'wp-floorplan-360' ),
                     'selectFloorplan'    => __( 'Select Floorplan Image', 'wp-floorplan-360' ),
@@ -53,6 +56,10 @@ class Assets {
                     'mergeError'         => __( 'Rooms must overlap or share an edge to merge.', 'wp-floorplan-360' ),
                     'cancel'             => __( 'Cancel', 'wp-floorplan-360' ),
                     'ok'                 => __( 'OK', 'wp-floorplan-360' ),
+                    'importDxf'          => __( 'Import DXF', 'wp-floorplan-360' ),
+                    'dxfSaving'          => __( 'Saving…', 'wp-floorplan-360' ),
+                    'dxfSaved'           => __( 'DXF floorplan saved.', 'wp-floorplan-360' ),
+                    'dxfSaveError'       => __( 'Failed to save the DXF floorplan. Please try again.', 'wp-floorplan-360' ),
                 ],
             ] );
         }

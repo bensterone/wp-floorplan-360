@@ -3,21 +3,24 @@
   "version": "1.7.3",
   "description": "Build tooling for the Floorplan 360 block editor component.",
   "scripts": {
-    "build":         "npm run build:block && npm run build:editor",
-    "build:block":   "wp-scripts build src/block-editor.js --output-path=assets/js --output-filename=block-editor.js",
-    "build:editor":  "webpack --config webpack.editor.js",
-    "start":         "wp-scripts start src/block-editor.js --output-path=assets/js --output-filename=block-editor.js",
-    "start:editor":  "webpack --config webpack.editor.js --watch",
-    "lint:js":       "wp-scripts lint-js src/"
+    "build": "npm run build:block && npm run build:editor",
+    "build:block": "wp-scripts build src/block-editor.js --output-path=assets/js --output-filename=block-editor.js",
+    "build:editor": "webpack --config webpack.editor.js",
+    "start": "wp-scripts start src/block-editor.js --output-path=assets/js --output-filename=block-editor.js",
+    "start:editor": "webpack --config webpack.editor.js --watch",
+    "lint:js": "wp-scripts lint-js src/"
   },
   "engines": {
     "node": ">=20.0.0"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.24.0",
     "@wordpress/scripts": "^30.0.0",
-    "@babel/preset-env":  "^7.24.0",
-    "babel-loader":       "^9.1.0",
-    "webpack":            "^5.0.0",
-    "webpack-cli":        "^5.0.0"
+    "babel-loader": "^9.1.0",
+    "webpack": "^5.0.0",
+    "webpack-cli": "^5.0.0"
+  },
+  "dependencies": {
+    "dompurify": "^3.4.0"
   }
 }

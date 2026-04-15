@@ -1,7 +1,7 @@
 <?php defined('ABSPATH') || exit; ?>
 <div id="fp360-editor-wrap">
-    <div style="margin-bottom: 15px;">
-        <label><strong><?php esc_html_e( 'Floorplan Image', 'wp-floorplan-360' ); ?></strong></label><br>
+    <div style="margin-bottom: 15px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <label><strong><?php esc_html_e( 'Floorplan', 'wp-floorplan-360' ); ?></strong></label>
         <input type="hidden" name="fp360_image" id="fp360_image_url" value="<?php echo esc_attr( $floorplan_img ); ?>">
         <button type="button" class="button button-large" id="fp360_pick_image">
             <?php
@@ -10,10 +10,14 @@
                 : esc_html__( 'Select Floorplan Image', 'wp-floorplan-360' );
             ?>
         </button>
+        <button type="button" class="button button-large" id="fp360-import-dxf">
+            <span class="dashicons dashicons-media-code" style="padding-top:4px;"></span>
+            <?php esc_html_e( 'Import DXF', 'wp-floorplan-360' ); ?>
+        </button>
     </div>
 
     <div id="fp360-canvas-container">
-        <p id="fp360-empty-state" <?php echo $floorplan_img ? 'style="display:none;"' : ''; ?>>
+        <p id="fp360-empty-state" <?php echo ( $floorplan_img || $svg_markup ) ? 'style="display:none;"' : ''; ?>>
             <?php esc_html_e( 'Floorplan preview will appear here.', 'wp-floorplan-360' ); ?>
         </p>
         <img id="fp360-floorplan-img"
@@ -22,8 +26,15 @@
              alt=""
              style="display: <?php echo $floorplan_img ? 'block' : 'none'; ?>;">
 
+        <?php if ( $svg_markup ) : ?>
+        <div id="fp360-svg-background"
+             style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;">
+            <?php echo wp_kses( $svg_markup, \Floorplan360\Core\DxfMeta::svg_kses_allowed() ); ?>
+        </div>
+        <?php endif; ?>
+
         <svg id="fp360-svg-overlay"
-             style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:10; display: <?php echo $floorplan_img ? 'block' : 'none'; ?>;">
+             style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:10; display: <?php echo ( $floorplan_img || $svg_markup ) ? 'block' : 'none'; ?>;">
         </svg>
     </div>
 

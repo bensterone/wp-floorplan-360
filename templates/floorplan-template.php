@@ -9,6 +9,7 @@ while ( have_posts() ) :
 
     $post_id         = get_the_ID();
     $floorplan_img   = get_post_meta( $post_id, '_fp360_image', true );
+    $svg_markup      = get_post_meta( $post_id, '_fp360_svg_markup', true );
     $hotspots_json   = get_post_meta( $post_id, '_fp360_hotspots', true );
     $auto_rotate     = get_post_meta( $post_id, '_fp360_auto_rotate', true );
     $highlight_color = get_post_meta( $post_id, '_fp360_highlight_color', true ) ?: '#0078ff';
@@ -25,7 +26,22 @@ while ( have_posts() ) :
          data-highlight="<?php echo esc_attr( $highlight_color ); ?>"
          data-start-angle="<?php echo esc_attr( $start_angle ); ?>">
         <div id="fp360-left" class="fp360-left">
-            <?php if ( $floorplan_img ) : ?>
+
+            <?php if ( $svg_markup ) : ?>
+                <?php
+                // Vector floorplan — inject inline SVG (sanitised on save; belt-and-suspenders here too).
+                $allowed_svg = \Floorplan360\Core\DxfMeta::svg_kses_allowed();
+                ?>
+                <div class="fp360-floorplan-bg fp360-floorplan-bg--svg">
+                    <?php echo wp_kses( $svg_markup, $allowed_svg ); ?>
+                </div>
+                <svg id="fp360-svg-overlay"
+                     class="fp360-svg-overlay"
+                     data-hotspots='<?php echo esc_attr( $hotspots_json ); ?>'>
+                </svg>
+
+            <?php elseif ( $floorplan_img ) : ?>
+                <?php // Raster floorplan — standard <img> background ?>
                 <img id="fp360-floorplan-img"
                      class="fp360-floorplan-img"
                      src="<?php echo esc_url( $floorplan_img ); ?>"
@@ -35,11 +51,13 @@ while ( have_posts() ) :
                      class="fp360-svg-overlay"
                      data-hotspots='<?php echo esc_attr( $hotspots_json ); ?>'>
                 </svg>
+
             <?php else : ?>
                 <p class="fp360-no-image-notice">
                     <?php esc_html_e( 'No floorplan image uploaded.', 'wp-floorplan-360' ); ?>
                 </p>
             <?php endif; ?>
+
         </div>
 
         <div id="fp360-right" class="fp360-right" role="region" aria-label="<?php echo esc_attr__( '360 degree room view', 'wp-floorplan-360' ); ?>">
