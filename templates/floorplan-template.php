@@ -28,12 +28,9 @@ while ( have_posts() ) :
         <div id="fp360-left" class="fp360-left">
 
             <?php if ( $svg_markup ) : ?>
-                <?php
-                // Vector floorplan — inject inline SVG (sanitised on save; belt-and-suspenders here too).
-                $allowed_svg = \Floorplan360\Core\DxfMeta::svg_kses_allowed();
-                ?>
+                <?php // Vector floorplan — inject inline SVG (sanitised on save; kses_svg restores viewBox casing). ?>
                 <div class="fp360-floorplan-bg fp360-floorplan-bg--svg">
-                    <?php echo wp_kses( $svg_markup, $allowed_svg ); ?>
+                    <?php echo \Floorplan360\Core\DxfMeta::kses_svg( $svg_markup ); ?>
                 </div>
                 <svg id="fp360-svg-overlay"
                      class="fp360-svg-overlay"

@@ -23,12 +23,15 @@ wp-cli.phar
 
 
 # --- Compiled / generated assets ---
-# The built block editor JS is intentionally KEPT in git
-# (so users can install without running npm).
+# Built JS is kept in git so users can install without running npm.
 # Source maps are dev-only artifacts — exclude them from the repo.
+# Webpack 5 emits dynamic-import and Web Worker chunks as separate files
+# (e.g. src_editor_dxf_index_js.editor.js). Whitelist all *.editor.js so
+# those chunks are committed alongside editor.js.
 assets/js/*.map
 assets/js/*.js
 !assets/js/editor.js
+!assets/js/*.editor.js
 !assets/js/block-editor.js
 !assets/js/aframe.min.js
 !assets/js/viewer.js

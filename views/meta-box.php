@@ -29,7 +29,7 @@
         <?php if ( $svg_markup ) : ?>
         <div id="fp360-svg-background"
              style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;">
-            <?php echo wp_kses( $svg_markup, \Floorplan360\Core\DxfMeta::svg_kses_allowed() ); ?>
+            <?php echo \Floorplan360\Core\DxfMeta::kses_svg( $svg_markup ); ?>
         </div>
         <?php endif; ?>
 
