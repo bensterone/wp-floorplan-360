@@ -46,6 +46,7 @@ class Block {
         }
 
         $floorplan_img   = get_post_meta( $post_id, '_fp360_image', true );
+        $svg_markup      = get_post_meta( $post_id, '_fp360_svg_markup', true );
         $hotspots_json   = get_post_meta( $post_id, '_fp360_hotspots', true );
         $auto_rotate     = get_post_meta( $post_id, '_fp360_auto_rotate', true );
         $highlight_color = get_post_meta( $post_id, '_fp360_highlight_color', true ) ?: '#0078ff';

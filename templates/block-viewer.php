@@ -4,7 +4,8 @@
  *
  * Variables available (set by Block::render() before include):
  *   $post_id         int     The floorplan post ID.
- *   $floorplan_img   string  URL of the floorplan image.
+ *   $floorplan_img   string  URL of the raster floorplan image (empty if DXF was imported).
+ *   $svg_markup      string  Inline SVG from a DXF import (empty if raster image is used).
  *   $hotspots_json   string  JSON string of hotspot data.
  *   $auto_rotate     string  '1' to enable auto-rotate, '0' or '' to disable.
  *   $highlight_color string  Hex colour for the active room polygon.
@@ -18,7 +19,16 @@ defined( 'ABSPATH' ) || exit;
      data-highlight="<?php echo esc_attr( $highlight_color ); ?>"
      data-start-angle="<?php echo esc_attr( $start_angle ); ?>">
     <div class="fp360-left">
-        <?php if ( $floorplan_img ) : ?>
+        <?php if ( $svg_markup ) : ?>
+            <div class="fp360-floorplan-bg fp360-floorplan-bg--svg">
+                <?php echo \Floorplan360\Core\DxfMeta::kses_svg( $svg_markup ); ?>
+            </div>
+            <svg class="fp360-svg-overlay"
+                 data-hotspots='<?php echo esc_attr( $hotspots_json ); ?>'
+                 data-instance="<?php echo esc_attr( $post_id ); ?>">
+            </svg>
+
+        <?php elseif ( $floorplan_img ) : ?>
             <img id="fp360-floorplan-img-<?php echo esc_attr( $post_id ); ?>"
                  class="fp360-floorplan-img"
                  src="<?php echo esc_url( $floorplan_img ); ?>"
@@ -28,6 +38,7 @@ defined( 'ABSPATH' ) || exit;
                  data-hotspots='<?php echo esc_attr( $hotspots_json ); ?>'
                  data-instance="<?php echo esc_attr( $post_id ); ?>">
             </svg>
+
         <?php else : ?>
             <p class="fp360-no-image-notice">
                 <?php esc_html_e( 'No floorplan image uploaded.', 'wp-floorplan-360' ); ?>
