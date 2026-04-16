@@ -28,9 +28,9 @@ while ( have_posts() ) :
         <div id="fp360-left" class="fp360-left">
 
             <?php if ( $svg_markup ) : ?>
-                <?php // Vector floorplan — inject inline SVG (sanitised on save; kses_svg restores viewBox casing). ?>
+                <?php // Vector floorplan — already sanitised by kses_svg() on save; echo directly. ?>
                 <div class="fp360-floorplan-bg fp360-floorplan-bg--svg">
-                    <?php echo \Floorplan360\Core\DxfMeta::kses_svg( $svg_markup ); ?>
+                    <?php echo $svg_markup; ?>
                 </div>
                 <svg id="fp360-svg-overlay"
                      class="fp360-svg-overlay"

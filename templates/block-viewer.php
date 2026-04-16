@@ -21,7 +21,7 @@ defined( 'ABSPATH' ) || exit;
     <div class="fp360-left">
         <?php if ( $svg_markup ) : ?>
             <div class="fp360-floorplan-bg fp360-floorplan-bg--svg">
-                <?php echo \Floorplan360\Core\DxfMeta::kses_svg( $svg_markup ); ?>
+                <?php echo $svg_markup; // Already sanitised by kses_svg() on save. ?>
             </div>
             <svg class="fp360-svg-overlay"
                  data-hotspots='<?php echo esc_attr( $hotspots_json ); ?>'

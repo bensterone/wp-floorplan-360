@@ -3,8 +3,12 @@ namespace Floorplan360\Admin;
 
 class Editor {
     public function register() {
-        add_action( 'add_meta_boxes', [ $this, 'add_meta_box' ] );
-        add_action( 'save_post', [ $this, 'save_meta' ], 10, 2 );
+        add_action( 'add_meta_boxes',       [ $this, 'add_meta_box' ] );
+        add_action( 'save_post',            [ $this, 'save_meta' ], 10, 2 );
+        // Output the nonce outside any meta box so it is always present in the
+        // POST data even if the user hides the Floorplan Editor meta box via
+        // Screen Options or the Gutenberg options panel.
+        add_action( 'edit_form_after_title', [ $this, 'render_nonce' ] );
     }
 
     public function add_meta_box() {
@@ -27,8 +31,12 @@ class Editor {
         );
     }
 
-    public function render_ui( $post ) {
+    public function render_nonce( $post ) {
+        if ( $post->post_type !== FP360_CPT ) return;
         wp_nonce_field( 'fp360_save_action', 'fp360_nonce_field' );
+    }
+
+    public function render_ui( $post ) {
 
         $floorplan_img = get_post_meta( $post->ID, '_fp360_image', true );
         $svg_markup    = get_post_meta( $post->ID, '_fp360_svg_markup', true );

@@ -113,6 +113,7 @@ class DxfMeta {
             'polyline' => [ 'points' => true, 'style' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'class' => true ],
             'text'     => [ 'x' => true, 'y' => true, 'font-family' => true, 'font-size' => true, 'fill' => true, 'transform' => true, 'class' => true ],
             'rect'     => [ 'x' => true, 'y' => true, 'width' => true, 'height' => true, 'rx' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'class' => true ],
+            'use'      => [ 'href' => true, 'xlink:href' => true, 'x' => true, 'y' => true, 'class' => true ],
         ];
     }
 }

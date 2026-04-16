@@ -42,6 +42,14 @@ A WordPress plugin for housing cooperatives and property managers. Upload a rast
 
 ---
 
+## Known Limitations
+
+- **Gutenberg block: max 100 floorplans.** The block's floorplan selector loads up to 100 published floorplans (a WordPress REST API ceiling). If you manage more than 100, any beyond the first 100 cannot be selected from the block settings panel — use the floorplan's dedicated URL as a workaround.
+- **DXF entity support.** The DXF parser handles LINE, LWPOLYLINE, POLYLINE, ARC, CIRCLE, and INSERT entities. SPLINE, HATCH, 3DSOLID, and other complex types are silently skipped. Standard architectural floor plan exports work best.
+- **Experimental room detection** (auto-detect and seed fill) is unreliable on most real-world floorplans. Use Rectangle or Polygon for all production work.
+
+---
+
 ## Requirements
 
 - WordPress 5.9 or higher
@@ -342,7 +350,15 @@ Then open `languages/wp-floorplan-360-de_DE.po` in Poedit, update from the POT f
 
 ## Changelog
 
-### 1.7.4
+### 1.7.4 (patch)
+
+- **Fix: redundant `wp_kses` on frontend removed.** SVG is now echoed directly from the database value (already sanitised on save), eliminating a potential multi-second TTFB spike on large DXF drawings.
+- **Fix: rectangle tool now works on DXF floorplans.** Previously the tool silently aborted when no raster image was present; it now falls back to a plain rectangle without wall snapping.
+- **Fix: `<use>` tag added to SVG KSES allowlist.** Aligns the server-side allowlist with the client-side DOMPurify configuration.
+- **Fix: nonce decoupled from Floorplan Editor meta box.** Nonce is now output via `edit_form_after_title` so Viewer Settings always save even if the editor meta box is hidden.
+- **Fix: CPT registers `custom-fields` support.** Ensures conventional REST API meta handling and silences static analysis tools.
+
+### 1.7.4 (initial)
 
 - **DXF import** — full client-side DXF-to-SVG pipeline with Web Worker parsing, arc/bulge math, INSERT block reference resolution, and Painter's algorithm layer ordering.
 - **Fullscreen viewer** — fullscreen toggle button in the panorama viewer; CSS fake-fullscreen fallback for iOS Safari.

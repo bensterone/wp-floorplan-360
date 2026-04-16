@@ -15,7 +15,7 @@ import { otsuThreshold, morphErode, morphDilate } from '../detection/image.js';
  * Snaps each edge outward to the nearest dark wall pixel in `opened`.
  */
 export function finishRect(s, c) {
-    if (!imgEl || !imgEl.naturalWidth) return;
+    if (!imgEl || !imgEl.naturalWidth) { commitRect(s, c); return; }
 
     const MAX_DIM = 1200;
     const scale   = Math.min(MAX_DIM / imgEl.naturalWidth, MAX_DIM / imgEl.naturalHeight, 1);

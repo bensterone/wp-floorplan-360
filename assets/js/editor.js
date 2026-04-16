@@ -1318,7 +1318,10 @@ __webpack_require__.r(__webpack_exports__);
  * Snaps each edge outward to the nearest dark wall pixel in `opened`.
  */
 function finishRect(s, c) {
-  if (!_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl || !_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl.naturalWidth) return;
+  if (!_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl || !_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl.naturalWidth) {
+    commitRect(s, c);
+    return;
+  }
   var MAX_DIM = 1200;
   var scale = Math.min(MAX_DIM / _helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl.naturalWidth, MAX_DIM / _helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl.naturalHeight, 1);
   var W = Math.round(_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl.naturalWidth * scale);

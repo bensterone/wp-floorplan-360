@@ -37,7 +37,7 @@ class PostType {
             'has_archive'        => true,
             'hierarchical'       => false,
             'menu_position'      => 20,
-            'supports'           => [ 'title' ],
+            'supports'           => [ 'title', 'custom-fields' ],
             'menu_icon'          => 'dashicons-admin-home',
             'show_in_rest'       => true,
         ];
