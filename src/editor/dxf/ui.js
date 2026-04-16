@@ -21,6 +21,15 @@ const LAYER_DISPLAY_ORDER = [
 // Timeout for worker parse (30 s).
 const WORKER_TIMEOUT_MS = 30_000;
 
+// File size limits.
+const MAX_FILE_BYTES  = 10 * 1024 * 1024;  // 10 MB hard reject
+const WARN_FILE_BYTES =  5 * 1024 * 1024;  //  5 MB soft warning
+
+// Maximum resolved geometry items (after INSERT expansion).
+// A DXF with deeply nested block references can explode a modest file into
+// hundreds of thousands of draw calls — this cap prevents that.
+const MAX_ENTITIES = 50_000;
+
 // ---------------------------------------------------------------------------
 // Internal state (per-mount instance)
 // ---------------------------------------------------------------------------
@@ -306,8 +315,20 @@ export function mountDxfImporter(container, { onApply, onCancel }) {
         _dxfFile = file;
         dom.fileLabel.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
 
-        // Large-file warning
-        if (file.size > 5 * 1024 * 1024) {
+        // Hard reject above 10 MB
+        if (file.size > MAX_FILE_BYTES) {
+            dom.fileInput.value = '';
+            dom.fileLabel.textContent = 'No file selected';
+            setStatus(dom, 'error',
+                `File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). ` +
+                `Maximum allowed size is ${MAX_FILE_BYTES / 1024 / 1024} MB. ` +
+                `Export only the floor plan layers to reduce file size.`
+            );
+            return;
+        }
+
+        // Soft warning for 5–10 MB
+        if (file.size > WARN_FILE_BYTES) {
             if (!confirm(`This is a large file (${(file.size / 1024 / 1024).toFixed(1)} MB). Parsing may take a moment. Continue?`)) {
                 dom.fileInput.value = '';
                 dom.fileLabel.textContent = 'No file selected';
@@ -401,6 +422,22 @@ function handleParseResult(parsed, dom) {
 
     // Resolve INSERTs
     const resolved = resolveInserts(parsed.entities, parsed.blocks);
+
+    // Guard against deeply-nested block references that expand into an
+    // unmanageable number of draw calls. Check after INSERT resolution
+    // because a small file can still explode via repeated block usage.
+    const resolvedCount =
+        resolved.polylines.length + resolved.lines.length +
+        resolved.arcs.length     + resolved.circles.length;
+
+    if (resolvedCount > MAX_ENTITIES) {
+        setStatus(dom, 'error',
+            `This DXF is too complex (${resolvedCount.toLocaleString()} entities after resolving blocks; ` +
+            `maximum is ${MAX_ENTITIES.toLocaleString()}). ` +
+            `Export only the floor plan layers, or reduce block references, and try again.`
+        );
+        return;
+    }
 
     // Check for wall geometry
     const hasWalls = resolved.polylines.some(p => p.layer === 'walls') ||
