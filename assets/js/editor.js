@@ -1770,6 +1770,7 @@ function initUI() {
             mountDxfImporter = _yield$import.mountDxfImporter;
             container = document.getElementById('fp360-canvas-container');
             mountDxfImporter(document.body, {
+              savedLayersJson: fp360Admin.dxfLayers || '',
               onCancel: function onCancel() {/* modal already removed itself */},
               onApply: function onApply(svgMarkup, rooms, dxfFile, layersJson) {
                 return _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {

@@ -256,14 +256,21 @@ function terminateWorker() {
  *   onApply(svgMarkup: string, rooms: Array) — called when user clicks Apply.
  *   onCancel() — called when user cancels.
  */
-export function mountDxfImporter(container, { onApply, onCancel }) {
+export function mountDxfImporter(container, { onApply, onCancel, savedLayersJson = '' }) {
     // Reset instance state
     _parsed        = null;
     _transformed   = null;
     _visibleLayers = new Set(DEFAULT_ON);
-    _layerState    = {};
     _dxfFile       = null;
     terminateWorker();
+
+    // Restore previously saved layer visibility, falling back to DEFAULT_ON
+    // for any layer not present in the saved state.
+    try {
+        _layerState = savedLayersJson ? JSON.parse(savedLayersJson) : {};
+    } catch (e) {
+        _layerState = {};
+    }
 
     const dom = buildModal({
         onCancel() {
@@ -443,13 +450,15 @@ function handleParseResult(parsed, dom) {
     for (const t of _transformed.texts)     layerNames.add(t.layer);
     layerNames.delete('0');
 
-    // Default visible layers: those in DEFAULT_ON that actually exist
+    // Seed visible layers: use saved preference when available,
+    // fall back to DEFAULT_ON for any layer not in the saved state.
     _visibleLayers = new Set();
-    for (const name of DEFAULT_ON) {
-        if (layerNames.has(name)) _visibleLayers.add(name);
+    for (const name of layerNames) {
+        const isVisible = name in _layerState ? _layerState[name] : DEFAULT_ON.has(name);
+        if (isVisible) _visibleLayers.add(name);
     }
 
-    // Initialise layerState
+    // Sync _layerState to reflect the final resolved visibility
     for (const name of layerNames) {
         _layerState[name] = _visibleLayers.has(name);
     }

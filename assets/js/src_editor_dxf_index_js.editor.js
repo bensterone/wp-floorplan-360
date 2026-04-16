@@ -1126,14 +1126,23 @@ function terminateWorker() {
  */
 function mountDxfImporter(container, _ref) {
   var _onApply = _ref.onApply,
-    _onCancel = _ref.onCancel;
+    _onCancel = _ref.onCancel,
+    _ref$savedLayersJson = _ref.savedLayersJson,
+    savedLayersJson = _ref$savedLayersJson === void 0 ? '' : _ref$savedLayersJson;
   // Reset instance state
   _parsed = null;
   _transformed = null;
   _visibleLayers = new Set(DEFAULT_ON);
-  _layerState = {};
   _dxfFile = null;
   terminateWorker();
+
+  // Restore previously saved layer visibility, falling back to DEFAULT_ON
+  // for any layer not present in the saved state.
+  try {
+    _layerState = savedLayersJson ? JSON.parse(savedLayersJson) : {};
+  } catch (e) {
+    _layerState = {};
+  }
   var dom = buildModal({
     onCancel: function onCancel() {
       terminateWorker();
@@ -1309,17 +1318,19 @@ function handleParseResult(parsed, dom) {
   }
   layerNames["delete"]('0');
 
-  // Default visible layers: those in DEFAULT_ON that actually exist
+  // Seed visible layers: use saved preference when available,
+  // fall back to DEFAULT_ON for any layer not in the saved state.
   _visibleLayers = new Set();
-  var _iterator5 = _createForOfIteratorHelper(DEFAULT_ON),
+  var _iterator5 = _createForOfIteratorHelper(layerNames),
     _step5;
   try {
     for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
       var name = _step5.value;
-      if (layerNames.has(name)) _visibleLayers.add(name);
+      var isVisible = name in _layerState ? _layerState[name] : DEFAULT_ON.has(name);
+      if (isVisible) _visibleLayers.add(name);
     }
 
-    // Initialise layerState
+    // Sync _layerState to reflect the final resolved visibility
   } catch (err) {
     _iterator5.e(err);
   } finally {

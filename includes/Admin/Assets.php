@@ -24,9 +24,10 @@ class Assets {
             );
 
             wp_localize_script( 'fp360-admin', 'fp360Admin', [
-                'postId'   => get_the_ID(),
-                'restUrl'  => esc_url_raw( rest_url() ),
-                'nonce'    => wp_create_nonce( 'wp_rest' ),
+                'postId'    => get_the_ID(),
+                'restUrl'   => esc_url_raw( rest_url() ),
+                'nonce'     => wp_create_nonce( 'wp_rest' ),
+                'dxfLayers' => get_post_meta( get_the_ID(), '_fp360_dxf_layers', true ) ?: '',
                 'i18n' => [
                     'pick360'            => __( 'Pick 360', 'wp-floorplan-360' ),
                     'selectFloorplan'    => __( 'Select Floorplan Image', 'wp-floorplan-360' ),
