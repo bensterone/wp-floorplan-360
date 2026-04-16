@@ -1720,6 +1720,7 @@ function initUI() {
   var elDetectStatus = document.getElementById('fp360-detect-status');
   var elTolerance = document.getElementById('fp360-detect-tolerance');
   var elToleranceVal = document.getElementById('fp360-detect-tolerance-val');
+  var hotspotListAdmin = document.getElementById('fp360-hotspot-list-admin');
 
   // --- Media frames ---
   // wp.media() frames are expensive — each call creates a new Backbone view
@@ -2167,72 +2168,76 @@ function initUI() {
   }
 
   // --- Delegated handlers ---
-  // Buttons inside the hotspot list are created dynamically by renderHotspotList,
-  // so we delegate to document rather than binding to each element directly.
+  // Buttons and inputs inside the hotspot list are created dynamically by
+  // renderHotspotList, so we delegate to the static container instead of
+  // binding to each element directly. Scoping to hotspotListAdmin avoids
+  // firing on every click/keystroke elsewhere in the WP admin UI.
 
   var pick360Frame = null;
   var pick360Handler = null;
-  document.addEventListener('click', function (e) {
-    // Pick 360° image
-    var pickBtn = e.target.closest('.fp360-hs-pick360');
-    if (pickBtn) {
-      e.preventDefault();
-      var id = pickBtn.dataset.id;
-      if (!pick360Frame) {
-        pick360Frame = wp.media({
-          title: fp360Admin.i18n.pick360 || 'Select 360 Image',
-          multiple: false
-        });
+  if (hotspotListAdmin) {
+    hotspotListAdmin.addEventListener('click', function (e) {
+      // Pick 360° image
+      var pickBtn = e.target.closest('.fp360-hs-pick360');
+      if (pickBtn) {
+        e.preventDefault();
+        var id = pickBtn.dataset.id;
+        if (!pick360Frame) {
+          pick360Frame = wp.media({
+            title: fp360Admin.i18n.pick360 || 'Select 360 Image',
+            multiple: false
+          });
+        }
+
+        // Remove the previous select handler and attach one for this room.
+        if (pick360Handler) pick360Frame.off('select', pick360Handler);
+        pick360Handler = function pick360Handler() {
+          var attachment = pick360Frame.state().get('selection').first().toJSON();
+          var hs = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.find(function (h) {
+            return h.id === id;
+          });
+          if (hs) {
+            hs.image360 = attachment.url;
+            (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
+            (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
+          }
+        };
+        pick360Frame.on('select', pick360Handler);
+        pick360Frame.open();
+        return;
       }
 
-      // Remove the previous select handler and attach one for this room.
-      if (pick360Handler) pick360Frame.off('select', pick360Handler);
-      pick360Handler = function pick360Handler() {
-        var attachment = pick360Frame.state().get('selection').first().toJSON();
-        var hs = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.find(function (h) {
-          return h.id === id;
-        });
-        if (hs) {
-          hs.image360 = attachment.url;
+      // Delete room
+      var deleteBtn = e.target.closest('.fp360-hs-delete');
+      if (deleteBtn) {
+        var _id = deleteBtn.dataset.id;
+        fp360Confirm(fp360Admin.i18n.deleteRoomConfirm || 'Delete this room?', function () {
+          _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.filter(function (h) {
+            return h.id !== _id;
+          });
+          _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds["delete"](_id);
           (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
           (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
-        }
-      };
-      pick360Frame.on('select', pick360Handler);
-      pick360Frame.open();
-      return;
-    }
-
-    // Delete room
-    var deleteBtn = e.target.closest('.fp360-hs-delete');
-    if (deleteBtn) {
-      var _id = deleteBtn.dataset.id;
-      fp360Confirm(fp360Admin.i18n.deleteRoomConfirm || 'Delete this room?', function () {
-        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.filter(function (h) {
-          return h.id !== _id;
+          (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
         });
-        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds["delete"](_id);
-        (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
-        (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
-        (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
-      });
-    }
-  });
-  document.addEventListener('input', function (e) {
-    var target = e.target.closest('.fp360-hs-label, .fp360-hs-img360');
-    if (!target) return;
-    var id = target.dataset.id;
-    var hs = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.find(function (h) {
-      return h.id === id;
+      }
     });
-    if (hs) {
-      var _document$querySelect, _document$querySelect2, _document$querySelect3, _document$querySelect4;
-      hs.label = (_document$querySelect = (_document$querySelect2 = document.querySelector(".fp360-hs-label[data-id=\"".concat(id, "\"]"))) === null || _document$querySelect2 === void 0 ? void 0 : _document$querySelect2.value) !== null && _document$querySelect !== void 0 ? _document$querySelect : '';
-      hs.image360 = (_document$querySelect3 = (_document$querySelect4 = document.querySelector(".fp360-hs-img360[data-id=\"".concat(id, "\"]"))) === null || _document$querySelect4 === void 0 ? void 0 : _document$querySelect4.value) !== null && _document$querySelect3 !== void 0 ? _document$querySelect3 : '';
-      (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
-      (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
-    }
-  });
+    hotspotListAdmin.addEventListener('input', function (e) {
+      var target = e.target.closest('.fp360-hs-label, .fp360-hs-img360');
+      if (!target) return;
+      var id = target.dataset.id;
+      var hs = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.find(function (h) {
+        return h.id === id;
+      });
+      if (hs) {
+        var _document$querySelect, _document$querySelect2, _document$querySelect3, _document$querySelect4;
+        hs.label = (_document$querySelect = (_document$querySelect2 = document.querySelector(".fp360-hs-label[data-id=\"".concat(id, "\"]"))) === null || _document$querySelect2 === void 0 ? void 0 : _document$querySelect2.value) !== null && _document$querySelect !== void 0 ? _document$querySelect : '';
+        hs.image360 = (_document$querySelect3 = (_document$querySelect4 = document.querySelector(".fp360-hs-img360[data-id=\"".concat(id, "\"]"))) === null || _document$querySelect4 === void 0 ? void 0 : _document$querySelect4.value) !== null && _document$querySelect3 !== void 0 ? _document$querySelect3 : '';
+        (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
+        (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
+      }
+    });
+  }
   window.addEventListener('resize', _helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw);
 }
 

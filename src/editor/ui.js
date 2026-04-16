@@ -150,8 +150,9 @@ export function initUI() {
     const btnExpToggle   = document.getElementById('fp360-experimental-toggle');
     const elExpPanel     = document.getElementById('fp360-experimental-panel');
     const elDetectStatus = document.getElementById('fp360-detect-status');
-    const elTolerance    = document.getElementById('fp360-detect-tolerance');
-    const elToleranceVal = document.getElementById('fp360-detect-tolerance-val');
+    const elTolerance       = document.getElementById('fp360-detect-tolerance');
+    const elToleranceVal    = document.getElementById('fp360-detect-tolerance-val');
+    const hotspotListAdmin  = document.getElementById('fp360-hotspot-list-admin');
 
     // --- Media frames ---
     // wp.media() frames are expensive — each call creates a new Backbone view
@@ -561,61 +562,65 @@ export function initUI() {
     }
 
     // --- Delegated handlers ---
-    // Buttons inside the hotspot list are created dynamically by renderHotspotList,
-    // so we delegate to document rather than binding to each element directly.
+    // Buttons and inputs inside the hotspot list are created dynamically by
+    // renderHotspotList, so we delegate to the static container instead of
+    // binding to each element directly. Scoping to hotspotListAdmin avoids
+    // firing on every click/keystroke elsewhere in the WP admin UI.
 
     let pick360Frame   = null;
     let pick360Handler = null;
 
-    document.addEventListener('click', function (e) {
-        // Pick 360° image
-        const pickBtn = e.target.closest('.fp360-hs-pick360');
-        if (pickBtn) {
-            e.preventDefault();
-            const id = pickBtn.dataset.id;
+    if (hotspotListAdmin) {
+        hotspotListAdmin.addEventListener('click', function (e) {
+            // Pick 360° image
+            const pickBtn = e.target.closest('.fp360-hs-pick360');
+            if (pickBtn) {
+                e.preventDefault();
+                const id = pickBtn.dataset.id;
 
-            if (!pick360Frame) {
-                pick360Frame = wp.media({ title: fp360Admin.i18n.pick360 || 'Select 360 Image', multiple: false });
+                if (!pick360Frame) {
+                    pick360Frame = wp.media({ title: fp360Admin.i18n.pick360 || 'Select 360 Image', multiple: false });
+                }
+
+                // Remove the previous select handler and attach one for this room.
+                if (pick360Handler) pick360Frame.off('select', pick360Handler);
+                pick360Handler = function () {
+                    const attachment = pick360Frame.state().get('selection').first().toJSON();
+                    const hs = state.hotspots.find(h => h.id === id);
+                    if (hs) { hs.image360 = attachment.url; saveHotspots(); renderHotspotList(); }
+                };
+                pick360Frame.on('select', pick360Handler);
+                pick360Frame.open();
+                return;
             }
 
-            // Remove the previous select handler and attach one for this room.
-            if (pick360Handler) pick360Frame.off('select', pick360Handler);
-            pick360Handler = function () {
-                const attachment = pick360Frame.state().get('selection').first().toJSON();
-                const hs = state.hotspots.find(h => h.id === id);
-                if (hs) { hs.image360 = attachment.url; saveHotspots(); renderHotspotList(); }
-            };
-            pick360Frame.on('select', pick360Handler);
-            pick360Frame.open();
-            return;
-        }
+            // Delete room
+            const deleteBtn = e.target.closest('.fp360-hs-delete');
+            if (deleteBtn) {
+                const id = deleteBtn.dataset.id;
+                fp360Confirm(fp360Admin.i18n.deleteRoomConfirm || 'Delete this room?', () => {
+                    state.hotspots = state.hotspots.filter(h => h.id !== id);
+                    state.selectedIds.delete(id);
+                    saveHotspots();
+                    renderHotspotList();
+                    requestRedraw();
+                });
+            }
+        });
 
-        // Delete room
-        const deleteBtn = e.target.closest('.fp360-hs-delete');
-        if (deleteBtn) {
-            const id = deleteBtn.dataset.id;
-            fp360Confirm(fp360Admin.i18n.deleteRoomConfirm || 'Delete this room?', () => {
-                state.hotspots = state.hotspots.filter(h => h.id !== id);
-                state.selectedIds.delete(id);
+        hotspotListAdmin.addEventListener('input', function (e) {
+            const target = e.target.closest('.fp360-hs-label, .fp360-hs-img360');
+            if (!target) return;
+            const id = target.dataset.id;
+            const hs = state.hotspots.find(h => h.id === id);
+            if (hs) {
+                hs.label    = document.querySelector(`.fp360-hs-label[data-id="${id}"]`)?.value ?? '';
+                hs.image360 = document.querySelector(`.fp360-hs-img360[data-id="${id}"]`)?.value ?? '';
                 saveHotspots();
-                renderHotspotList();
                 requestRedraw();
-            });
-        }
-    });
-
-    document.addEventListener('input', function (e) {
-        const target = e.target.closest('.fp360-hs-label, .fp360-hs-img360');
-        if (!target) return;
-        const id = target.dataset.id;
-        const hs = state.hotspots.find(h => h.id === id);
-        if (hs) {
-            hs.label    = document.querySelector(`.fp360-hs-label[data-id="${id}"]`)?.value ?? '';
-            hs.image360 = document.querySelector(`.fp360-hs-img360[data-id="${id}"]`)?.value ?? '';
-            saveHotspots();
-            requestRedraw();
-        }
-    });
+            }
+        });
+    }
 
     window.addEventListener('resize', requestRedraw);
 }
