@@ -9,8 +9,8 @@
 import { resolveInserts, calculateBBox, toSvgSpace } from './transformer.js';
 import { renderSvg, layerCounts }                    from './renderer.js';
 
-// Layers that should be checked ON by default in the toggle list.
-const DEFAULT_ON = new Set(['walls', 'doors', 'windows', 'texts']);
+// Layers that should be checked ON by default in the toggle list + used for room labels.
+const DEFAULT_ON = new Set(['walls', 'doors', 'windows', 'texts', 'roomitems', 'nocategory']);
 
 // Layer display order in the checkbox list (matches the painter render order).
 const LAYER_DISPLAY_ORDER = [
@@ -115,8 +115,10 @@ function buildModal(callbacks) {
 
     const roomSection = el('div', { style: 'padding:12px;' });
     const roomTitle   = el('p', { style: 'margin:0 0 8px;font-size:12px;font-weight:600;color:#1d2327;text-transform:uppercase;letter-spacing:.5px;' }, 'Rooms detected');
+    const roomNote    = el('p', { style: 'font-size:11px;color:#888;margin:-4px 0 8px 0;' },
+        'Labels are taken from layers: texts, roomitems, nocategory');
     const roomList    = el('ul', { id: 'fp360-dxf-rooms', style: 'margin:0;padding:0;list-style:none;font-size:13px;color:#444;' });
-    roomSection.append(roomTitle, roomList);
+    roomSection.append(roomTitle, roomNote, roomList);
 
     sidebar.append(layerSection, roomSection);
     body.append(previewPane, sidebar);
@@ -212,14 +214,28 @@ function rerenderPreview(previewEl) {
 
 function buildRoomList(roomList, texts) {
     roomList.innerHTML = '';
-    const roomTexts = texts.filter(t => t.layer === 'texts' || t.layer === '0');
+    const roomTexts = texts.filter(t =>
+        t.layer === 'texts' ||
+        t.layer === 'roomitems' ||
+        t.layer === '0' ||
+        t.layer === 'nocategory'
+    );
     if (roomTexts.length === 0) {
         const li = el('li', { style: 'color:#999;font-style:italic;' }, 'No room labels found');
         roomList.appendChild(li);
         return;
     }
     for (const t of roomTexts) {
-        const li = el('li', { style: 'padding:2px 0;' }, t.text);
+        // Seed editable label from parsed text; mutations are written back to t.label.
+        t.label = t.text;
+        const li    = el('li', { style: 'padding:2px 0;' });
+        const input = el('input', {
+            type:  'text',
+            style: 'width:100%;font-size:13px;border:1px solid #ddd;padding:2px 4px;border-radius:2px;box-sizing:border-box;',
+        });
+        input.value = t.label;
+        input.addEventListener('input', () => { t.label = input.value; });
+        li.appendChild(input);
         roomList.appendChild(li);
     }
 }
@@ -264,9 +280,14 @@ export function mountDxfImporter(container, { onApply, onCancel }) {
             if (!_transformed) return;
             const svgMarkup = renderSvg(_transformed, _visibleLayers);
             const rooms = _transformed.texts
-                .filter(t => t.layer === 'texts' || t.layer === '0')
+                .filter(t =>
+                    t.layer === 'texts' ||
+                    t.layer === 'roomitems' ||
+                    t.layer === '0' ||
+                    t.layer === 'nocategory'
+                )
                 .map(t => ({
-                    label: t.text,
+                    label: t.label || t.text,
                     normX: t.x / 1000,
                     normY: t.y / (_transformed.svgHeight || 1000),
                 }));

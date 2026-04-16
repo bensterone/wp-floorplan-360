@@ -813,8 +813,8 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 
 
 
-// Layers that should be checked ON by default in the toggle list.
-var DEFAULT_ON = new Set(['walls', 'doors', 'windows', 'texts']);
+// Layers that should be checked ON by default in the toggle list + used for room labels.
+var DEFAULT_ON = new Set(['walls', 'doors', 'windows', 'texts', 'roomitems', 'nocategory']);
 
 // Layer display order in the checkbox list (matches the painter render order).
 var LAYER_DISPLAY_ORDER = ['walls', 'doors', 'windows', 'texts', 'wallitems', 'roomitems', 'plumbing', 'furnitures', 'nocategory'];
@@ -934,11 +934,14 @@ function buildModal(callbacks) {
   var roomTitle = el('p', {
     style: 'margin:0 0 8px;font-size:12px;font-weight:600;color:#1d2327;text-transform:uppercase;letter-spacing:.5px;'
   }, 'Rooms detected');
+  var roomNote = el('p', {
+    style: 'font-size:11px;color:#888;margin:-4px 0 8px 0;'
+  }, 'Labels are taken from layers: texts, roomitems, nocategory');
   var roomList = el('ul', {
     id: 'fp360-dxf-rooms',
     style: 'margin:0;padding:0;list-style:none;font-size:13px;color:#444;'
   });
-  roomSection.append(roomTitle, roomList);
+  roomSection.append(roomTitle, roomNote, roomList);
   sidebar.append(layerSection, roomSection);
   body.append(previewPane, sidebar);
 
@@ -1065,7 +1068,7 @@ function rerenderPreview(previewEl) {
 function buildRoomList(roomList, texts) {
   roomList.innerHTML = '';
   var roomTexts = texts.filter(function (t) {
-    return t.layer === 'texts' || t.layer === '0';
+    return t.layer === 'texts' || t.layer === 'roomitems' || t.layer === '0' || t.layer === 'nocategory';
   });
   if (roomTexts.length === 0) {
     var li = el('li', {
@@ -1077,12 +1080,26 @@ function buildRoomList(roomList, texts) {
   var _iterator2 = _createForOfIteratorHelper(roomTexts),
     _step2;
   try {
-    for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+    var _loop2 = function _loop2() {
       var t = _step2.value;
-      var _li = el('li', {
+      // Seed editable label from parsed text; mutations are written back to t.label.
+      t.label = t.text;
+      var li = el('li', {
         style: 'padding:2px 0;'
-      }, t.text);
-      roomList.appendChild(_li);
+      });
+      var input = el('input', {
+        type: 'text',
+        style: 'width:100%;font-size:13px;border:1px solid #ddd;padding:2px 4px;border-radius:2px;box-sizing:border-box;'
+      });
+      input.value = t.label;
+      input.addEventListener('input', function () {
+        t.label = input.value;
+      });
+      li.appendChild(input);
+      roomList.appendChild(li);
+    };
+    for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+      _loop2();
     }
   } catch (err) {
     _iterator2.e(err);
@@ -1138,10 +1155,10 @@ function mountDxfImporter(container, _ref) {
       if (!_transformed) return;
       var svgMarkup = (0,_renderer_js__WEBPACK_IMPORTED_MODULE_1__.renderSvg)(_transformed, _visibleLayers);
       var rooms = _transformed.texts.filter(function (t) {
-        return t.layer === 'texts' || t.layer === '0';
+        return t.layer === 'texts' || t.layer === 'roomitems' || t.layer === '0' || t.layer === 'nocategory';
       }).map(function (t) {
         return {
-          label: t.text,
+          label: t.label || t.text,
           normX: t.x / 1000,
           normY: t.y / (_transformed.svgHeight || 1000)
         };
