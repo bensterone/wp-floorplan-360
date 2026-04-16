@@ -5,16 +5,15 @@
 
 import { COLORS, state } from './state.js';
 
-// DOM references — set by initDomRefs() inside document.ready
-export let $dataField, $imageUrlInput, svg, imgEl, $emptyState;
+// DOM references — set by initDomRefs() inside DOMContentLoaded
+export let dataField, imageUrlInput, emptyState, svg, imgEl;
 
 export function initDomRefs() {
-    const $ = window.jQuery;
-    $dataField     = $('#fp360_hotspots_data');
-    $imageUrlInput = $('#fp360_image_url');
-    svg            = document.getElementById('fp360-svg-overlay');
-    imgEl          = document.getElementById('fp360-floorplan-img');
-    $emptyState    = $('#fp360-empty-state');
+    dataField     = document.getElementById('fp360_hotspots_data');
+    imageUrlInput = document.getElementById('fp360_image_url');
+    svg           = document.getElementById('fp360-svg-overlay');
+    imgEl         = document.getElementById('fp360-floorplan-img');
+    emptyState    = document.getElementById('fp360-empty-state');
 }
 
 // render.js registers its renderSVG here to avoid circular imports.
@@ -22,7 +21,7 @@ let _renderSVG = () => {};
 export function registerRenderFn(fn) { _renderSVG = fn; }
 
 export function saveHotspots() {
-    $dataField.val(JSON.stringify(state.hotspots));
+    if (dataField) dataField.value = JSON.stringify(state.hotspots);
 }
 
 export function generateId() {
@@ -56,4 +55,21 @@ export function getCentroid(points) {
     const x = points.reduce((sum, p) => sum + p.x, 0) / points.length;
     const y = points.reduce((sum, p) => sum + p.y, 0) / points.length;
     return { x, y };
+}
+
+/**
+ * Minimal DOM element factory.
+ * el('div', { className: 'foo', style: 'color:red', 'data-id': '1' }, 'text')
+ * Handles: className, style (cssText), all other attrs via setAttribute.
+ * For CSS custom properties use el(...) then el.style.setProperty().
+ */
+export function el(tag, attrs = {}, text = '') {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+        if (k === 'className') e.className = v;
+        else if (k === 'style') e.style.cssText = v;
+        else e.setAttribute(k, v);
+    }
+    if (text) e.textContent = text;
+    return e;
 }

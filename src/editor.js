@@ -22,42 +22,37 @@ import { renderSVG, renderHotspotList } from './editor/render.js';
 import { initUI } from './editor/ui.js';
 import { setFloorplanBackground } from './editor/helpers/floorplan-background.js';
 
-(function ($) {
-    $(document).ready(function () {
+document.addEventListener('DOMContentLoaded', function () {
 
-        // 1. Wire up DOM references
-        initDomRefs();
+    // 1. Wire up DOM references
+    initDomRefs();
 
-        // 2. Load initial hotspot data from hidden field
-        const $dataField = $('#fp360_hotspots_data');
-        try {
-            const raw = $dataField.val();
-            state.hotspots = raw ? JSON.parse(raw) : [];
-        } catch (e) {
-            console.error('FP360: Error parsing hotspot data', e);
-            state.hotspots = [];
-        }
+    // 2. Load initial hotspot data from hidden field
+    const dataField = document.getElementById('fp360_hotspots_data');
+    try {
+        const raw = dataField ? dataField.value : '';
+        state.hotspots = raw ? JSON.parse(raw) : [];
+    } catch (e) {
+        console.error('FP360: Error parsing hotspot data', e);
+        state.hotspots = [];
+    }
 
-        // 3. Bind all UI events and button handlers
-        initUI();
+    // 3. Bind all UI events and button handlers
+    initUI();
 
-        // 4. Restore SVG background if a vector floorplan was previously saved.
-        //    The server already injected #fp360-svg-background into the DOM if
-        //    _fp360_svg_markup exists, so we only need to ensure the overlay
-        //    SVG and empty-state visibility are correct.
-        const svgBgEl = document.getElementById('fp360-svg-background');
-        if (svgBgEl) {
-            const container = document.getElementById('fp360-canvas-container');
-            // Mark the overlay as visible (it may still be hidden from the PHP default)
-            const overlayEl    = document.getElementById('fp360-svg-overlay');
-            const emptyStateEl = document.getElementById('fp360-empty-state');
-            if (overlayEl)    overlayEl.style.display    = 'block';
-            if (emptyStateEl) emptyStateEl.style.display = 'none';
-        }
+    // 4. Restore SVG background if a vector floorplan was previously saved.
+    //    The server already injected #fp360-svg-background into the DOM if
+    //    _fp360_svg_markup exists, so we only need to ensure the overlay
+    //    SVG and empty-state visibility are correct.
+    const svgBgEl = document.getElementById('fp360-svg-background');
+    if (svgBgEl) {
+        const overlayEl    = document.getElementById('fp360-svg-overlay');
+        const emptyStateEl = document.getElementById('fp360-empty-state');
+        if (overlayEl)    overlayEl.style.display    = 'block';
+        if (emptyStateEl) emptyStateEl.style.display = 'none';
+    }
 
-        // 5. Initial render
-        renderHotspotList();
-        renderSVG();
-
-    });
-})(jQuery);
+    // 5. Initial render
+    renderHotspotList();
+    renderSVG();
+});

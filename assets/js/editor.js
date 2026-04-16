@@ -33,7 +33,7 @@ __webpack_require__.r(__webpack_exports__);
 /* global fp360Admin */
 
 function detectRooms(tolerancePx) {
-  if (!_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl || !_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl.naturalWidth || _helpers_js__WEBPACK_IMPORTED_MODULE_1__.$emptyState.is(':visible')) {
+  if (!_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl || !_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl.naturalWidth || _helpers_js__WEBPACK_IMPORTED_MODULE_1__.emptyState && _helpers_js__WEBPACK_IMPORTED_MODULE_1__.emptyState.style.display !== 'none') {
     (0,_ui_js__WEBPACK_IMPORTED_MODULE_3__.setDetectionStatus)('no-image');
     return;
   }
@@ -663,12 +663,13 @@ function runSeedFillCore(img, seeds, tolerancePx) {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   $dataField: () => (/* binding */ $dataField),
-/* harmony export */   $emptyState: () => (/* binding */ $emptyState),
-/* harmony export */   $imageUrlInput: () => (/* binding */ $imageUrlInput),
+/* harmony export */   dataField: () => (/* binding */ dataField),
+/* harmony export */   el: () => (/* binding */ el),
+/* harmony export */   emptyState: () => (/* binding */ emptyState),
 /* harmony export */   generateId: () => (/* binding */ generateId),
 /* harmony export */   getCentroid: () => (/* binding */ getCentroid),
 /* harmony export */   getNormalizedPos: () => (/* binding */ getNormalizedPos),
+/* harmony export */   imageUrlInput: () => (/* binding */ imageUrlInput),
 /* harmony export */   imgEl: () => (/* binding */ imgEl),
 /* harmony export */   initDomRefs: () => (/* binding */ initDomRefs),
 /* harmony export */   nextColor: () => (/* binding */ nextColor),
@@ -678,6 +679,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   svg: () => (/* binding */ svg)
 /* harmony export */ });
 /* harmony import */ var _state_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./state.js */ "./src/editor/state.js");
+function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
+function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 /**
  * helpers.js
  * Pure utility functions shared across all modules.
@@ -685,15 +692,14 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-// DOM references — set by initDomRefs() inside document.ready
-var $dataField, $imageUrlInput, svg, imgEl, $emptyState;
+// DOM references — set by initDomRefs() inside DOMContentLoaded
+var dataField, imageUrlInput, emptyState, svg, imgEl;
 function initDomRefs() {
-  var $ = window.jQuery;
-  $dataField = $('#fp360_hotspots_data');
-  $imageUrlInput = $('#fp360_image_url');
+  dataField = document.getElementById('fp360_hotspots_data');
+  imageUrlInput = document.getElementById('fp360_image_url');
   svg = document.getElementById('fp360-svg-overlay');
   imgEl = document.getElementById('fp360-floorplan-img');
-  $emptyState = $('#fp360-empty-state');
+  emptyState = document.getElementById('fp360-empty-state');
 }
 
 // render.js registers its renderSVG here to avoid circular imports.
@@ -702,7 +708,7 @@ function registerRenderFn(fn) {
   _renderSVG = fn;
 }
 function saveHotspots() {
-  $dataField.val(JSON.stringify(_state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots));
+  if (dataField) dataField.value = JSON.stringify(_state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots);
 }
 function generateId() {
   if (typeof self.crypto !== 'undefined' && self.crypto.randomUUID) {
@@ -741,6 +747,26 @@ function getCentroid(points) {
     x: x,
     y: y
   };
+}
+
+/**
+ * Minimal DOM element factory.
+ * el('div', { className: 'foo', style: 'color:red', 'data-id': '1' }, 'text')
+ * Handles: className, style (cssText), all other attrs via setAttribute.
+ * For CSS custom properties use el(...) then el.style.setProperty().
+ */
+function el(tag) {
+  var attrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  var text = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+  var e = document.createElement(tag);
+  for (var _i = 0, _Object$entries = Object.entries(attrs); _i < _Object$entries.length; _i++) {
+    var _Object$entries$_i = _slicedToArray(_Object$entries[_i], 2),
+      k = _Object$entries$_i[0],
+      v = _Object$entries$_i[1];
+    if (k === 'className') e.className = v;else if (k === 'style') e.style.cssText = v;else e.setAttribute(k, v);
+  }
+  if (text) e.textContent = text;
+  return e;
 }
 
 /***/ },
@@ -1005,45 +1031,57 @@ function renderSVG() {
   }
 }
 function renderHotspotList() {
-  var $ = window.jQuery;
   /* global fp360Admin */
-  var $ul = $('#fp360-hotspot-items').empty();
-  $('#fp360-merge-rooms').toggle(_state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.size === 2);
+  var ul = document.getElementById('fp360-hotspot-items');
+  if (!ul) return;
+  ul.innerHTML = '';
+  var mergeBtn = document.getElementById('fp360-merge-rooms');
+  if (mergeBtn) mergeBtn.style.display = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.size === 2 ? '' : 'none';
   _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.forEach(function (hs) {
     var isSelected = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.has(hs.id);
     var color = hs.color || _state_js__WEBPACK_IMPORTED_MODULE_0__.COLORS[0];
-    var $li = $('<li>').addClass('fp360-hs-item').toggleClass('is-active', isSelected);
-    $li[0].style.setProperty('--hs-color', color);
-    var $swatch = $('<span>').addClass('fp360-hs-swatch').css('background-color', color);
-    var $label = $('<input>', {
-      type: 'text',
-      "class": 'fp360-hs-label',
-      'data-id': hs.id,
-      placeholder: fp360Admin.i18n.roomLabel || 'Room Label'
-    }).val(hs.label);
-    var $row = $('<div>').addClass('fp360-hs-input-row');
-    var $urlInput = $('<input>', {
-      type: 'text',
-      "class": 'fp360-hs-img360',
-      'data-id': hs.id,
-      placeholder: '360 Image URL'
-    }).val(hs.image360);
-    var $pickBtn = $('<button>', {
-      type: 'button',
-      "class": 'button fp360-hs-pick360',
-      'data-id': hs.id,
-      text: fp360Admin.i18n.pick360
+    var li = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('li', {
+      className: 'fp360-hs-item' + (isSelected ? ' is-active' : '')
     });
-    var $deleteBtn = $('<button>', {
-      type: 'button',
-      "class": 'button button-link-delete fp360-hs-delete',
-      'data-id': hs.id,
-      text: fp360Admin.i18n.deleteRoom
+    li.style.setProperty('--hs-color', color);
+    var swatch = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('span', {
+      className: 'fp360-hs-swatch',
+      style: "background-color:".concat(color)
     });
-    var $header = $('<div>').addClass('fp360-hs-header').append($swatch, $label);
-    $row.append($urlInput, $pickBtn);
-    $li.append($header, $row, $deleteBtn);
-    $ul.append($li);
+    var labelInput = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('input', {
+      type: 'text',
+      className: 'fp360-hs-label',
+      'data-id': hs.id,
+      placeholder: fp360Admin.i18n.roomLabel || 'Room Label',
+      value: hs.label
+    });
+    var header = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('div', {
+      className: 'fp360-hs-header'
+    });
+    header.append(swatch, labelInput);
+    var urlInput = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('input', {
+      type: 'text',
+      className: 'fp360-hs-img360',
+      'data-id': hs.id,
+      placeholder: '360 Image URL',
+      value: hs.image360
+    });
+    var pickBtn = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('button', {
+      type: 'button',
+      className: 'button fp360-hs-pick360',
+      'data-id': hs.id
+    }, fp360Admin.i18n.pick360);
+    var row = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('div', {
+      className: 'fp360-hs-input-row'
+    });
+    row.append(urlInput, pickBtn);
+    var deleteBtn = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('button', {
+      type: 'button',
+      className: 'button button-link-delete fp360-hs-delete',
+      'data-id': hs.id
+    }, fp360Admin.i18n.deleteRoom);
+    li.append(header, row, deleteBtn);
+    ul.appendChild(li);
   });
 }
 
@@ -1501,21 +1539,24 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
  */
 function fp360Confirm(message, onConfirm) {
   var i18n = fp360Admin.i18n;
-  var overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;';
-  var dialog = document.createElement('div');
-  dialog.style.cssText = 'background:#fff;border-radius:4px;padding:24px;max-width:420px;width:90%;box-shadow:0 4px 20px rgba(0,0,0,.3);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;';
-  var msg = document.createElement('p');
-  msg.style.cssText = 'margin:0 0 20px;font-size:14px;line-height:1.5;color:#1d2327;';
-  msg.textContent = message;
-  var btnRow = document.createElement('div');
-  btnRow.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;';
-  var cancelBtn = document.createElement('button');
-  cancelBtn.className = 'button';
-  cancelBtn.textContent = i18n.cancel || 'Cancel';
-  var okBtn = document.createElement('button');
-  okBtn.className = 'button button-primary';
-  okBtn.textContent = i18n.ok || 'OK';
+  var overlay = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('div', {
+    style: 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;'
+  });
+  var dialog = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('div', {
+    style: 'background:#fff;border-radius:4px;padding:24px;max-width:420px;width:90%;box-shadow:0 4px 20px rgba(0,0,0,.3);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;'
+  });
+  var msg = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('p', {
+    style: 'margin:0 0 20px;font-size:14px;line-height:1.5;color:#1d2327;'
+  }, message);
+  var btnRow = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('div', {
+    style: 'display:flex;gap:8px;justify-content:flex-end;'
+  });
+  var cancelBtn = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('button', {
+    className: 'button'
+  }, i18n.cancel || 'Cancel');
+  var okBtn = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('button', {
+    className: 'button button-primary'
+  }, i18n.ok || 'OK');
   var close = function close() {
     return document.body.removeChild(overlay);
   };
@@ -1542,8 +1583,12 @@ function fp360Confirm(message, onConfirm) {
  * @param {string} message  The message to display.
  */
 function fp360Alert(message) {
-  var $ = window.jQuery;
-  $('#fp360-detect-status').text(message).removeClass('fp360-status--info fp360-status--success fp360-status--warn').addClass('fp360-status--error').show();
+  var statusEl = document.getElementById('fp360-detect-status');
+  if (!statusEl) return;
+  statusEl.textContent = message;
+  statusEl.classList.remove('fp360-status--info', 'fp360-status--success', 'fp360-status--warn');
+  statusEl.classList.add('fp360-status--error');
+  statusEl.style.display = '';
 }
 
 /**
@@ -1658,7 +1703,23 @@ function centreToRect(cx, cy) {
   }];
 }
 function initUI() {
-  var $ = window.jQuery;
+  // Cache all toolbar element references once.
+  var btnPickImage = document.getElementById('fp360_pick_image');
+  var btnImportDxf = document.getElementById('fp360-import-dxf');
+  var btnUndo = document.getElementById('fp360-undo-point');
+  var btnPoly = document.getElementById('fp360-poly-tool');
+  var btnRect = document.getElementById('fp360-rect-tool');
+  var btnMerge = document.getElementById('fp360-merge-rooms');
+  var btnSeed = document.getElementById('fp360-seed-mode');
+  var btnRunFill = document.getElementById('fp360-run-fill');
+  var btnClearSeeds = document.getElementById('fp360-clear-seeds');
+  var btnDetect = document.getElementById('fp360-detect-rooms');
+  var btnClearRooms = document.getElementById('fp360-clear-rooms');
+  var btnExpToggle = document.getElementById('fp360-experimental-toggle');
+  var elExpPanel = document.getElementById('fp360-experimental-panel');
+  var elDetectStatus = document.getElementById('fp360-detect-status');
+  var elTolerance = document.getElementById('fp360-detect-tolerance');
+  var elToleranceVal = document.getElementById('fp360-detect-tolerance-val');
 
   // --- Media frames ---
   // wp.media() frames are expensive — each call creates a new Backbone view
@@ -1667,120 +1728,137 @@ function initUI() {
   // callback each time so the correct room ID is always captured.
 
   var floorplanFrame = null;
-  $('#fp360_pick_image').on('click', function (e) {
-    e.preventDefault();
-    if (typeof wp === 'undefined' || !wp.media) return;
-    if (!floorplanFrame) {
-      floorplanFrame = wp.media({
-        title: fp360Admin.i18n.selectFloorplan || 'Select Floorplan',
-        multiple: false
-      });
-      floorplanFrame.on('select', function () {
-        var attachment = floorplanFrame.state().get('selection').first().toJSON();
-        _helpers_js__WEBPACK_IMPORTED_MODULE_1__.$imageUrlInput.val(attachment.url);
-
-        // Raster replaces vector: clear SVG meta via REST then update the canvas
-        clearSvgMeta()["finally"](function () {
-          var container = document.getElementById('fp360-canvas-container');
-          (0,_helpers_floorplan_background_js__WEBPACK_IMPORTED_MODULE_8__.setFloorplanBackground)(container, {
-            imageUrl: attachment.url
-          });
-          (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
+  if (btnPickImage) {
+    btnPickImage.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (typeof wp === 'undefined' || !wp.media) return;
+      if (!floorplanFrame) {
+        floorplanFrame = wp.media({
+          title: fp360Admin.i18n.selectFloorplan || 'Select Floorplan',
+          multiple: false
         });
-      });
-    }
-    floorplanFrame.open();
-  });
+        floorplanFrame.on('select', function () {
+          var attachment = floorplanFrame.state().get('selection').first().toJSON();
+          if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imageUrlInput) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.imageUrlInput.value = attachment.url;
+
+          // Raster replaces vector: clear SVG meta via REST then update the canvas
+          clearSvgMeta()["finally"](function () {
+            var container = document.getElementById('fp360-canvas-container');
+            (0,_helpers_floorplan_background_js__WEBPACK_IMPORTED_MODULE_8__.setFloorplanBackground)(container, {
+              imageUrl: attachment.url
+            });
+            (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
+          });
+        });
+      }
+      floorplanFrame.open();
+    });
+  }
 
   // --- Import DXF button ---
-  $('#fp360-import-dxf').on('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2() {
-    var _yield$import, mountDxfImporter, container;
-    return _regenerator().w(function (_context2) {
-      while (1) switch (_context2.n) {
-        case 0:
-          _context2.n = 1;
-          return __webpack_require__.e(/*! import() */ "src_editor_dxf_index_js").then(__webpack_require__.bind(__webpack_require__, /*! ./dxf/index.js */ "./src/editor/dxf/index.js"));
-        case 1:
-          _yield$import = _context2.v;
-          mountDxfImporter = _yield$import.mountDxfImporter;
-          container = document.getElementById('fp360-canvas-container');
-          mountDxfImporter(document.body, {
-            onCancel: function onCancel() {/* modal already removed itself */},
-            onApply: function onApply(svgMarkup, rooms, dxfFile, layersJson) {
-              return _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
-                var i18n, postId, _t;
-                return _regenerator().w(function (_context) {
-                  while (1) switch (_context.p = _context.n) {
-                    case 0:
-                      i18n = fp360Admin.i18n;
-                      postId = fp360Admin.postId;
-                      setDetectionStatus('processing');
-                      $('#fp360-detect-status').text(i18n.dxfSaving || 'Saving…').show();
-                      _context.p = 1;
-                      _context.n = 2;
-                      return wp.apiFetch({
-                        path: "/wp/v2/floorplan/".concat(postId),
-                        method: 'POST',
-                        data: {
-                          meta: {
-                            _fp360_svg_markup: svgMarkup,
-                            _fp360_dxf_layers: layersJson,
-                            _fp360_image: ''
-                          }
+  if (btnImportDxf) {
+    btnImportDxf.addEventListener('click', /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2() {
+      var _yield$import, mountDxfImporter, container;
+      return _regenerator().w(function (_context2) {
+        while (1) switch (_context2.n) {
+          case 0:
+            _context2.n = 1;
+            return __webpack_require__.e(/*! import() */ "src_editor_dxf_index_js").then(__webpack_require__.bind(__webpack_require__, /*! ./dxf/index.js */ "./src/editor/dxf/index.js"));
+          case 1:
+            _yield$import = _context2.v;
+            mountDxfImporter = _yield$import.mountDxfImporter;
+            container = document.getElementById('fp360-canvas-container');
+            mountDxfImporter(document.body, {
+              onCancel: function onCancel() {/* modal already removed itself */},
+              onApply: function onApply(svgMarkup, rooms, dxfFile, layersJson) {
+                return _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
+                  var i18n, postId, _t;
+                  return _regenerator().w(function (_context) {
+                    while (1) switch (_context.p = _context.n) {
+                      case 0:
+                        i18n = fp360Admin.i18n;
+                        postId = fp360Admin.postId;
+                        setDetectionStatus('processing');
+                        if (elDetectStatus) {
+                          elDetectStatus.textContent = i18n.dxfSaving || 'Saving…';
+                          elDetectStatus.style.display = '';
                         }
-                      });
-                    case 2:
-                      // 2. Upload DXF to media library for archival (non-blocking)
-                      if (dxfFile) {
-                        uploadDxfToMedia(dxfFile, postId)["catch"](function (err) {
-                          console.warn('[fp360-dxf] DXF media upload failed (archival only):', err);
+                        _context.p = 1;
+                        _context.n = 2;
+                        return wp.apiFetch({
+                          path: "/wp/v2/floorplan/".concat(postId),
+                          method: 'POST',
+                          data: {
+                            meta: {
+                              _fp360_svg_markup: svgMarkup,
+                              _fp360_dxf_layers: layersJson,
+                              _fp360_image: ''
+                            }
+                          }
                         });
-                      }
-
-                      // 3. Update the editor canvas
-                      _helpers_js__WEBPACK_IMPORTED_MODULE_1__.$imageUrlInput.val('');
-                      (0,_helpers_floorplan_background_js__WEBPACK_IMPORTED_MODULE_8__.setFloorplanBackground)(container, {
-                        svgMarkup: svgMarkup
-                      });
-                      (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
-
-                      // 4. Pre-populate rooms if list is empty
-                      if (rooms.length > 0 && _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.length === 0) {
-                        rooms.forEach(function (room) {
-                          _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.push({
-                            id: (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.generateId)(),
-                            label: room.label,
-                            image360: '',
-                            color: (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.nextColor)(),
-                            points: centreToRect(room.normX, room.normY)
+                      case 2:
+                        // 2. Upload DXF to media library for archival (non-blocking)
+                        if (dxfFile) {
+                          uploadDxfToMedia(dxfFile, postId)["catch"](function (err) {
+                            console.warn('[fp360-dxf] DXF media upload failed (archival only):', err);
                           });
+                        }
+
+                        // 3. Update the editor canvas
+                        if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imageUrlInput) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.imageUrlInput.value = '';
+                        (0,_helpers_floorplan_background_js__WEBPACK_IMPORTED_MODULE_8__.setFloorplanBackground)(container, {
+                          svgMarkup: svgMarkup
                         });
-                        (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
-                        (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
                         (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
-                      }
-                      setDetectionStatus('idle');
-                      $('#fp360-detect-status').text(i18n.dxfSaved || 'DXF floorplan saved.').removeClass('fp360-status--error fp360-status--info').addClass('fp360-status--success').show();
-                      _context.n = 4;
-                      break;
-                    case 3:
-                      _context.p = 3;
-                      _t = _context.v;
-                      console.error('[fp360-dxf] Save error:', _t);
-                      setDetectionStatus('idle');
-                      $('#fp360-detect-status').text(i18n.dxfSaveError || 'Failed to save the DXF floorplan. Please try again.').removeClass('fp360-status--success fp360-status--info').addClass('fp360-status--error').show();
-                    case 4:
-                      return _context.a(2);
-                  }
-                }, _callee, null, [[1, 3]]);
-              }))();
-            }
-          });
-        case 2:
-          return _context2.a(2);
-      }
-    }, _callee2);
-  })));
+
+                        // 4. Pre-populate rooms if list is empty
+                        if (rooms.length > 0 && _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.length === 0) {
+                          rooms.forEach(function (room) {
+                            _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.push({
+                              id: (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.generateId)(),
+                              label: room.label,
+                              image360: '',
+                              color: (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.nextColor)(),
+                              points: centreToRect(room.normX, room.normY)
+                            });
+                          });
+                          (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
+                          (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
+                          (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
+                        }
+                        setDetectionStatus('idle');
+                        if (elDetectStatus) {
+                          elDetectStatus.textContent = i18n.dxfSaved || 'DXF floorplan saved.';
+                          elDetectStatus.classList.remove('fp360-status--error', 'fp360-status--info');
+                          elDetectStatus.classList.add('fp360-status--success');
+                          elDetectStatus.style.display = '';
+                        }
+                        _context.n = 4;
+                        break;
+                      case 3:
+                        _context.p = 3;
+                        _t = _context.v;
+                        console.error('[fp360-dxf] Save error:', _t);
+                        setDetectionStatus('idle');
+                        if (elDetectStatus) {
+                          elDetectStatus.textContent = i18n.dxfSaveError || 'Failed to save the DXF floorplan. Please try again.';
+                          elDetectStatus.classList.remove('fp360-status--success', 'fp360-status--info');
+                          elDetectStatus.classList.add('fp360-status--error');
+                          elDetectStatus.style.display = '';
+                        }
+                      case 4:
+                        return _context.a(2);
+                    }
+                  }, _callee, null, [[1, 3]]);
+                }))();
+              }
+            });
+          case 2:
+            return _context2.a(2);
+        }
+      }, _callee2);
+    })));
+  }
 
   // --- SVG mouse events ---
   if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) {
@@ -1851,7 +1929,7 @@ function initUI() {
     });
     _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.addEventListener('click', function (e) {
       if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.dragging || _state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectMode) return;
-      if (!_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl || !_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl.src || _helpers_js__WEBPACK_IMPORTED_MODULE_1__.$emptyState && _helpers_js__WEBPACK_IMPORTED_MODULE_1__.$emptyState.is(':visible')) return;
+      if (!_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl || !_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl.src || _helpers_js__WEBPACK_IMPORTED_MODULE_1__.emptyState && _helpers_js__WEBPACK_IMPORTED_MODULE_1__.emptyState.style.display !== 'none') return;
       var pos = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.getNormalizedPos)(e);
 
       // Seed mode click
@@ -1860,7 +1938,7 @@ function initUI() {
           x: pos.x,
           y: pos.y
         });
-        $('#fp360-run-fill').prop('disabled', false);
+        if (btnRunFill) btnRunFill.disabled = false;
         (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
         return;
       }
@@ -1888,207 +1966,269 @@ function initUI() {
 
   // --- Toolbar buttons ---
 
-  $('#fp360-undo-point').on('click', function () {
-    _state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints.pop();
-    if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints.length === 0) {
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.drawing = false;
-      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.classList.remove('fp360-snap-active');
-    }
-    (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
-  });
+  if (btnUndo) {
+    btnUndo.addEventListener('click', function () {
+      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints.pop();
+      if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints.length === 0) {
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.drawing = false;
+        if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.classList.remove('fp360-snap-active');
+      }
+      (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
+    });
+  }
 
   // Polygon tool toggle
-  $('#fp360-poly-tool').on('click', function () {
-    _state_js__WEBPACK_IMPORTED_MODULE_0__.state.polyMode = !_state_js__WEBPACK_IMPORTED_MODULE_0__.state.polyMode;
-    if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.polyMode) {
-      // Exit other active modes
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectMode = false;
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.seedMode = false;
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectStart = null;
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectCurrent = null;
-      $('#fp360-rect-tool').removeClass('is-active').text(fp360Admin.i18n.rectTool || 'Rectangle');
-      $('#fp360-seed-mode').removeClass('is-active').text(fp360Admin.i18n.seedMode || 'Seed Rooms');
-      $(this).addClass('is-active').text(fp360Admin.i18n.polyModeActive || '✕ Cancel Polygon');
-      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = 'crosshair';
-    } else {
-      // Cancelling — discard any in-progress drawing
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.drawing = false;
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints = [];
-      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.classList.remove('fp360-snap-active');
-      $(this).removeClass('is-active').text(fp360Admin.i18n.polyTool || 'Polygon');
-      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = '';
-    }
-    (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
-  });
-  $('#fp360-rect-tool').on('click', function () {
-    _state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectMode = !_state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectMode;
-    if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectMode) {
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.drawing = false;
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints = [];
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.seedMode = false;
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.polyMode = false;
-      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.classList.remove('fp360-snap-active');
-      $('#fp360-seed-mode').removeClass('is-active').text(fp360Admin.i18n.seedMode || 'Seed Rooms');
-      $('#fp360-poly-tool').removeClass('is-active').text(fp360Admin.i18n.polyTool || 'Polygon');
-      $(this).addClass('is-active').text(fp360Admin.i18n.rectModeActive || 'Cancel Rectangle');
-      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = 'crosshair';
-    } else {
-      $(this).removeClass('is-active').text(fp360Admin.i18n.rectTool || 'Rectangle');
-      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = '';
-    }
-    (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
-  });
+  if (btnPoly) {
+    btnPoly.addEventListener('click', function () {
+      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.polyMode = !_state_js__WEBPACK_IMPORTED_MODULE_0__.state.polyMode;
+      if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.polyMode) {
+        // Exit other active modes
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectMode = false;
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.seedMode = false;
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectStart = null;
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectCurrent = null;
+        if (btnRect) {
+          btnRect.classList.remove('is-active');
+          btnRect.textContent = fp360Admin.i18n.rectTool || 'Rectangle';
+        }
+        if (btnSeed) {
+          btnSeed.classList.remove('is-active');
+          btnSeed.textContent = fp360Admin.i18n.seedMode || 'Seed Rooms';
+        }
+        btnPoly.classList.add('is-active');
+        btnPoly.textContent = fp360Admin.i18n.polyModeActive || '✕ Cancel Polygon';
+        if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = 'crosshair';
+      } else {
+        // Cancelling — discard any in-progress drawing
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.drawing = false;
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints = [];
+        if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.classList.remove('fp360-snap-active');
+        btnPoly.classList.remove('is-active');
+        btnPoly.textContent = fp360Admin.i18n.polyTool || 'Polygon';
+        if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = '';
+      }
+      (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
+    });
+  }
+
+  // Rectangle tool toggle
+  if (btnRect) {
+    btnRect.addEventListener('click', function () {
+      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectMode = !_state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectMode;
+      if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectMode) {
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.drawing = false;
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints = [];
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.seedMode = false;
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.polyMode = false;
+        if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.classList.remove('fp360-snap-active');
+        if (btnSeed) {
+          btnSeed.classList.remove('is-active');
+          btnSeed.textContent = fp360Admin.i18n.seedMode || 'Seed Rooms';
+        }
+        if (btnPoly) {
+          btnPoly.classList.remove('is-active');
+          btnPoly.textContent = fp360Admin.i18n.polyTool || 'Polygon';
+        }
+        btnRect.classList.add('is-active');
+        btnRect.textContent = fp360Admin.i18n.rectModeActive || 'Cancel Rectangle';
+        if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = 'crosshair';
+      } else {
+        btnRect.classList.remove('is-active');
+        btnRect.textContent = fp360Admin.i18n.rectTool || 'Rectangle';
+        if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = '';
+      }
+      (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
+    });
+  }
 
   // Experimental panel toggle
-  $('#fp360-experimental-toggle').on('click', function () {
-    var $panel = $('#fp360-experimental-panel');
-    var open = $panel.is(':visible');
-    $panel.toggle(!open);
-    $(this).toggleClass('is-active', !open).find('.fp360-exp-arrow').text(open ? '▾' : '▴');
-  });
-  $('#fp360-merge-rooms').on('click', function () {
-    if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.size !== 2) return;
-    var ids = _toConsumableArray(_state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds);
-    var a = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.find(function (h) {
-      return h.id === ids[0];
+  if (btnExpToggle && elExpPanel) {
+    btnExpToggle.addEventListener('click', function () {
+      var open = elExpPanel.style.display !== 'none';
+      elExpPanel.style.display = open ? 'none' : '';
+      btnExpToggle.classList.toggle('is-active', !open);
+      var arrow = btnExpToggle.querySelector('.fp360-exp-arrow');
+      if (arrow) arrow.textContent = open ? '▾' : '▴';
     });
-    var b = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.find(function (h) {
-      return h.id === ids[1];
-    });
-    if (!a || !b) return;
-    var merged = (0,_tools_merge_js__WEBPACK_IMPORTED_MODULE_5__.mergePolygons)(a, b);
-    if (!merged) {
-      fp360Alert(fp360Admin.i18n.mergeError || 'Rooms must overlap or share an edge.');
-      return;
-    }
-    _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.filter(function (h) {
-      return !_state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.has(h.id);
-    });
-    _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.push({
-      id: (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.generateId)(),
-      points: merged,
-      label: a.label || fp360Admin.i18n.newRoom || 'New Room',
-      image360: a.image360 || '',
-      color: a.color || (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.nextColor)()
-    });
-    _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.clear();
-    (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
-    (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
-    (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
-  });
-  $('#fp360-seed-mode').on('click', function () {
-    _state_js__WEBPACK_IMPORTED_MODULE_0__.state.seedMode = !_state_js__WEBPACK_IMPORTED_MODULE_0__.state.seedMode;
-    if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.seedMode) {
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.drawing = false;
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints = [];
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.polyMode = false;
-      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.classList.remove('fp360-snap-active');
-      $('#fp360-poly-tool').removeClass('is-active').text(fp360Admin.i18n.polyTool || 'Polygon');
-      $(this).addClass('is-active').text(fp360Admin.i18n.seedModeActive || 'Cancel Seed Mode');
-      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = 'crosshair';
-      $('#fp360-run-fill').prop('disabled', _state_js__WEBPACK_IMPORTED_MODULE_0__.state.seeds.length === 0);
-      setDetectionStatus('seed-mode');
-    } else {
-      $(this).removeClass('is-active').text(fp360Admin.i18n.seedMode || 'Seed Rooms');
-      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = '';
-      $('#fp360-run-fill').prop('disabled', true);
-      setDetectionStatus('idle');
-    }
-    (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
-  });
-  $('#fp360-run-fill').on('click', function () {
-    if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.seeds.length === 0) return;
-    var tolerance = parseInt($('#fp360-detect-tolerance').val(), 10) || 3;
-    _state_js__WEBPACK_IMPORTED_MODULE_0__.state.seedMode = false;
-    $('#fp360-seed-mode').removeClass('is-active').text(fp360Admin.i18n.seedMode || 'Seed Rooms');
-    if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = '';
-    $('#fp360-run-fill').prop('disabled', true);
-    (0,_detection_seed_js__WEBPACK_IMPORTED_MODULE_7__.runSeedFill)(_state_js__WEBPACK_IMPORTED_MODULE_0__.state.seeds, tolerance);
-  });
-  $('#fp360-clear-seeds').on('click', function () {
-    _state_js__WEBPACK_IMPORTED_MODULE_0__.state.seeds = [];
-    $('#fp360-run-fill').prop('disabled', true);
-    (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
-  });
-  $('#fp360-detect-rooms').on('click', function () {
-    var tolerance = parseInt($('#fp360-detect-tolerance').val(), 10) || 3;
-    if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.length > 0) {
-      fp360Confirm(fp360Admin.i18n.detectConfirmClear || 'Clear existing rooms and re-detect?', function () {
-        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = [];
-        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.clear();
-        (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
-        (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
-        (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
-        (0,_detection_auto_js__WEBPACK_IMPORTED_MODULE_6__.detectRooms)(tolerance);
+  }
+  if (btnMerge) {
+    btnMerge.addEventListener('click', function () {
+      if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.size !== 2) return;
+      var ids = _toConsumableArray(_state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds);
+      var a = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.find(function (h) {
+        return h.id === ids[0];
       });
-      return;
-    }
-    (0,_detection_auto_js__WEBPACK_IMPORTED_MODULE_6__.detectRooms)(tolerance);
-  });
-  $('#fp360-clear-rooms').on('click', function () {
-    if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.length === 0) return;
-    fp360Confirm(fp360Admin.i18n.clearAllConfirm || 'Delete all rooms?', function () {
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = [];
+      var b = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.find(function (h) {
+        return h.id === ids[1];
+      });
+      if (!a || !b) return;
+      var merged = (0,_tools_merge_js__WEBPACK_IMPORTED_MODULE_5__.mergePolygons)(a, b);
+      if (!merged) {
+        fp360Alert(fp360Admin.i18n.mergeError || 'Rooms must overlap or share an edge.');
+        return;
+      }
+      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.filter(function (h) {
+        return !_state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.has(h.id);
+      });
+      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.push({
+        id: (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.generateId)(),
+        points: merged,
+        label: a.label || fp360Admin.i18n.newRoom || 'New Room',
+        image360: a.image360 || '',
+        color: a.color || (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.nextColor)()
+      });
       _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.clear();
       (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
       (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
       (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
     });
-  });
-  $('#fp360-detect-tolerance').on('input', function () {
-    $('#fp360-detect-tolerance-val').text($(this).val());
-  });
+  }
+  if (btnSeed) {
+    btnSeed.addEventListener('click', function () {
+      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.seedMode = !_state_js__WEBPACK_IMPORTED_MODULE_0__.state.seedMode;
+      if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.seedMode) {
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.drawing = false;
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.currentPoints = [];
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.polyMode = false;
+        if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.classList.remove('fp360-snap-active');
+        if (btnPoly) {
+          btnPoly.classList.remove('is-active');
+          btnPoly.textContent = fp360Admin.i18n.polyTool || 'Polygon';
+        }
+        btnSeed.classList.add('is-active');
+        btnSeed.textContent = fp360Admin.i18n.seedModeActive || 'Cancel Seed Mode';
+        if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = 'crosshair';
+        if (btnRunFill) btnRunFill.disabled = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.seeds.length === 0;
+        setDetectionStatus('seed-mode');
+      } else {
+        btnSeed.classList.remove('is-active');
+        btnSeed.textContent = fp360Admin.i18n.seedMode || 'Seed Rooms';
+        if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = '';
+        if (btnRunFill) btnRunFill.disabled = true;
+        setDetectionStatus('idle');
+      }
+      (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
+    });
+  }
+  if (btnRunFill) {
+    btnRunFill.addEventListener('click', function () {
+      if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.seeds.length === 0) return;
+      var tolerance = parseInt(elTolerance ? elTolerance.value : '3', 10) || 3;
+      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.seedMode = false;
+      if (btnSeed) {
+        btnSeed.classList.remove('is-active');
+        btnSeed.textContent = fp360Admin.i18n.seedMode || 'Seed Rooms';
+      }
+      if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.style.cursor = '';
+      btnRunFill.disabled = true;
+      (0,_detection_seed_js__WEBPACK_IMPORTED_MODULE_7__.runSeedFill)(_state_js__WEBPACK_IMPORTED_MODULE_0__.state.seeds, tolerance);
+    });
+  }
+  if (btnClearSeeds) {
+    btnClearSeeds.addEventListener('click', function () {
+      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.seeds = [];
+      if (btnRunFill) btnRunFill.disabled = true;
+      (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
+    });
+  }
+  if (btnDetect) {
+    btnDetect.addEventListener('click', function () {
+      var tolerance = parseInt(elTolerance ? elTolerance.value : '3', 10) || 3;
+      if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.length > 0) {
+        fp360Confirm(fp360Admin.i18n.detectConfirmClear || 'Clear existing rooms and re-detect?', function () {
+          _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = [];
+          _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.clear();
+          (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
+          (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
+          (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
+          (0,_detection_auto_js__WEBPACK_IMPORTED_MODULE_6__.detectRooms)(tolerance);
+        });
+        return;
+      }
+      (0,_detection_auto_js__WEBPACK_IMPORTED_MODULE_6__.detectRooms)(tolerance);
+    });
+  }
+  if (btnClearRooms) {
+    btnClearRooms.addEventListener('click', function () {
+      if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.length === 0) return;
+      fp360Confirm(fp360Admin.i18n.clearAllConfirm || 'Delete all rooms?', function () {
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = [];
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.clear();
+        (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
+        (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
+        (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
+      });
+    });
+  }
+  if (elTolerance && elToleranceVal) {
+    elTolerance.addEventListener('input', function () {
+      elToleranceVal.textContent = elTolerance.value;
+    });
+  }
 
   // --- Delegated handlers ---
+  // Buttons inside the hotspot list are created dynamically by renderHotspotList,
+  // so we delegate to document rather than binding to each element directly.
 
   var pick360Frame = null;
   var pick360Handler = null;
-  $(document).on('click', '.fp360-hs-pick360', function (e) {
-    e.preventDefault();
-    var id = $(this).data('id');
-    if (!pick360Frame) {
-      pick360Frame = wp.media({
-        title: fp360Admin.i18n.pick360 || 'Select 360 Image',
-        multiple: false
-      });
+  document.addEventListener('click', function (e) {
+    // Pick 360° image
+    var pickBtn = e.target.closest('.fp360-hs-pick360');
+    if (pickBtn) {
+      e.preventDefault();
+      var id = pickBtn.dataset.id;
+      if (!pick360Frame) {
+        pick360Frame = wp.media({
+          title: fp360Admin.i18n.pick360 || 'Select 360 Image',
+          multiple: false
+        });
+      }
+
+      // Remove the previous select handler and attach one for this room.
+      if (pick360Handler) pick360Frame.off('select', pick360Handler);
+      pick360Handler = function pick360Handler() {
+        var attachment = pick360Frame.state().get('selection').first().toJSON();
+        var hs = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.find(function (h) {
+          return h.id === id;
+        });
+        if (hs) {
+          hs.image360 = attachment.url;
+          (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
+          (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
+        }
+      };
+      pick360Frame.on('select', pick360Handler);
+      pick360Frame.open();
+      return;
     }
 
-    // Remove the previous select handler and attach one for this room.
-    if (pick360Handler) pick360Frame.off('select', pick360Handler);
-    pick360Handler = function pick360Handler() {
-      var attachment = pick360Frame.state().get('selection').first().toJSON();
-      var hs = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.find(function (h) {
-        return h.id === id;
-      });
-      if (hs) {
-        hs.image360 = attachment.url;
+    // Delete room
+    var deleteBtn = e.target.closest('.fp360-hs-delete');
+    if (deleteBtn) {
+      var _id = deleteBtn.dataset.id;
+      fp360Confirm(fp360Admin.i18n.deleteRoomConfirm || 'Delete this room?', function () {
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.filter(function (h) {
+          return h.id !== _id;
+        });
+        _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds["delete"](_id);
         (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
         (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
-      }
-    };
-    pick360Frame.on('select', pick360Handler);
-    pick360Frame.open();
-  });
-  $(document).on('click', '.fp360-hs-delete', function () {
-    var id = $(this).data('id');
-    fp360Confirm(fp360Admin.i18n.deleteRoomConfirm || 'Delete this room?', function () {
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.filter(function (h) {
-        return h.id !== id;
+        (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
       });
-      _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds["delete"](id);
-      (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
-      (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
-      (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
-    });
+    }
   });
-  $(document).on('input', '.fp360-hs-label, .fp360-hs-img360', function () {
-    var id = $(this).data('id');
+  document.addEventListener('input', function (e) {
+    var target = e.target.closest('.fp360-hs-label, .fp360-hs-img360');
+    if (!target) return;
+    var id = target.dataset.id;
     var hs = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.find(function (h) {
       return h.id === id;
     });
     if (hs) {
-      hs.label = $(".fp360-hs-label[data-id=\"".concat(id, "\"]")).val();
-      hs.image360 = $(".fp360-hs-img360[data-id=\"".concat(id, "\"]")).val();
+      var _document$querySelect, _document$querySelect2, _document$querySelect3, _document$querySelect4;
+      hs.label = (_document$querySelect = (_document$querySelect2 = document.querySelector(".fp360-hs-label[data-id=\"".concat(id, "\"]"))) === null || _document$querySelect2 === void 0 ? void 0 : _document$querySelect2.value) !== null && _document$querySelect !== void 0 ? _document$querySelect : '';
+      hs.image360 = (_document$querySelect3 = (_document$querySelect4 = document.querySelector(".fp360-hs-img360[data-id=\"".concat(id, "\"]"))) === null || _document$querySelect4 === void 0 ? void 0 : _document$querySelect4.value) !== null && _document$querySelect3 !== void 0 ? _document$querySelect3 : '';
       (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
       (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
     }
@@ -2098,10 +2238,9 @@ function initUI() {
 
 /** Updates the status bar. Called by detection modules and toolbar toggles. */
 function setDetectionStatus(status, count) {
-  var $ = window.jQuery;
   /* global fp360Admin */
-  var $btn = $('#fp360-detect-rooms');
-  var $status = $('#fp360-detect-status');
+  var btnDetect = document.getElementById('fp360-detect-rooms');
+  var elStatus = document.getElementById('fp360-detect-status');
   var i18n = fp360Admin.i18n;
   var cfgMap = {
     processing: {
@@ -2150,8 +2289,18 @@ function setDetectionStatus(status, count) {
     idle: ''
   };
   var cfg = cfgMap[status] || cfgMap.error;
-  $btn.prop('disabled', cfg.disabled).text(cfg.btn);
-  $status.text(msgMap[status] || '').removeClass('fp360-status--info fp360-status--success fp360-status--warn fp360-status--error').addClass(cfg.cls).show();
+  if (btnDetect) {
+    btnDetect.disabled = cfg.disabled;
+    btnDetect.textContent = cfg.btn;
+  }
+  if (elStatus) {
+    elStatus.textContent = msgMap[status] || '';
+    ['fp360-status--info', 'fp360-status--success', 'fp360-status--warn', 'fp360-status--error'].forEach(function (c) {
+      return elStatus.classList.remove(c);
+    });
+    if (cfg.cls) elStatus.classList.add(cfg.cls);
+    elStatus.style.display = '';
+  }
 }
 
 /***/ },
@@ -3860,43 +4009,39 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-(function ($) {
-  $(document).ready(function () {
-    // 1. Wire up DOM references
-    (0,_editor_helpers_js__WEBPACK_IMPORTED_MODULE_1__.initDomRefs)();
+document.addEventListener('DOMContentLoaded', function () {
+  // 1. Wire up DOM references
+  (0,_editor_helpers_js__WEBPACK_IMPORTED_MODULE_1__.initDomRefs)();
 
-    // 2. Load initial hotspot data from hidden field
-    var $dataField = $('#fp360_hotspots_data');
-    try {
-      var raw = $dataField.val();
-      _editor_state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = raw ? JSON.parse(raw) : [];
-    } catch (e) {
-      console.error('FP360: Error parsing hotspot data', e);
-      _editor_state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = [];
-    }
+  // 2. Load initial hotspot data from hidden field
+  var dataField = document.getElementById('fp360_hotspots_data');
+  try {
+    var raw = dataField ? dataField.value : '';
+    _editor_state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error('FP360: Error parsing hotspot data', e);
+    _editor_state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = [];
+  }
 
-    // 3. Bind all UI events and button handlers
-    (0,_editor_ui_js__WEBPACK_IMPORTED_MODULE_3__.initUI)();
+  // 3. Bind all UI events and button handlers
+  (0,_editor_ui_js__WEBPACK_IMPORTED_MODULE_3__.initUI)();
 
-    // 4. Restore SVG background if a vector floorplan was previously saved.
-    //    The server already injected #fp360-svg-background into the DOM if
-    //    _fp360_svg_markup exists, so we only need to ensure the overlay
-    //    SVG and empty-state visibility are correct.
-    var svgBgEl = document.getElementById('fp360-svg-background');
-    if (svgBgEl) {
-      var container = document.getElementById('fp360-canvas-container');
-      // Mark the overlay as visible (it may still be hidden from the PHP default)
-      var overlayEl = document.getElementById('fp360-svg-overlay');
-      var emptyStateEl = document.getElementById('fp360-empty-state');
-      if (overlayEl) overlayEl.style.display = 'block';
-      if (emptyStateEl) emptyStateEl.style.display = 'none';
-    }
+  // 4. Restore SVG background if a vector floorplan was previously saved.
+  //    The server already injected #fp360-svg-background into the DOM if
+  //    _fp360_svg_markup exists, so we only need to ensure the overlay
+  //    SVG and empty-state visibility are correct.
+  var svgBgEl = document.getElementById('fp360-svg-background');
+  if (svgBgEl) {
+    var overlayEl = document.getElementById('fp360-svg-overlay');
+    var emptyStateEl = document.getElementById('fp360-empty-state');
+    if (overlayEl) overlayEl.style.display = 'block';
+    if (emptyStateEl) emptyStateEl.style.display = 'none';
+  }
 
-    // 5. Initial render
-    (0,_editor_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
-    (0,_editor_render_js__WEBPACK_IMPORTED_MODULE_2__.renderSVG)();
-  });
-})(jQuery);
+  // 5. Initial render
+  (0,_editor_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();
+  (0,_editor_render_js__WEBPACK_IMPORTED_MODULE_2__.renderSVG)();
+});
 })();
 
 /******/ })()

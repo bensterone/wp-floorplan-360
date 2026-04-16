@@ -6,7 +6,7 @@
 import { COLORS, state } from './state.js';
 import {
     registerRenderFn, saveHotspots, requestRedraw,
-    getCentroid, svg, imgEl
+    getCentroid, svg, imgEl, el,
 } from './helpers.js';
 
 export function renderSVG() {
@@ -175,42 +175,35 @@ export function renderSVG() {
 }
 
 export function renderHotspotList() {
-    const $ = window.jQuery;
     /* global fp360Admin */
-    const $ul = $('#fp360-hotspot-items').empty();
+    const ul = document.getElementById('fp360-hotspot-items');
+    if (!ul) return;
+    ul.innerHTML = '';
 
-    $('#fp360-merge-rooms').toggle(state.selectedIds.size === 2);
+    const mergeBtn = document.getElementById('fp360-merge-rooms');
+    if (mergeBtn) mergeBtn.style.display = state.selectedIds.size === 2 ? '' : 'none';
 
     state.hotspots.forEach(hs => {
         const isSelected = state.selectedIds.has(hs.id);
         const color      = hs.color || COLORS[0];
-        const $li        = $('<li>').addClass('fp360-hs-item').toggleClass('is-active', isSelected);
 
-        $li[0].style.setProperty('--hs-color', color);
+        const li = el('li', { className: 'fp360-hs-item' + (isSelected ? ' is-active' : '') });
+        li.style.setProperty('--hs-color', color);
 
-        const $swatch   = $('<span>').addClass('fp360-hs-swatch').css('background-color', color);
-        const $label    = $('<input>', {
-            type: 'text', class: 'fp360-hs-label', 'data-id': hs.id,
-            placeholder: fp360Admin.i18n.roomLabel || 'Room Label',
-        }).val(hs.label);
-        const $row      = $('<div>').addClass('fp360-hs-input-row');
-        const $urlInput = $('<input>', {
-            type: 'text', class: 'fp360-hs-img360', 'data-id': hs.id,
-            placeholder: '360 Image URL',
-        }).val(hs.image360);
-        const $pickBtn  = $('<button>', {
-            type: 'button', class: 'button fp360-hs-pick360', 'data-id': hs.id,
-            text: fp360Admin.i18n.pick360,
-        });
-        const $deleteBtn = $('<button>', {
-            type: 'button', class: 'button button-link-delete fp360-hs-delete', 'data-id': hs.id,
-            text: fp360Admin.i18n.deleteRoom,
-        });
+        const swatch     = el('span',   { className: 'fp360-hs-swatch', style: `background-color:${color}` });
+        const labelInput = el('input',  { type: 'text', className: 'fp360-hs-label',  'data-id': hs.id, placeholder: fp360Admin.i18n.roomLabel || 'Room Label', value: hs.label });
+        const header     = el('div',    { className: 'fp360-hs-header' });
+        header.append(swatch, labelInput);
 
-        const $header = $('<div>').addClass('fp360-hs-header').append($swatch, $label);
-        $row.append($urlInput, $pickBtn);
-        $li.append($header, $row, $deleteBtn);
-        $ul.append($li);
+        const urlInput   = el('input',  { type: 'text', className: 'fp360-hs-img360', 'data-id': hs.id, placeholder: '360 Image URL', value: hs.image360 });
+        const pickBtn    = el('button', { type: 'button', className: 'button fp360-hs-pick360', 'data-id': hs.id }, fp360Admin.i18n.pick360);
+        const row        = el('div',    { className: 'fp360-hs-input-row' });
+        row.append(urlInput, pickBtn);
+
+        const deleteBtn  = el('button', { type: 'button', className: 'button button-link-delete fp360-hs-delete', 'data-id': hs.id }, fp360Admin.i18n.deleteRoom);
+
+        li.append(header, row, deleteBtn);
+        ul.appendChild(li);
     });
 }
 

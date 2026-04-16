@@ -8,6 +8,7 @@
 
 import { resolveInserts, calculateBBox, toSvgSpace } from './transformer.js';
 import { renderSvg, layerCounts }                    from './renderer.js';
+import { el }                                         from '../helpers.js';
 
 // Layers that should be checked ON by default in the toggle list + used for room labels.
 const DEFAULT_ON = new Set(['walls', 'doors', 'windows', 'texts', 'roomitems', 'nocategory']);
@@ -41,21 +42,6 @@ let _worker        = null;
 let _workerTimer   = null;
 let _dxfFile       = null;
 let _layerState    = {};     // { layerName: boolean } for persistence
-
-// ---------------------------------------------------------------------------
-// DOM helpers
-// ---------------------------------------------------------------------------
-
-function el(tag, attrs = {}, text = '') {
-    const e = document.createElement(tag);
-    for (const [k, v] of Object.entries(attrs)) {
-        if (k === 'className') e.className = v;
-        else if (k === 'style')    e.style.cssText = v;
-        else                       e.setAttribute(k, v);
-    }
-    if (text) e.textContent = text;
-    return e;
-}
 
 // ---------------------------------------------------------------------------
 // Modal markup

@@ -5,7 +5,7 @@
  */
 
 import { state } from '../state.js';
-import { saveHotspots, generateId, nextColor, requestRedraw, imgEl, $emptyState } from '../helpers.js';
+import { saveHotspots, generateId, nextColor, requestRedraw, imgEl, emptyState } from '../helpers.js';
 import { renderHotspotList } from '../render.js';
 import { setDetectionStatus } from '../ui.js';
 import {
@@ -16,7 +16,7 @@ import {
 /* global fp360Admin */
 
 export function detectRooms(tolerancePx) {
-    if (!imgEl || !imgEl.naturalWidth || $emptyState.is(':visible')) {
+    if (!imgEl || !imgEl.naturalWidth || (emptyState && emptyState.style.display !== 'none')) {
         setDetectionStatus('no-image');
         return;
     }

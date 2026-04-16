@@ -795,13 +795,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _transformer_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./transformer.js */ "./src/editor/dxf/transformer.js");
 /* harmony import */ var _renderer_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./renderer.js */ "./src/editor/dxf/renderer.js");
+/* harmony import */ var _helpers_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../helpers.js */ "./src/editor/helpers.js");
 function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
-function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
 function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
-function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
-function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
 /**
  * dxf/ui.js
  * Modal panel for DXF import: file picker, Web Worker progress,
@@ -809,6 +806,7 @@ function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
  *
  * Exported: mountDxfImporter(container, { onApply, onCancel })
  */
+
 
 
 
@@ -844,109 +842,91 @@ var _dxfFile = null;
 var _layerState = {}; // { layerName: boolean } for persistence
 
 // ---------------------------------------------------------------------------
-// DOM helpers
-// ---------------------------------------------------------------------------
-
-function el(tag) {
-  var attrs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-  var text = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
-  var e = document.createElement(tag);
-  for (var _i = 0, _Object$entries = Object.entries(attrs); _i < _Object$entries.length; _i++) {
-    var _Object$entries$_i = _slicedToArray(_Object$entries[_i], 2),
-      k = _Object$entries$_i[0],
-      v = _Object$entries$_i[1];
-    if (k === 'className') e.className = v;else if (k === 'style') e.style.cssText = v;else e.setAttribute(k, v);
-  }
-  if (text) e.textContent = text;
-  return e;
-}
-
-// ---------------------------------------------------------------------------
 // Modal markup
 // ---------------------------------------------------------------------------
 
 function buildModal(callbacks) {
   /* ---- Overlay ---- */
-  var overlay = el('div', {
+  var overlay = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('div', {
     id: 'fp360-dxf-modal',
     style: 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;' + 'display:flex;align-items:center;justify-content:center;' + 'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;'
   });
 
   /* ---- Dialog ---- */
-  var dialog = el('div', {
+  var dialog = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('div', {
     style: 'background:#fff;border-radius:4px;width:90%;max-width:860px;' + 'max-height:90vh;display:flex;flex-direction:column;' + 'box-shadow:0 8px 32px rgba(0,0,0,.35);overflow:hidden;'
   });
 
   /* ---- Header ---- */
-  var header = el('div', {
+  var header = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('div', {
     style: 'display:flex;align-items:center;justify-content:space-between;' + 'padding:14px 20px;border-bottom:1px solid #e0e0e0;background:#f9f9f9;'
   });
-  var title = el('h3', {
+  var title = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('h3', {
     style: 'margin:0;font-size:15px;color:#1d2327;'
   }, 'Import DXF Floorplan');
-  var closeBtn = el('button', {
+  var closeBtn = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('button', {
     style: 'background:none;border:none;cursor:pointer;font-size:20px;color:#666;padding:0;'
   }, '×');
   closeBtn.addEventListener('click', callbacks.onCancel);
   header.append(title, closeBtn);
 
   /* ---- File row ---- */
-  var fileRow = el('div', {
+  var fileRow = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('div', {
     style: 'padding:12px 20px;border-bottom:1px solid #e8e8e8;display:flex;align-items:center;gap:12px;'
   });
-  var fileInput = el('input', {
+  var fileInput = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('input', {
     type: 'file',
     accept: '.dxf',
     style: 'flex:1;'
   });
-  var fileLabel = el('span', {
+  var fileLabel = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('span', {
     style: 'font-size:13px;color:#666;'
   }, 'No file selected');
   fileRow.append(fileInput, fileLabel);
 
   /* ---- Body (preview + sidebar) ---- */
-  var body = el('div', {
+  var body = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('div', {
     style: 'display:flex;flex:1;overflow:hidden;min-height:0;'
   });
 
   /* Preview pane */
-  var previewPane = el('div', {
+  var previewPane = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('div', {
     style: 'flex:1;background:#f0f0f0;overflow:auto;position:relative;min-width:0;'
   });
-  var previewBg = el('div', {
+  var previewBg = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('div', {
     style: 'position:absolute;inset:0;background:' + 'repeating-conic-gradient(#ccc 0% 25%,#e8e8e8 0% 50%) 0 0/20px 20px;'
   });
-  var previewEl = el('div', {
+  var previewEl = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('div', {
     id: 'fp360-dxf-preview',
     style: 'position:relative;z-index:1;padding:8px;'
   });
   previewPane.append(previewBg, previewEl);
 
   /* Sidebar */
-  var sidebar = el('div', {
+  var sidebar = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('div', {
     style: 'width:240px;flex-shrink:0;display:flex;flex-direction:column;' + 'border-left:1px solid #e0e0e0;overflow-y:auto;'
   });
-  var layerSection = el('div', {
+  var layerSection = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('div', {
     style: 'padding:12px;border-bottom:1px solid #eee;'
   });
-  var layerTitle = el('p', {
+  var layerTitle = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('p', {
     style: 'margin:0 0 8px;font-size:12px;font-weight:600;color:#1d2327;text-transform:uppercase;letter-spacing:.5px;'
   }, 'Layers');
-  var layerList = el('div', {
+  var layerList = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('div', {
     id: 'fp360-dxf-layers',
     style: 'display:flex;flex-direction:column;gap:4px;'
   });
   layerSection.append(layerTitle, layerList);
-  var roomSection = el('div', {
+  var roomSection = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('div', {
     style: 'padding:12px;'
   });
-  var roomTitle = el('p', {
+  var roomTitle = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('p', {
     style: 'margin:0 0 8px;font-size:12px;font-weight:600;color:#1d2327;text-transform:uppercase;letter-spacing:.5px;'
   }, 'Rooms detected');
-  var roomNote = el('p', {
+  var roomNote = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('p', {
     style: 'font-size:11px;color:#888;margin:-4px 0 8px 0;'
   }, 'Labels are taken from layers: texts, roomitems, nocategory');
-  var roomList = el('ul', {
+  var roomList = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('ul', {
     id: 'fp360-dxf-rooms',
     style: 'margin:0;padding:0;list-style:none;font-size:13px;color:#444;'
   });
@@ -955,32 +935,32 @@ function buildModal(callbacks) {
   body.append(previewPane, sidebar);
 
   /* ---- Footer ---- */
-  var footer = el('div', {
+  var footer = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('div', {
     style: 'display:flex;align-items:center;justify-content:space-between;' + 'padding:10px 20px;border-top:1px solid #e0e0e0;background:#f9f9f9;'
   });
-  var progressWrap = el('div', {
+  var progressWrap = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('div', {
     style: 'flex:1;display:flex;align-items:center;gap:10px;'
   });
-  var progressBar = el('div', {
+  var progressBar = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('div', {
     id: 'fp360-dxf-progress-bar',
     style: 'flex:1;height:6px;background:#e0e0e0;border-radius:3px;overflow:hidden;'
   });
-  var progressFill = el('div', {
+  var progressFill = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('div', {
     style: 'height:100%;width:0;background:#0073aa;transition:width .15s;'
   });
   progressBar.appendChild(progressFill);
-  var progressText = el('span', {
+  var progressText = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('span', {
     style: 'font-size:12px;color:#666;white-space:nowrap;'
   });
   progressWrap.append(progressBar, progressText);
-  var btnGroup = el('div', {
+  var btnGroup = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('div', {
     style: 'display:flex;gap:8px;'
   });
-  var cancelBtn = el('button', {
+  var cancelBtn = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('button', {
     className: 'button',
     style: 'margin-left:12px;'
   }, 'Cancel');
-  var applyBtn = el('button', {
+  var applyBtn = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('button', {
     className: 'button button-primary',
     disabled: 'disabled'
   }, 'Apply');
@@ -1026,15 +1006,15 @@ function buildLayerToggles(layerList, layerNames, counts, onToggle) {
         if (name === '0') return 0; // continue
         var count = counts[name] || 0;
         var checked = _visibleLayers.has(name);
-        var row = el('label', {
+        var row = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('label', {
           style: 'display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;'
         });
-        var cb = el('input', {
+        var cb = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('input', {
           type: 'checkbox'
         });
         cb.checked = checked;
-        var label = el('span', {}, "".concat(name));
-        var badge = el('span', {
+        var label = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('span', {}, "".concat(name));
+        var badge = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('span', {
           style: 'margin-left:auto;font-size:11px;color:#999;'
         }, String(count));
         row.append(cb, label, badge);
@@ -1080,7 +1060,7 @@ function buildRoomList(roomList, texts) {
     return t.layer === 'texts' || t.layer === 'roomitems' || t.layer === '0' || t.layer === 'nocategory';
   });
   if (roomTexts.length === 0) {
-    var li = el('li', {
+    var li = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('li', {
       style: 'color:#999;font-style:italic;'
     }, 'No room labels found');
     roomList.appendChild(li);
@@ -1093,10 +1073,10 @@ function buildRoomList(roomList, texts) {
       var t = _step2.value;
       // Seed editable label from parsed text; mutations are written back to t.label.
       t.label = t.text;
-      var li = el('li', {
+      var li = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('li', {
         style: 'padding:2px 0;'
       });
-      var input = el('input', {
+      var input = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_2__.el)('input', {
         type: 'text',
         style: 'width:100%;font-size:13px;border:1px solid #ddd;padding:2px 4px;border-radius:2px;box-sizing:border-box;'
       });
