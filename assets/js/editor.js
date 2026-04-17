@@ -1636,10 +1636,13 @@ function clearSvgMeta() {
  */
 function _clearSvgMeta() {
   _clearSvgMeta = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
-    var postId;
+    var newImageUrl,
+      postId,
+      _args3 = arguments;
     return _regenerator().w(function (_context3) {
       while (1) switch (_context3.n) {
         case 0:
+          newImageUrl = _args3.length > 0 && _args3[0] !== undefined ? _args3[0] : '';
           postId = fp360Admin.postId;
           if (postId) {
             _context3.n = 1;
@@ -1654,7 +1657,8 @@ function _clearSvgMeta() {
               meta: {
                 _fp360_svg_markup: '',
                 _fp360_dxf_attachment_id: 0,
-                _fp360_dxf_layers: ''
+                _fp360_dxf_layers: '',
+                _fp360_image: newImageUrl
               }
             }
           }));
@@ -1770,8 +1774,9 @@ function initUI() {
           var attachment = floorplanFrame.state().get('selection').first().toJSON();
           if (_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imageUrlInput) _helpers_js__WEBPACK_IMPORTED_MODULE_1__.imageUrlInput.value = attachment.url;
 
-          // Raster replaces vector: clear SVG meta via REST then update the canvas
-          clearSvgMeta()["finally"](function () {
+          // Raster replaces vector: persist new image URL AND clear SVG meta in one
+          // REST call so neither is lost if the user navigates away before clicking Update.
+          clearSvgMeta(attachment.url)["finally"](function () {
             var container = document.getElementById('fp360-canvas-container');
             (0,_helpers_floorplan_background_js__WEBPACK_IMPORTED_MODULE_8__.setFloorplanBackground)(container, {
               imageUrl: attachment.url
@@ -1802,7 +1807,7 @@ function initUI() {
               onCancel: function onCancel() {/* modal already removed itself */},
               onApply: function onApply(svgMarkup, rooms, dxfFile, layersJson) {
                 return _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
-                  var i18n, postId, _t;
+                  var i18n, postId, willSeedRooms, seededHotspots, meta, _t;
                   return _regenerator().w(function (_context) {
                     while (1) switch (_context.p = _context.n) {
                       case 0:
@@ -1813,17 +1818,38 @@ function initUI() {
                           elDetectStatus.textContent = i18n.dxfSaving || 'Saving…';
                           elDetectStatus.style.display = '';
                         }
+
+                        // Pre-build the auto-detected hotspot list before the REST call so
+                        // we can persist it atomically with the SVG markup. Skip pre-population
+                        // if the user already has rooms drawn — we don't want to clobber those.
+                        willSeedRooms = rooms.length > 0 && _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.length === 0;
+                        seededHotspots = willSeedRooms ? rooms.map(function (room) {
+                          return {
+                            id: (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.generateId)(),
+                            label: room.label,
+                            image360: '',
+                            color: (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.nextColor)(),
+                            points: centreToRect(room.normX, room.normY)
+                          };
+                        }) : null;
                         _context.p = 1;
+                        // 1. Save SVG markup, clear raster image URL, and persist any
+                        //    auto-seeded rooms — all in a single REST call so a navigate-away
+                        //    after import never leaves the post in a partial state.
+                        meta = {
+                          _fp360_svg_markup: svgMarkup,
+                          _fp360_dxf_layers: layersJson,
+                          _fp360_image: ''
+                        };
+                        if (seededHotspots) {
+                          meta._fp360_hotspots = JSON.stringify(seededHotspots);
+                        }
                         _context.n = 2;
                         return wp.apiFetch({
                           path: "/wp/v2/floorplan/".concat(postId),
                           method: 'POST',
                           data: {
-                            meta: {
-                              _fp360_svg_markup: svgMarkup,
-                              _fp360_dxf_layers: layersJson,
-                              _fp360_image: ''
-                            }
+                            meta: meta
                           }
                         });
                       case 2:
@@ -1841,16 +1867,10 @@ function initUI() {
                         });
                         (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.requestRedraw)();
 
-                        // 4. Pre-populate rooms if list is empty
-                        if (rooms.length > 0 && _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.length === 0) {
-                          rooms.forEach(function (room) {
-                            _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.push({
-                              id: (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.generateId)(),
-                              label: room.label,
-                              image360: '',
-                              color: (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.nextColor)(),
-                              points: centreToRect(room.normX, room.normY)
-                            });
+                        // 4. Mirror the seeded rooms into editor state (already persisted above)
+                        if (seededHotspots) {
+                          seededHotspots.forEach(function (hs) {
+                            return _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.push(hs);
                           });
                           (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
                           (0,_render_js__WEBPACK_IMPORTED_MODULE_2__.renderHotspotList)();

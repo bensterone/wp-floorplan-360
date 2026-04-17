@@ -39,7 +39,7 @@ function fp360Alert(message) {
  * Clear _fp360_svg_markup (and related DXF meta) on the current post via REST.
  * Called when the user picks a raster image to replace the vector floorplan.
  */
-async function clearSvgMeta() {
+async function clearSvgMeta(newImageUrl = '') {
     const postId = fp360Admin.postId;
     if (!postId) return;
     return wp.apiFetch({
@@ -50,6 +50,7 @@ async function clearSvgMeta() {
                 _fp360_svg_markup:        '',
                 _fp360_dxf_attachment_id: 0,
                 _fp360_dxf_layers:        '',
+                _fp360_image:             newImageUrl,
             },
         },
     });
@@ -144,8 +145,9 @@ export function initUI() {
                     const attachment = floorplanFrame.state().get('selection').first().toJSON();
                     if (imageUrlInput) imageUrlInput.value = attachment.url;
 
-                    // Raster replaces vector: clear SVG meta via REST then update the canvas
-                    clearSvgMeta().finally(() => {
+                    // Raster replaces vector: persist new image URL AND clear SVG meta in one
+                    // REST call so neither is lost if the user navigates away before clicking Update.
+                    clearSvgMeta(attachment.url).finally(() => {
                         const container = document.getElementById('fp360-canvas-container');
                         setFloorplanBackground(container, { imageUrl: attachment.url });
                         requestRedraw();
@@ -175,18 +177,36 @@ export function initUI() {
                         elDetectStatus.style.display = '';
                     }
 
+                    // Pre-build the auto-detected hotspot list before the REST call so
+                    // we can persist it atomically with the SVG markup. Skip pre-population
+                    // if the user already has rooms drawn — we don't want to clobber those.
+                    const willSeedRooms = rooms.length > 0 && state.hotspots.length === 0;
+                    const seededHotspots = willSeedRooms
+                        ? rooms.map(room => ({
+                            id:       generateId(),
+                            label:    room.label,
+                            image360: '',
+                            color:    nextColor(),
+                            points:   centreToRect(room.normX, room.normY),
+                        }))
+                        : null;
+
                     try {
-                        // 1. Save SVG markup + clear raster image URL
+                        // 1. Save SVG markup, clear raster image URL, and persist any
+                        //    auto-seeded rooms — all in a single REST call so a navigate-away
+                        //    after import never leaves the post in a partial state.
+                        const meta = {
+                            _fp360_svg_markup: svgMarkup,
+                            _fp360_dxf_layers: layersJson,
+                            _fp360_image:      '',
+                        };
+                        if (seededHotspots) {
+                            meta._fp360_hotspots = JSON.stringify(seededHotspots);
+                        }
                         await wp.apiFetch({
                             path:   `/wp/v2/floorplan/${postId}`,
                             method: 'POST',
-                            data:   {
-                                meta: {
-                                    _fp360_svg_markup: svgMarkup,
-                                    _fp360_dxf_layers: layersJson,
-                                    _fp360_image:      '',
-                                },
-                            },
+                            data:   { meta },
                         });
 
                         // 2. Upload DXF to media library for archival (non-blocking)
@@ -201,17 +221,9 @@ export function initUI() {
                         setFloorplanBackground(container, { svgMarkup });
                         requestRedraw();
 
-                        // 4. Pre-populate rooms if list is empty
-                        if (rooms.length > 0 && state.hotspots.length === 0) {
-                            rooms.forEach(room => {
-                                state.hotspots.push({
-                                    id:       generateId(),
-                                    label:    room.label,
-                                    image360: '',
-                                    color:    nextColor(),
-                                    points:   centreToRect(room.normX, room.normY),
-                                });
-                            });
+                        // 4. Mirror the seeded rooms into editor state (already persisted above)
+                        if (seededHotspots) {
+                            seededHotspots.forEach(hs => state.hotspots.push(hs));
                             saveHotspots();
                             renderHotspotList();
                             requestRedraw();

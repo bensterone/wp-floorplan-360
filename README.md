@@ -2,7 +2,7 @@
 
 A WordPress plugin for housing cooperatives and property managers. Upload a raster floorplan image **or import a DXF vector drawing**, draw room polygons in the admin editor, assign a 360° panorama to each room, and embed the result anywhere on your site — as a dedicated page or as a Gutenberg block inside any post or page.
 
-![Plugin Version](https://img.shields.io/badge/version-1.7.5-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
+![Plugin Version](https://img.shields.io/badge/version-1.7.6-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
 
 ---
 
@@ -349,6 +349,15 @@ Then open `languages/wp-floorplan-360-de_DE.po` in Poedit, update from the POT f
 ---
 
 ## Changelog
+
+### 1.7.6
+
+- **Fix: DXF import no longer wipes auto-detected rooms.** Seeded room polygons are now bundled into the same atomic REST write as the SVG markup, instead of relying on a follow-up Update click that never fires if the user navigates away.
+- **Fix: replacing a DXF with a raster image is now atomic.** The new image URL ships in the same REST payload that clears the SVG markup, so a navigation between the two writes can no longer leave the floorplan in a half-cleared state.
+- **Fix: viewer settings no longer silently disabled when the meta box is hidden.** A hidden sentinel field lets the save handler distinguish "checkbox unchecked" from "Gutenberg unmounted the panel", so toggling Editor Preferences no longer wipes auto-rotate, highlight colour, or start angle.
+- **Hardening: DXF MIME override is now narrowly scoped.** The `wp_check_filetype_and_ext` filter only rewrites the result when finfo reported `text/plain` for a `.dxf` filename — WordPress's other security rejections (double extensions, executable headers) are left untouched.
+- **Hardening: DXF layer state JSON is decode-validated on save.** Layer names containing CAD-legal characters like `<` and `>` (e.g. `Walls<Interior>`) survive sanitisation instead of being silently corrupted by `sanitize_text_field`. Stored as `{}` not `[]` when empty.
+- **Refactor: hotspot JSON sanitiser extracted to `Floorplan360\\Core\\Hotspots`.** The classic form-submit path and the REST path now share a single validator, so the rules can no longer drift apart.
 
 ### 1.7.5
 

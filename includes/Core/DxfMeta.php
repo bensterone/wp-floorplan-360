@@ -4,14 +4,15 @@ namespace Floorplan360\Core;
 /**
  * DxfMeta
  *
- * Registers the three post-meta fields used by the DXF pipeline and exposes
- * them through the REST API so the editor JS can read and write them without
- * a full page reload.
+ * Registers the post-meta fields used by the DXF pipeline and the editor
+ * REST flow, so the editor JS can read and write them without a full reload.
  *
  * Meta fields:
  *   _fp360_svg_markup        — sanitised SVG string (longtext)
  *   _fp360_dxf_attachment_id — WP attachment ID of the original .dxf file
- *   _fp360_dxf_layers        — JSON string: layer visibility state
+ *   _fp360_dxf_layers        — JSON object: layer visibility state
+ *   _fp360_image             — raster floorplan URL (cleared atomically on DXF import)
+ *   _fp360_hotspots          — JSON array of room polygons (atomic write on DXF import)
  */
 class DxfMeta {
 
@@ -46,14 +47,17 @@ class DxfMeta {
             'auth_callback' => $auth,
         ] );
 
-        // Layer visibility state (JSON string)
+        // Layer visibility state — JSON object of { layerName: bool }.
+        // sanitize_text_field() would strip < and > from layer names that legally
+        // contain them in CAD (e.g. "Walls<Interior>") and corrupt the JSON, so
+        // we decode-validate-re-encode instead.
         register_post_meta( FP360_CPT, '_fp360_dxf_layers', [
             'type'              => 'string',
             'single'            => true,
             'default'           => '',
             'show_in_rest'      => true,
             'auth_callback'     => $auth,
-            'sanitize_callback' => 'sanitize_text_field',
+            'sanitize_callback' => [ self::class, 'sanitize_layers_json' ],
         ] );
 
         // Raster floorplan image URL — registered here so the REST API can clear
@@ -66,6 +70,45 @@ class DxfMeta {
             'auth_callback'     => $auth,
             'sanitize_callback' => 'sanitize_url',
         ] );
+
+        // Hotspots JSON — registered for REST so the DXF importer can persist
+        // auto-detected rooms atomically with the SVG markup. Same Hotspots::sanitize_json
+        // helper is used by the classic form-submit path (Admin\Editor::save_meta).
+        register_post_meta( FP360_CPT, '_fp360_hotspots', [
+            'type'              => 'string',
+            'single'            => true,
+            'default'           => '[]',
+            'show_in_rest'      => true,
+            'auth_callback'     => $auth,
+            'sanitize_callback' => [ Hotspots::class, 'sanitize_json' ],
+        ] );
+    }
+
+    /**
+     * Validate and re-encode the layer visibility JSON.
+     *
+     * Decodes to an associative array of { layerName: bool }. Layer names are
+     * passed through unchanged (CAD layer names may contain spaces, punctuation,
+     * and angle brackets); values are coerced to boolean. On any decode failure
+     * an empty object is returned so a malformed payload never overwrites
+     * stored state with junk.
+     *
+     * @param  string $raw  Raw JSON string.
+     * @return string       Sanitised JSON string.
+     */
+    public static function sanitize_layers_json( string $raw ): string {
+        $decoded = json_decode( $raw, true );
+        if ( ! is_array( $decoded ) ) {
+            return '{}';
+        }
+        $clean = [];
+        foreach ( $decoded as $name => $visible ) {
+            // Reject non-string keys; everything else accepted as-is.
+            if ( ! is_string( $name ) ) continue;
+            $clean[ $name ] = (bool) $visible;
+        }
+        // JSON_FORCE_OBJECT keeps `{}` from becoming `[]` when $clean is empty.
+        return wp_json_encode( $clean, JSON_UNESCAPED_UNICODE | JSON_FORCE_OBJECT );
     }
 
     /**

@@ -1,6 +1,8 @@
 <?php
 namespace Floorplan360\Admin;
 
+use Floorplan360\Core\Hotspots;
+
 class Editor {
     public function register() {
         add_action( 'add_meta_boxes',       [ $this, 'add_meta_box' ] );
@@ -61,6 +63,7 @@ class Editor {
             $start_angle = '0';
         }
         ?>
+        <input type="hidden" name="fp360_settings_present" value="1" />
         <p>
             <label>
                 <input type="checkbox"
@@ -100,33 +103,6 @@ class Editor {
         <?php
     }
 
-    /**
-     * Validates a hotspot ID.
-     *
-     * Accepts standard UUIDs (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) and
-     * the legacy fallback format (hs_<timestamp>_<random>). Rejects anything
-     * else to prevent injection via crafted IDs.
-     *
-     * Using sanitize_key() was insufficient — it lowercases and strips
-     * non-alphanumeric characters, which would mangle any future ID format
-     * and could silently produce duplicate IDs if two values collide after
-     * stripping. Explicit validation is safer.
-     *
-     * @param  string $id  Raw ID string from JSON payload.
-     * @return string      Validated ID, or empty string if invalid.
-     */
-    private function validate_hotspot_id( string $id ): string {
-        // Standard UUID v4: 8-4-4-4-12 hex groups separated by hyphens.
-        if ( preg_match( '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id ) ) {
-            return strtolower( $id );
-        }
-        // Legacy fallback ID format: hs_<digits>_<alphanumeric>
-        if ( preg_match( '/^hs_[0-9]+_[a-z0-9]+$/i', $id ) ) {
-            return $id;
-        }
-        return '';
-    }
-
     public function save_meta( $post_id, $post ) {
         // Security checks
         if ( ! isset( $_POST['fp360_nonce_field'] ) ) {
@@ -146,58 +122,35 @@ class Editor {
             update_post_meta( $post_id, '_fp360_image', esc_url_raw( wp_unslash( $_POST['fp360_image'] ) ) );
         }
 
-        // Save Hotspot JSON data
+        // Save Hotspot JSON data — sanitisation is shared with the REST path.
         if ( isset( $_POST['fp360_hotspots'] ) ) {
-            $raw     = wp_unslash( $_POST['fp360_hotspots'] );
-            $decoded = json_decode( $raw, true );
+            $clean = Hotspots::sanitize_json( wp_unslash( $_POST['fp360_hotspots'] ) );
+            update_post_meta( $post_id, '_fp360_hotspots', $clean );
+        }
 
-            if ( is_array( $decoded ) ) {
-                $clean_hotspots = [];
-                foreach ( $decoded as $hotspot ) {
-                    $clean_points = [];
-                    if ( isset( $hotspot['points'] ) && is_array( $hotspot['points'] ) ) {
-                        foreach ( $hotspot['points'] as $point ) {
-                            $clean_points[] = [
-                                'x' => max( 0, min( 1, (float) ( $point['x'] ?? 0 ) ) ),
-                                'y' => max( 0, min( 1, (float) ( $point['y'] ?? 0 ) ) ),
-                            ];
-                        }
-                    }
-                    if ( count( $clean_points ) < 3 ) continue;
+        // Save viewer settings — only when the Viewer Settings meta box was actually
+        // submitted. Without this guard, an unchecked checkbox is indistinguishable
+        // from a meta box hidden via Editor Preferences (Gutenberg unmounts hidden
+        // panels entirely), so auto-rotate would be silently disabled on every save.
+        if ( isset( $_POST['fp360_settings_present'] ) ) {
+            update_post_meta(
+                $post_id,
+                '_fp360_auto_rotate',
+                isset( $_POST['fp360_auto_rotate'] ) ? '1' : '0'
+            );
 
-                    $validated_id = $this->validate_hotspot_id( $hotspot['id'] ?? '' );
-                    if ( empty( $validated_id ) ) continue; // discard hotspots with invalid IDs
-
-                    $clean_hotspots[] = [
-                        'id'       => $validated_id,
-                        'label'    => sanitize_text_field( $hotspot['label'] ?? '' ),
-                        'image360' => esc_url_raw( $hotspot['image360'] ?? '' ),
-                        'color'    => sanitize_hex_color( $hotspot['color'] ?? '' ) ?: '#4fa8e8',
-                        'points'   => $clean_points,
-                    ];
+            if ( isset( $_POST['fp360_highlight_color'] ) ) {
+                $color = sanitize_hex_color( wp_unslash( $_POST['fp360_highlight_color'] ) );
+                if ( $color ) {
+                    update_post_meta( $post_id, '_fp360_highlight_color', $color );
                 }
-                update_post_meta( $post_id, '_fp360_hotspots', wp_json_encode( $clean_hotspots, JSON_UNESCAPED_UNICODE ) );
             }
-        }
 
-        // Save viewer settings
-        update_post_meta(
-            $post_id,
-            '_fp360_auto_rotate',
-            isset( $_POST['fp360_auto_rotate'] ) ? '1' : '0'
-        );
-
-        if ( isset( $_POST['fp360_highlight_color'] ) ) {
-            $color = sanitize_hex_color( wp_unslash( $_POST['fp360_highlight_color'] ) );
-            if ( $color ) {
-                update_post_meta( $post_id, '_fp360_highlight_color', $color );
+            if ( isset( $_POST['fp360_start_angle'] ) ) {
+                $angle = (int) $_POST['fp360_start_angle'];
+                $angle = max( -180, min( 180, $angle ) ); // clamp to valid range
+                update_post_meta( $post_id, '_fp360_start_angle', (string) $angle );
             }
-        }
-
-        if ( isset( $_POST['fp360_start_angle'] ) ) {
-            $angle = (int) $_POST['fp360_start_angle'];
-            $angle = max( -180, min( 180, $angle ) ); // clamp to valid range
-            update_post_meta( $post_id, '_fp360_start_angle', (string) $angle );
         }
     }
 }
