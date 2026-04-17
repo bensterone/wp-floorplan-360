@@ -147,8 +147,13 @@ class Editor {
             }
 
             if ( isset( $_POST['fp360_start_angle'] ) ) {
-                $angle = (int) $_POST['fp360_start_angle'];
-                $angle = max( -180, min( 180, $angle ) ); // clamp to valid range
+                // Scalar guard: casting an array to int in PHP 8+ emits an
+                // E_WARNING ("Array to int conversion"). Default to 0 on
+                // non-scalar input rather than polluting the error log on
+                // crafted submissions.
+                $angle_raw = $_POST['fp360_start_angle'];
+                $angle     = is_scalar( $angle_raw ) ? (int) $angle_raw : 0;
+                $angle     = max( -180, min( 180, $angle ) ); // clamp to valid range
                 update_post_meta( $post_id, '_fp360_start_angle', (string) $angle );
             }
         }

@@ -27,7 +27,14 @@ export function setFloorplanBackground(container, { svgMarkup, imageUrl } = {}) 
 
     if (svgMarkup) {
         // --- Vector mode ---
-        if (imgEl)        imgEl.style.display = 'none';
+        // Also remove the raster src: hiding via display:none leaves
+        // naturalWidth intact, which fools the rectangle tool's wall-snap
+        // path into running against the now-invisible raster instead of
+        // falling back to plain commit for vector floorplans.
+        if (imgEl) {
+            imgEl.style.display = 'none';
+            imgEl.removeAttribute('src');
+        }
         if (emptyStateEl) emptyStateEl.style.display = 'none';
         if (overlayEl)    overlayEl.style.display = 'block';
 

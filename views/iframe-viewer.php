@@ -132,7 +132,13 @@
         const autoRotate    = <?php echo isset( $_GET['autorotate'] ) && $_GET['autorotate'] === '1' ? 'true' : 'false'; ?>;
         // Start angle: horizontal rotation applied to the sky when the scene loads.
         // Lets editors set a better default view direction per floorplan.
-        const startAngle    = <?php echo (int) ( $_GET['angle'] ?? 0 ); ?>;
+        // Scalar guard: `(int) []` emits an E_WARNING in PHP 8+ if someone
+        // passes ?angle[]=…, so coerce non-scalar values to 0 first.
+        <?php
+        $angle_raw = $_GET['angle'] ?? 0;
+        $angle     = is_scalar( $angle_raw ) ? (int) $angle_raw : 0;
+        ?>
+        const startAngle    = <?php echo $angle; ?>;
 
         function signalReady() {
             window.parent.postMessage({ type: 'FP360_VIEWER_READY' }, allowedOrigin);

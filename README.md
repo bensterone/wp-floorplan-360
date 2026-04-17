@@ -2,7 +2,7 @@
 
 A WordPress plugin for housing cooperatives and property managers. Upload a raster floorplan image **or import a DXF vector drawing**, draw room polygons in the admin editor, assign a 360° panorama to each room, and embed the result anywhere on your site — as a dedicated page or as a Gutenberg block inside any post or page.
 
-![Plugin Version](https://img.shields.io/badge/version-1.7.6-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
+![Plugin Version](https://img.shields.io/badge/version-1.7.7-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
 
 ---
 
@@ -349,6 +349,11 @@ Then open `languages/wp-floorplan-360-de_DE.po` in Poedit, update from the POT f
 ---
 
 ## Changelog
+
+### 1.7.7
+
+- **Fix: rectangle tool no longer snaps to a stale raster after DXF import.** Switching the editor background to vector mode now removes the raster `<img>` `src` attribute instead of just hiding it, so `naturalWidth` drops to 0 and the tool's wall-snap path correctly falls through to plain rectangle commit.
+- **Hardening: `?angle=` and `fp360_start_angle` scalar-guarded before `(int)` cast.** Avoids an `E_WARNING` ("Array to int conversion") on crafted array submissions in PHP 8+; non-scalar input now defaults to 0.
 
 ### 1.7.6
 
