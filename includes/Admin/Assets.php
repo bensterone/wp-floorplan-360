@@ -18,7 +18,7 @@ class Assets {
             wp_enqueue_script(
                 'fp360-admin',
                 FP360_URL . 'assets/js/editor.js',
-                [ 'jquery', 'media-views', 'wp-api-fetch' ],
+                [ 'media-views', 'wp-api-fetch' ],
                 FP360_VERSION,
                 true
             );
@@ -26,7 +26,6 @@ class Assets {
             wp_localize_script( 'fp360-admin', 'fp360Admin', [
                 'postId'    => get_the_ID(),
                 'restUrl'   => esc_url_raw( rest_url() ),
-                'nonce'     => wp_create_nonce( 'wp_rest' ),
                 'dxfLayers' => get_post_meta( get_the_ID(), '_fp360_dxf_layers', true ) ?: '',
                 'i18n' => [
                     'pick360'            => __( 'Pick 360', 'wp-floorplan-360' ),

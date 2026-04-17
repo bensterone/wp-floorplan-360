@@ -771,6 +771,78 @@ function el(tag) {
 
 /***/ },
 
+/***/ "./src/editor/helpers/confirm.js"
+/*!***************************************!*\
+  !*** ./src/editor/helpers/confirm.js ***!
+  \***************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   fp360Confirm: () => (/* binding */ fp360Confirm)
+/* harmony export */ });
+/* harmony import */ var _helpers_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../helpers.js */ "./src/editor/helpers.js");
+/**
+ * helpers/confirm.js
+ * Non-blocking confirmation dialog styled to match the WP admin UI.
+ * Replaces native window.confirm() so the browser UI thread is never frozen.
+ */
+
+
+
+/* global fp360Admin */
+
+/**
+ * @param {string}    message     The confirmation message to display.
+ * @param {Function}  onConfirm   Called when the user clicks OK.
+ * @param {Function} [onCancel]   Called when the user clicks Cancel or presses Escape.
+ */
+function fp360Confirm(message, onConfirm, onCancel) {
+  var i18n = typeof fp360Admin !== 'undefined' && fp360Admin.i18n ? fp360Admin.i18n : {};
+  var overlay = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_0__.el)('div', {
+    style: 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100001;display:flex;align-items:center;justify-content:center;'
+  });
+  var dialog = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_0__.el)('div', {
+    style: 'background:#fff;border-radius:4px;padding:24px;max-width:420px;width:90%;box-shadow:0 4px 20px rgba(0,0,0,.3);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;'
+  });
+  var msg = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_0__.el)('p', {
+    style: 'margin:0 0 20px;font-size:14px;line-height:1.5;color:#1d2327;'
+  }, message);
+  var btnRow = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_0__.el)('div', {
+    style: 'display:flex;gap:8px;justify-content:flex-end;'
+  });
+  var cancelBtn = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_0__.el)('button', {
+    className: 'button'
+  }, i18n.cancel || 'Cancel');
+  var okBtn = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_0__.el)('button', {
+    className: 'button button-primary'
+  }, i18n.ok || 'OK');
+  var close = function close() {
+    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+  };
+  cancelBtn.addEventListener('click', function () {
+    close();
+    if (onCancel) onCancel();
+  });
+  okBtn.addEventListener('click', function () {
+    close();
+    onConfirm();
+  });
+  overlay.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      close();
+      if (onCancel) onCancel();
+    }
+  });
+  btnRow.append(cancelBtn, okBtn);
+  dialog.append(msg, btnRow);
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  okBtn.focus();
+}
+
+/***/ },
+
 /***/ "./src/editor/helpers/floorplan-background.js"
 /*!****************************************************!*\
   !*** ./src/editor/helpers/floorplan-background.js ***!
@@ -818,7 +890,7 @@ function setFloorplanBackground(container) {
     if (!bgEl) {
       bgEl = document.createElement('div');
       bgEl.id = 'fp360-svg-background';
-      bgEl.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;';
+      bgEl.style.cssText = 'width:100%;pointer-events:none;display:block;line-height:0;';
       // Insert before the overlay so it sits behind the polygon layer
       if (overlayEl) {
         container.insertBefore(bgEl, overlayEl);
@@ -1502,6 +1574,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _detection_auto_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./detection/auto.js */ "./src/editor/detection/auto.js");
 /* harmony import */ var _detection_seed_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./detection/seed.js */ "./src/editor/detection/seed.js");
 /* harmony import */ var _helpers_floorplan_background_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./helpers/floorplan-background.js */ "./src/editor/helpers/floorplan-background.js");
+/* harmony import */ var _helpers_confirm_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./helpers/confirm.js */ "./src/editor/helpers/confirm.js");
 function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
@@ -1528,53 +1601,8 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
 
 
 
-/* global fp360Admin, wp */
 
-/**
- * Shows a non-blocking confirmation dialog styled to match the WP admin UI.
- * Calls onConfirm() when the user clicks OK; does nothing on Cancel.
- *
- * @param {string}   message    The confirmation message to display.
- * @param {Function} onConfirm  Callback executed when the user confirms.
- */
-function fp360Confirm(message, onConfirm) {
-  var i18n = fp360Admin.i18n;
-  var overlay = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('div', {
-    style: 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;'
-  });
-  var dialog = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('div', {
-    style: 'background:#fff;border-radius:4px;padding:24px;max-width:420px;width:90%;box-shadow:0 4px 20px rgba(0,0,0,.3);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;'
-  });
-  var msg = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('p', {
-    style: 'margin:0 0 20px;font-size:14px;line-height:1.5;color:#1d2327;'
-  }, message);
-  var btnRow = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('div', {
-    style: 'display:flex;gap:8px;justify-content:flex-end;'
-  });
-  var cancelBtn = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('button', {
-    className: 'button'
-  }, i18n.cancel || 'Cancel');
-  var okBtn = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.el)('button', {
-    className: 'button button-primary'
-  }, i18n.ok || 'OK');
-  var close = function close() {
-    return document.body.removeChild(overlay);
-  };
-  cancelBtn.addEventListener('click', close);
-  okBtn.addEventListener('click', function () {
-    close();
-    onConfirm();
-  });
-  // Allow Escape to cancel
-  overlay.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') close();
-  });
-  btnRow.append(cancelBtn, okBtn);
-  dialog.append(msg, btnRow);
-  overlay.appendChild(dialog);
-  document.body.appendChild(overlay);
-  okBtn.focus();
-}
+/* global fp360Admin, wp */
 
 /**
  * Shows a brief error message in the existing detect-status bar.
@@ -1931,7 +1959,9 @@ function initUI() {
     });
     _helpers_js__WEBPACK_IMPORTED_MODULE_1__.svg.addEventListener('click', function (e) {
       if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.dragging || _state_js__WEBPACK_IMPORTED_MODULE_0__.state.rectMode) return;
-      if (!_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl || !_helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl.src || _helpers_js__WEBPACK_IMPORTED_MODULE_1__.emptyState && _helpers_js__WEBPACK_IMPORTED_MODULE_1__.emptyState.style.display !== 'none') return;
+      // Accept either a raster image or a DXF SVG background.
+      var hasBackground = _helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl && _helpers_js__WEBPACK_IMPORTED_MODULE_1__.imgEl.src || document.getElementById('fp360-svg-background');
+      if (!hasBackground || _helpers_js__WEBPACK_IMPORTED_MODULE_1__.emptyState && _helpers_js__WEBPACK_IMPORTED_MODULE_1__.emptyState.style.display !== 'none') return;
       var pos = (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.getNormalizedPos)(e);
 
       // Seed mode click
@@ -2137,7 +2167,7 @@ function initUI() {
     btnDetect.addEventListener('click', function () {
       var tolerance = parseInt(elTolerance ? elTolerance.value : '3', 10) || 3;
       if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.length > 0) {
-        fp360Confirm(fp360Admin.i18n.detectConfirmClear || 'Clear existing rooms and re-detect?', function () {
+        (0,_helpers_confirm_js__WEBPACK_IMPORTED_MODULE_9__.fp360Confirm)(fp360Admin.i18n.detectConfirmClear || 'Clear existing rooms and re-detect?', function () {
           _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = [];
           _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.clear();
           (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
@@ -2153,7 +2183,7 @@ function initUI() {
   if (btnClearRooms) {
     btnClearRooms.addEventListener('click', function () {
       if (_state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.length === 0) return;
-      fp360Confirm(fp360Admin.i18n.clearAllConfirm || 'Delete all rooms?', function () {
+      (0,_helpers_confirm_js__WEBPACK_IMPORTED_MODULE_9__.fp360Confirm)(fp360Admin.i18n.clearAllConfirm || 'Delete all rooms?', function () {
         _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = [];
         _state_js__WEBPACK_IMPORTED_MODULE_0__.state.selectedIds.clear();
         (0,_helpers_js__WEBPACK_IMPORTED_MODULE_1__.saveHotspots)();
@@ -2212,7 +2242,7 @@ function initUI() {
       var deleteBtn = e.target.closest('.fp360-hs-delete');
       if (deleteBtn) {
         var _id = deleteBtn.dataset.id;
-        fp360Confirm(fp360Admin.i18n.deleteRoomConfirm || 'Delete this room?', function () {
+        (0,_helpers_confirm_js__WEBPACK_IMPORTED_MODULE_9__.fp360Confirm)(fp360Admin.i18n.deleteRoomConfirm || 'Delete this room?', function () {
           _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots = _state_js__WEBPACK_IMPORTED_MODULE_0__.state.hotspots.filter(function (h) {
             return h.id !== _id;
           });

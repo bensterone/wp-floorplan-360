@@ -129,7 +129,11 @@ class Editor {
 
     public function save_meta( $post_id, $post ) {
         // Security checks
-        if ( ! isset( $_POST['fp360_nonce_field'] ) || ! wp_verify_nonce( $_POST['fp360_nonce_field'], 'fp360_save_action' ) ) {
+        if ( ! isset( $_POST['fp360_nonce_field'] ) ) {
+            return;
+        }
+        $nonce = sanitize_text_field( wp_unslash( $_POST['fp360_nonce_field'] ) );
+        if ( ! wp_verify_nonce( $nonce, 'fp360_save_action' ) ) {
             return;
         }
         if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;

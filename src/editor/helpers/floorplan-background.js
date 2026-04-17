@@ -34,7 +34,7 @@ export function setFloorplanBackground(container, { svgMarkup, imageUrl } = {}) 
         if (!bgEl) {
             bgEl = document.createElement('div');
             bgEl.id = 'fp360-svg-background';
-            bgEl.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;';
+            bgEl.style.cssText = 'width:100%;pointer-events:none;display:block;line-height:0;';
             // Insert before the overlay so it sits behind the polygon layer
             if (overlayEl) {
                 container.insertBefore(bgEl, overlayEl);

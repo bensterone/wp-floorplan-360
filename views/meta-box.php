@@ -28,7 +28,7 @@
 
         <?php if ( $svg_markup ) : ?>
         <div id="fp360-svg-background"
-             style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;">
+             style="width:100%;pointer-events:none;line-height:0;">
             <?php echo $svg_markup; // Already sanitised by kses_svg() on save. ?>
         </div>
         <?php endif; ?>

@@ -318,9 +318,10 @@
                 const ptsString = hs.points.map(p => `${p.x * 100},${p.y * 100}`).join(' ');
                 const poly      = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
 
-                poly.setAttribute('points',   ptsString);
-                poly.setAttribute('tabindex', '0');
-                poly.setAttribute('role',     'button');
+                poly.setAttribute('points',    ptsString);
+                poly.setAttribute('data-id',   hs.id);
+                poly.setAttribute('tabindex',  '0');
+                poly.setAttribute('role',      'button');
                 poly.setAttribute('aria-label', hs.label || i18n.viewRoom || '');
 
                 if (hs.color) {
@@ -374,11 +375,10 @@
                 btn.appendChild(label);
 
                 btn.addEventListener('click', () => {
-                    const polys = svgEl.querySelectorAll('polygon');
-                    const index = hotspots.findIndex(h => h.id === hs.id);
-                    if (index !== -1 && polys[index]) {
-                        loadRoom(hs, polys[index]);
-                    }
+                    // Look up by id: polys[i] can drift from hotspots[i] if any
+                    // hotspot is skipped in renderPolygons (< 3 points).
+                    const poly = svgEl.querySelector(`polygon[data-id="${hs.id}"]`);
+                    if (poly) loadRoom(hs, poly);
                 });
 
                 roomListEl.appendChild(btn);

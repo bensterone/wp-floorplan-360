@@ -223,7 +223,7 @@ msgstr "Zurück"
 msgid "Floorplans"
 msgstr "Grundrisse"
 
-#: includes/Core/PostType.php:17
+#: includes/Core/PostType.php:17 views/meta-box.php:4
 msgid "Floorplan"
 msgstr "Grundriss"
 
@@ -290,10 +290,6 @@ msgstr "Lade Panorama..."
 #: views/iframe-viewer.php:50
 msgid "JavaScript is required to view 360° panoramas."
 msgstr "JavaScript wird benötigt um 360°-Panoramas anzuzeigen."
-
-#: views/meta-box.php:4
-msgid "Floorplan Image"
-msgstr "Grundriss Bild"
 
 #: views/meta-box.php:9
 msgid "Change Image"

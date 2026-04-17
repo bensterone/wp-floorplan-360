@@ -6,9 +6,10 @@
  * Exported: mountDxfImporter(container, { onApply, onCancel })
  */
 
-import { resolveInserts, calculateBBox, toSvgSpace } from './transformer.js';
+import { resolveInserts, calculateBBox, toSvgSpace, SVG_WIDTH } from './transformer.js';
 import { renderSvg, layerCounts }                    from './renderer.js';
 import { el }                                         from '../helpers.js';
+import { fp360Confirm }                               from '../helpers/confirm.js';
 
 // Layers that should be checked ON by default in the toggle list + used for room labels.
 const DEFAULT_ON = new Set(['walls', 'doors', 'windows', 'texts', 'roomitems', 'nocategory']);
@@ -290,8 +291,8 @@ export function mountDxfImporter(container, { onApply, onCancel, savedLayersJson
                 )
                 .map(t => ({
                     label: t.label || t.text,
-                    normX: t.x / 1000,
-                    normY: t.y / (_transformed.svgHeight || 1000),
+                    normX: t.x / SVG_WIDTH,
+                    normY: t.y / (_transformed.svgHeight || SVG_WIDTH),
                 }));
             onApply(svgMarkup, rooms, _dxfFile, JSON.stringify(_layerState));
             if (dom.overlay.parentNode) dom.overlay.parentNode.removeChild(dom.overlay);
@@ -320,31 +321,39 @@ export function mountDxfImporter(container, { onApply, onCancel, savedLayersJson
             return;
         }
 
+        const proceed = () => {
+            dom.progressText.textContent = 'Reading file…';
+            dom.progressFill.style.width = '0%';
+            dom.applyBtn.disabled = true;
+            dom.previewEl.innerHTML = '';
+
+            terminateWorker();
+
+            const reader = new FileReader();
+            reader.onload = function () {
+                startWorker(reader.result, dom);
+            };
+            reader.onerror = function () {
+                setStatus(dom, 'error', 'Failed to read the file.');
+            };
+            // Force Windows-1252 for DXF R2000 compatibility
+            reader.readAsText(file, 'windows-1252');
+        };
+
         // Soft warning for 5–10 MB
         if (file.size > WARN_FILE_BYTES) {
-            if (!confirm(`This is a large file (${(file.size / 1024 / 1024).toFixed(1)} MB). Parsing may take a moment. Continue?`)) {
-                dom.fileInput.value = '';
-                dom.fileLabel.textContent = 'No file selected';
-                return;
-            }
+            fp360Confirm(
+                `This is a large file (${(file.size / 1024 / 1024).toFixed(1)} MB). Parsing may take a moment. Continue?`,
+                proceed,
+                () => {
+                    dom.fileInput.value = '';
+                    dom.fileLabel.textContent = 'No file selected';
+                }
+            );
+            return;
         }
 
-        dom.progressText.textContent = 'Reading file…';
-        dom.progressFill.style.width = '0%';
-        dom.applyBtn.disabled = true;
-        dom.previewEl.innerHTML = '';
-
-        terminateWorker();
-
-        const reader = new FileReader();
-        reader.onload = function () {
-            startWorker(reader.result, dom);
-        };
-        reader.onerror = function () {
-            setStatus(dom, 'error', 'Failed to read the file.');
-        };
-        // Force Windows-1252 for DXF R2000 compatibility
-        reader.readAsText(file, 'windows-1252');
+        proceed();
     });
 }
 

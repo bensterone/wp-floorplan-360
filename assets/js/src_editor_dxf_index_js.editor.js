@@ -796,6 +796,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _transformer_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./transformer.js */ "./src/editor/dxf/transformer.js");
 /* harmony import */ var _renderer_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./renderer.js */ "./src/editor/dxf/renderer.js");
 /* harmony import */ var _helpers_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../helpers.js */ "./src/editor/helpers.js");
+/* harmony import */ var _helpers_confirm_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../helpers/confirm.js */ "./src/editor/helpers/confirm.js");
 function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
 function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
@@ -806,6 +807,7 @@ function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length)
  *
  * Exported: mountDxfImporter(container, { onApply, onCancel })
  */
+
 
 
 
@@ -1157,8 +1159,8 @@ function mountDxfImporter(container, _ref) {
       }).map(function (t) {
         return {
           label: t.label || t.text,
-          normX: t.x / 1000,
-          normY: t.y / (_transformed.svgHeight || 1000)
+          normX: t.x / _transformer_js__WEBPACK_IMPORTED_MODULE_0__.SVG_WIDTH,
+          normY: t.y / (_transformed.svgHeight || _transformer_js__WEBPACK_IMPORTED_MODULE_0__.SVG_WIDTH)
         };
       });
       _onApply(svgMarkup, rooms, _dxfFile, JSON.stringify(_layerState));
@@ -1181,29 +1183,32 @@ function mountDxfImporter(container, _ref) {
       setStatus(dom, 'error', "File is too large (".concat((file.size / 1024 / 1024).toFixed(1), " MB). ") + "Maximum allowed size is ".concat(MAX_FILE_BYTES / 1024 / 1024, " MB. ") + "Export only the floor plan layers to reduce file size.");
       return;
     }
+    var proceed = function proceed() {
+      dom.progressText.textContent = 'Reading file…';
+      dom.progressFill.style.width = '0%';
+      dom.applyBtn.disabled = true;
+      dom.previewEl.innerHTML = '';
+      terminateWorker();
+      var reader = new FileReader();
+      reader.onload = function () {
+        startWorker(reader.result, dom);
+      };
+      reader.onerror = function () {
+        setStatus(dom, 'error', 'Failed to read the file.');
+      };
+      // Force Windows-1252 for DXF R2000 compatibility
+      reader.readAsText(file, 'windows-1252');
+    };
 
     // Soft warning for 5–10 MB
     if (file.size > WARN_FILE_BYTES) {
-      if (!confirm("This is a large file (".concat((file.size / 1024 / 1024).toFixed(1), " MB). Parsing may take a moment. Continue?"))) {
+      (0,_helpers_confirm_js__WEBPACK_IMPORTED_MODULE_3__.fp360Confirm)("This is a large file (".concat((file.size / 1024 / 1024).toFixed(1), " MB). Parsing may take a moment. Continue?"), proceed, function () {
         dom.fileInput.value = '';
         dom.fileLabel.textContent = 'No file selected';
-        return;
-      }
+      });
+      return;
     }
-    dom.progressText.textContent = 'Reading file…';
-    dom.progressFill.style.width = '0%';
-    dom.applyBtn.disabled = true;
-    dom.previewEl.innerHTML = '';
-    terminateWorker();
-    var reader = new FileReader();
-    reader.onload = function () {
-      startWorker(reader.result, dom);
-    };
-    reader.onerror = function () {
-      setStatus(dom, 'error', 'Failed to read the file.');
-    };
-    // Force Windows-1252 for DXF R2000 compatibility
-    reader.readAsText(file, 'windows-1252');
+    proceed();
   });
 }
 

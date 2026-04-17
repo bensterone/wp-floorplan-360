@@ -219,10 +219,10 @@
                     if (!lastTime) { lastTime = timestamp; return; }
                     const delta = (timestamp - lastTime) / 1000;
                     lastTime = timestamp;
-                    const camera = document.querySelector('[camera]');
-                    if (!camera) return;
-                    const rot = camera.getAttribute('rotation') || { x: 0, y: 0, z: 0 };
-                    camera.setAttribute('rotation', { x: rot.x, y: rot.y + (DEG_PER_SEC * delta), z: rot.z });
+                    const sky = document.getElementById('fp360-sky');
+                    if (!sky) return;
+                    const rot = sky.getAttribute('rotation') || { x: 0, y: 0, z: 0 };
+                    sky.setAttribute('rotation', { x: rot.x, y: rot.y + (DEG_PER_SEC * delta), z: rot.z });
                 }
 
                 const startWhenReady = () => requestAnimationFrame(tick);

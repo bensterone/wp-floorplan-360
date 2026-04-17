@@ -2,7 +2,7 @@
 
 A WordPress plugin for housing cooperatives and property managers. Upload a raster floorplan image **or import a DXF vector drawing**, draw room polygons in the admin editor, assign a 360° panorama to each room, and embed the result anywhere on your site — as a dedicated page or as a Gutenberg block inside any post or page.
 
-![Plugin Version](https://img.shields.io/badge/version-1.7.4-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
+![Plugin Version](https://img.shields.io/badge/version-1.7.5-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
 
 ---
 
@@ -349,6 +349,22 @@ Then open `languages/wp-floorplan-360-de_DE.po` in Poedit, update from the POT f
 ---
 
 ## Changelog
+
+### 1.7.5
+
+- **DXF layer visibility persists across sessions.** Toggling layers on/off in the import dialog is now saved with the floorplan post, so the next edit reopens with the same layer state.
+- **Fix: SVG background layout collapse on DXF import.** The inline SVG container is now an in-flow element, so DXF-imported floorplans display at the correct aspect ratio instead of collapsing to zero height.
+- **Fix: panorama auto-rotate no longer fights with look-controls.** Rotation is now applied to the `<a-sky>` instead of the camera, so touch/drag/gyro input stays smooth while auto-rotate is active.
+- **Fix: Polygon tool now works on DXF floorplans.** Parallels the earlier Rectangle-tool fix — the click handler checks for either a raster image or a DXF SVG background before activating.
+- **Fix: DXF delete no longer freezes the UI.** The native `confirm()` in the DXF layer dialog is replaced with the shared non-blocking `fp360Confirm` modal.
+- **Fix: hotspot button index mismatch.** Mobile room-list buttons now look up polygons by `data-id` instead of relying on array position, which broke when hotspots were filtered.
+- **Fix: hardcoded SVG width constant.** The DXF pipeline now uses the imported `SVG_WIDTH` constant everywhere instead of a literal `1000`.
+- **Fix: missing nonce sanitization.** `$_POST['fp360_nonce_field']` is now run through `wp_unslash` + `sanitize_text_field` before `wp_verify_nonce`.
+- **Refactor: main editor migrated from jQuery to vanilla JS.** Removes a runtime dependency on jQuery for the admin editor script.
+- **Refactor: hotspot list event delegation scoped to container.** Reduces accidental event capture and improves testability.
+- **DXF: hard file size and entity count limits** to guard against runaway browser memory use on pathological drawings.
+- **DXF: editable room labels and broader text-layer detection** in the import dialog.
+- **i18n: .pot regenerated with 7 newly translatable strings; de_DE translation updated to 100 % coverage.**
 
 ### 1.7.4 (patch)
 
