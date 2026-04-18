@@ -58,6 +58,26 @@ viewer.addEventListener('key-press', stopAutorotate);
 viewer.addEventListener('ready', () => {
     if (loader) loader.style.display = 'none';
     postToParent({ type: 'FP360_VIEWER_READY' });
+
+    // WebGL context loss — iOS Safari drops the context on backgrounding
+    // or memory pressure. Without this handler the user sees a frozen
+    // frame with no explanation. We show the existing no-WebGL overlay
+    // and tell the parent so it can update its own state.
+    //
+    // We intentionally do NOT call preventDefault() on the event:
+    // doing so would keep the canvas alive and fire webglcontextrestored
+    // later, but Three.js would need a full re-init to render again. A
+    // page reload is simpler and more reliable than a restore path we
+    // cannot fully exercise across devices.
+    const canvas = document.querySelector('#fp360-viewer canvas');
+    if (canvas) {
+        canvas.addEventListener('webglcontextlost', () => {
+            const overlay = document.getElementById('fp360-no-webgl');
+            if (overlay) overlay.style.display = 'block';
+            if (loader) loader.style.display = 'none';
+            postToParent({ type: 'FP360_IMAGE_ERROR', reason: 'webgl-lost' });
+        });
+    }
 });
 
 viewer.addEventListener('panorama-loaded', () => {

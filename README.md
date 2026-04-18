@@ -2,7 +2,7 @@
 
 A WordPress plugin for housing cooperatives and property managers. Upload a raster floorplan image **or import a DXF vector drawing**, draw room polygons in the admin editor, assign a 360° panorama to each room, and embed the result anywhere on your site — as a dedicated page or as a Gutenberg block inside any post or page.
 
-![Plugin Version](https://img.shields.io/badge/version-1.8.0-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
+![Plugin Version](https://img.shields.io/badge/version-1.8.1-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
 
 ---
 
@@ -354,6 +354,10 @@ Then open `languages/wp-floorplan-360-de_DE.po` in Poedit, update from the POT f
 ---
 
 ## Changelog
+
+### 1.8.1
+
+- **Hardening: recover from WebGL context loss in the panorama iframe.** iOS Safari drops the WebGL context on backgrounding or under memory pressure, which used to leave the viewer on a frozen frame with no feedback. The iframe now listens for `webglcontextlost` on the Photo Sphere Viewer canvas, shows the existing "WebGL not supported" overlay, and signals `FP360_IMAGE_ERROR` with `reason: 'webgl-lost'` to the parent so the user can reload.
 
 ### 1.8.0
 
