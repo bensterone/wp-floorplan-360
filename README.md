@@ -2,7 +2,7 @@
 
 A WordPress plugin for housing cooperatives and property managers. Upload a raster floorplan image **or import a DXF vector drawing**, draw room polygons in the admin editor, assign a 360° panorama to each room, and embed the result anywhere on your site — as a dedicated page or as a Gutenberg block inside any post or page.
 
-![Plugin Version](https://img.shields.io/badge/version-1.7.7-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
+![Plugin Version](https://img.shields.io/badge/version-1.7.8-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
 
 ---
 
@@ -349,6 +349,10 @@ Then open `languages/wp-floorplan-360-de_DE.po` in Poedit, update from the POT f
 ---
 
 ## Changelog
+
+### 1.7.8
+
+- **Fix: panorama loader no longer gets stuck when revisiting a room.** Clicking a room with a panorama → a room without one → back to the first room used to leave the "Loading Viewer" overlay on top of the scene forever, because A-Frame swallows no-op `<a-sky>` src assignments (no `materialtextureloaded` re-fires). The viewer now tracks the currently-loaded URL and short-circuits repeat clicks on the same room; the flag is cleared on image error so failed loads can still be retried.
 
 ### 1.7.7
 

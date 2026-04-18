@@ -37,6 +37,11 @@
         let hotspots      = [];
         let isIframeReady = false;
         let pendingImage  = null;
+        // URL currently displayed in the <a-sky>. Lets us short-circuit a
+        // repeat click on the same room: setting sky's src to the same URL
+        // is a no-op in A-Frame (no materialtextureloaded re-fire), which
+        // would otherwise leave the loader stuck forever.
+        let currentImage  = null;
 
         try {
             hotspots = JSON.parse(svgEl.dataset.hotspots || '[]');
@@ -80,6 +85,10 @@
             if (event.data.type === 'FP360_IMAGE_ERROR') {
                 if (loader) loader.style.display = 'none';
                 setStatus(i18n.viewerLoadError || '');
+                // Allow a retry on the failed URL — otherwise the same-URL
+                // short-circuit in loadRoom would lock the user out.
+                currentImage = null;
+                return;
             }
         });
 
@@ -104,10 +113,18 @@
             }
 
             if (placeholder) placeholder.style.display = 'none';
-            if (loader)      loader.style.display = 'block';
 
             // Reveal the fullscreen button once the first room is selected.
             if (fullscreenBtn) fullscreenBtn.style.display = 'flex';
+
+            // Same URL already loaded — skip the round-trip and keep the
+            // existing panorama visible. Without this, the loader would
+            // show but never hide (A-Frame swallows no-op src assignments).
+            if (hs.image360 === currentImage && frame.src && frame.src !== 'about:blank') {
+                return;
+            }
+
+            if (loader) loader.style.display = 'block';
 
             if (frame.src === '' || frame.src === 'about:blank') {
                 frame.style.display = 'block';
@@ -125,6 +142,8 @@
                     pendingImage = hs.image360;
                 }
             }
+
+            currentImage = hs.image360;
         }
 
         // ---------------------------------------------------------------
