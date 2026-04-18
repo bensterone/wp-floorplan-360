@@ -1,13 +1,15 @@
 {
   "name": "wp-floorplan-360",
-  "version": "1.7.8",
+  "version": "1.8.0",
   "description": "Build tooling for the Floorplan 360 block editor component.",
   "scripts": {
-    "build": "npm run build:block && npm run build:editor",
+    "build": "npm run build:block && npm run build:editor && npm run build:viewer",
     "build:block": "wp-scripts build src/block-editor.js --output-path=assets/js --output-filename=block-editor.js",
     "build:editor": "webpack --config webpack.editor.js",
+    "build:viewer": "webpack --config webpack.viewer.js",
     "start": "wp-scripts start src/block-editor.js --output-path=assets/js --output-filename=block-editor.js",
     "start:editor": "webpack --config webpack.editor.js --watch",
+    "start:viewer": "webpack --config webpack.viewer.js --watch",
     "lint:js": "wp-scripts lint-js src/"
   },
   "engines": {
@@ -17,10 +19,16 @@
     "@babel/preset-env": "^7.24.0",
     "@wordpress/scripts": "^30.0.0",
     "babel-loader": "^9.1.0",
+    "css-loader": "^7.1.4",
+    "mini-css-extract-plugin": "^2.10.2",
     "webpack": "^5.0.0",
     "webpack-cli": "^5.0.0"
   },
   "dependencies": {
-    "dompurify": "^3.4.0"
+    "@photo-sphere-viewer/autorotate-plugin": "^5.14.1",
+    "@photo-sphere-viewer/core": "^5.14.1",
+    "@photo-sphere-viewer/gyroscope-plugin": "^5.14.1",
+    "dompurify": "^3.4.0",
+    "three": "^0.179.1"
   }
 }

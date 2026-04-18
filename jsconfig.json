@@ -8,7 +8,7 @@
     },
     "exclude": [
         "node_modules",
-        "assets/js/aframe.min.js",
+        "assets/js/iframe-viewer.js",
         "assets/js/block-editor.js"
     ]
 }

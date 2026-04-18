@@ -2,7 +2,7 @@
 
 A WordPress plugin for housing cooperatives and property managers. Upload a raster floorplan image **or import a DXF vector drawing**, draw room polygons in the admin editor, assign a 360° panorama to each room, and embed the result anywhere on your site — as a dedicated page or as a Gutenberg block inside any post or page.
 
-![Plugin Version](https://img.shields.io/badge/version-1.7.8-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
+![Plugin Version](https://img.shields.io/badge/version-1.8.0-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-green) ![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-blue) ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
 
 ---
 
@@ -19,7 +19,7 @@ A WordPress plugin for housing cooperatives and property managers. Upload a rast
 - **Experimental tools** — auto room detection and click-to-seed fill are available behind an Experimental panel. See the note below.
 
 ### Frontend viewer
-- **360° panorama viewer** — powered by A-Frame. Visitors click a room and the panorama loads in an inline viewer without leaving the page.
+- **360° panorama viewer** — powered by Photo Sphere Viewer (Three.js under the hood). Visitors click a room and the panorama loads in an inline viewer without leaving the page.
 - **Fullscreen button** — a fullscreen toggle is rendered inside the viewer panel. Uses the native Fullscreen API on desktop browsers and a CSS fake-fullscreen fallback (`position:fixed; inset:0; height:100svh`) for iOS Safari, which does not support the Fullscreen API inside iframes.
 - **Gutenberg block** — embed any floorplan into any post or page with the `Floorplan 360 Viewer` block. Works with both raster image and DXF SVG floorplans.
 - **Multiple instances** — place the block several times on the same page with different floorplans. Each viewer operates independently.
@@ -30,7 +30,7 @@ A WordPress plugin for housing cooperatives and property managers. Upload a rast
 - **WebGL fallback** — if the visitor's browser does not support WebGL, a clear error message is shown instead of a black box.
 
 ### Security and architecture
-- **Iframe-based viewer** — A-Frame runs in a sandboxed iframe with strict `postMessage` origin validation, `X-Frame-Options`, and `Content-Security-Policy` headers.
+- **Iframe-based viewer** — Photo Sphere Viewer runs in a sandboxed iframe with strict `postMessage` origin validation, `X-Frame-Options`, and `Content-Security-Policy` headers.
 - **CDN-compatible** — panorama URLs are validated against the WordPress media library on the server side. The frontend viewer accepts images from any origin passed by the trusted parent window, so CDN-offloaded or S3-hosted media works correctly.
 - **UUID validation** — hotspot IDs are validated against a strict regex rather than passed through `sanitize_key`, preventing silent data corruption.
 - **Per-post capability checks** — REST API `auth_callback` closures use `current_user_can('edit_post', $post_id)` for all meta fields, preventing IDOR/privilege escalation by Contributors.
@@ -55,7 +55,6 @@ A WordPress plugin for housing cooperatives and property managers. Upload a rast
 - WordPress 5.9 or higher
 - PHP 7.4 or higher
 - Node.js 20 or higher (development only)
-- `assets/js/aframe.min.js` v1.7.1 (bundled)
 
 ---
 
@@ -66,7 +65,7 @@ A WordPress plugin for housing cooperatives and property managers. Upload a rast
    wp-content/plugins/wp-floorplan-360/
    ```
 
-2. `aframe.min.js` (v1.7.1) is bundled in the repository at `assets/js/aframe.min.js`. No separate download is needed.
+2. The 360° viewer bundle (`assets/js/iframe-viewer.js` and `assets/css/iframe-viewer.css`) is pre-built and committed to the repository. No separate download or `npm` step is needed for installation.
 
 3. Activate the plugin in **Plugins > Installed Plugins**.
 
@@ -179,9 +178,9 @@ The **Sensitivity** slider (2–8) controls how aggressively thin features (text
 
 **SVG sanitisation** — `DxfMeta::kses_svg()` wraps `wp_kses` with an explicit SVG element/attribute allowlist. Because `wp_kses` lowercases all attribute names and SVG's `viewBox` is case-sensitive, a `str_replace('viewbox=', 'viewBox=', ...)` pass is applied after sanitisation. This helper is called at every SVG output point: on REST save, in the singular floorplan template, in the Gutenberg block template, and in the admin meta-box.
 
-**Secure iframe viewer** — when a visitor clicks a room, the plugin loads an A-Frame panorama viewer inside a sandboxed iframe served via `admin-ajax.php`. The parent page and iframe communicate through a `postMessage` handshake:
+**Secure iframe viewer** — when a visitor clicks a room, the plugin loads a Photo Sphere Viewer panorama viewer inside a sandboxed iframe served via `admin-ajax.php`. The parent page and iframe communicate through a `postMessage` handshake:
 
-1. The iframe signals `FP360_VIEWER_READY` when A-Frame has initialised.
+1. The iframe signals `FP360_VIEWER_READY` when Photo Sphere Viewer has initialised.
 2. The parent sends `FP360_LOAD_IMAGE` with the panorama URL.
 3. The iframe confirms `FP360_IMAGE_LOADED` on success, or `FP360_IMAGE_ERROR` on failure.
 
@@ -209,7 +208,7 @@ All three paths check for SVG markup first, then raster image, then fall back to
 | Nonce verification | All meta box saves verified with `wp_verify_nonce` |
 | Per-post capability checks | REST `auth_callback` uses `current_user_can('edit_post', $post_id)` — prevents IDOR/privilege escalation by Contributors |
 | SVG sanitisation | `wp_kses` with explicit allowlist + `viewBox` casing fix; DOMPurify client-side as defence-in-depth |
-| WebGL check | A-Frame not loaded if WebGL unavailable — clear error shown instead |
+| WebGL check | Viewer bundle not loaded if WebGL unavailable — clear error shown instead |
 
 ---
 
@@ -221,15 +220,16 @@ wp-floorplan-360/
 │   ├── css/
 │   │   ├── block-editor.css
 │   │   ├── editor.css
+│   │   ├── iframe-viewer.css                      # Photo Sphere Viewer styles (webpack-extracted)
 │   │   └── viewer.css
 │   └── js/
-│       ├── aframe.min.js                          # A-Frame 1.7.1 (bundled, MIT)
 │       ├── block-editor.asset.php
 │       ├── block-editor.js                        # Compiled Gutenberg block
 │       ├── editor.js                              # Compiled admin editor (main chunk)
+│       ├── iframe-viewer.js                       # Compiled iframe viewer bundle (PSV + Three.js)
 │       ├── src_editor_dxf_index_js.editor.js      # Webpack dynamic-import chunk: DXF UI
 │       ├── src_editor_dxf_parser_worker_js.editor.js  # Webpack chunk: DXF Web Worker
-│       └── viewer.js                              # Frontend viewer
+│       └── viewer.js                              # Frontend viewer (parent-side)
 ├── includes/
 │   ├── Admin/
 │   │   ├── Assets.php
@@ -278,11 +278,12 @@ wp-floorplan-360/
 │   ├── block-viewer.php                           # Gutenberg block server-side render template
 │   └── floorplan-template.php                     # Singular floorplan page template
 ├── views/
-│   ├── iframe-viewer.php                          # A-Frame viewer (loaded in sandboxed iframe)
+│   ├── iframe-viewer.php                          # Photo Sphere Viewer (loaded in sandboxed iframe)
 │   └── meta-box.php                               # Admin editor canvas + toolbar
 ├── block.json
 ├── package.json
 ├── webpack.editor.js
+├── webpack.viewer.js
 ├── uninstall.php
 └── wp-floorplan-360.php
 ```
@@ -295,10 +296,12 @@ wp-floorplan-360/
 
 ```bash
 npm install
-npm run build           # builds both editor and block
+npm run build           # builds block, editor, and viewer
 npm run build:editor    # builds assets/js/editor.js and chunk files only
 npm run build:block     # builds assets/js/block-editor.js only
+npm run build:viewer    # builds assets/js/iframe-viewer.js + assets/css/iframe-viewer.css
 npm run start:editor    # watch mode for editor development
+npm run start:viewer    # watch mode for iframe viewer development
 ```
 
 The editor bundle is built by a custom `webpack.editor.js` config (not `@wordpress/scripts`) because it compiles Web Workers and dynamic imports. This produces three output files in `assets/js/`:
@@ -306,7 +309,9 @@ The editor bundle is built by a custom `webpack.editor.js` config (not `@wordpre
 - `src_editor_dxf_index_js.editor.js` — DXF importer UI (dynamic import chunk)
 - `src_editor_dxf_parser_worker_js.editor.js` — DXF parser Web Worker chunk
 
-All three are committed to the repository so the plugin can be installed without running `npm`.
+The iframe viewer bundle (`webpack.viewer.js`) bundles Photo Sphere Viewer + Three.js into a single `iframe-viewer.js` (~610 KB minified) with extracted CSS at `assets/css/iframe-viewer.css`.
+
+All compiled artifacts are committed to the repository so the plugin can be installed without running `npm`.
 
 ### Regenerating translations
 
@@ -321,7 +326,7 @@ Then open `languages/wp-floorplan-360-de_DE.po` in Poedit, update from the POT f
 ## Troubleshooting
 
 **The 360° viewer shows a black box**
-- Confirm `assets/js/aframe.min.js` exists in the plugin folder.
+- Confirm `assets/js/iframe-viewer.js` and `assets/css/iframe-viewer.css` exist in the plugin folder.
 - Check the browser console for CSP or origin errors.
 
 **Clicking a room does nothing**
@@ -349,6 +354,12 @@ Then open `languages/wp-floorplan-360-de_DE.po` in Poedit, update from the POT f
 ---
 
 ## Changelog
+
+### 1.8.0
+
+- **360° viewer migrated from A-Frame to Photo Sphere Viewer.** A-Frame's vendored 8 MB `aframe.min.js` is replaced by a webpack-bundled Photo Sphere Viewer + Three.js iframe at `assets/js/iframe-viewer.js` (~610 KB minified) plus extracted CSS at `assets/css/iframe-viewer.css`. Net payload is ~92 % smaller for the same feature set: drag-look, mouse-wheel + pinch zoom, auto-rotate, gyro/tilt-to-look button, WebGL fallback, and the existing `postMessage` handshake (`FP360_VIEWER_READY` / `FP360_LOAD_IMAGE` / `FP360_IMAGE_LOADED` / `FP360_IMAGE_ERROR`) are preserved unchanged so the parent-side viewer code continues to work without modification.
+- **Build: new `webpack.viewer.js` config** alongside `webpack.editor.js`. New scripts `npm run build:viewer` and `npm run start:viewer`; the top-level `npm run build` now also runs the viewer build.
+- **Removed: `assets/js/aframe.min.js`** (1.3 MB binary) and the `<a-scene>` / `<a-sky>` / `look-controls` markup that depended on it.
 
 ### 1.7.8
 
@@ -408,7 +419,8 @@ Then open `languages/wp-floorplan-360-de_DE.po` in Poedit, update from the POT f
 
 | Library | Version | License | Usage |
 |---|---|---|---|
-| [A-Frame](https://aframe.io) | 1.7.1 | MIT | 360° panorama rendering |
+| [Photo Sphere Viewer](https://photo-sphere-viewer.js.org/) | 5.14+ | MIT | 360° panorama rendering |
+| [Three.js](https://threejs.org/) | 0.179+ | MIT | WebGL renderer (Photo Sphere Viewer dependency) |
 | [DOMPurify](https://github.com/cure53/DOMPurify) | 3.4+ | Apache-2.0 / MPL-2.0 | Client-side SVG sanitisation |
 
 ---

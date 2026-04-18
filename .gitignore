@@ -29,17 +29,13 @@ wp-cli.phar
 # (e.g. src_editor_dxf_index_js.editor.js). Whitelist all *.editor.js so
 # those chunks are committed alongside editor.js.
 assets/js/*.map
+assets/css/*.map
 assets/js/*.js
 !assets/js/editor.js
 !assets/js/*.editor.js
 !assets/js/block-editor.js
-!assets/js/aframe.min.js
+!assets/js/iframe-viewer.js
 !assets/js/viewer.js
-
-# --- A-Frame binary ---
-# Large vendored binary — keep it if you want the repo self-contained,
-# remove this line if you commit it (recommended for easy installation).
-# assets/js/aframe.min.js
 
 
 # --- OS junk ---

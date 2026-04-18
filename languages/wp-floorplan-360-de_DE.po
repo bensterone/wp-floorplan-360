@@ -2,7 +2,7 @@
 # This file is distributed under the GPL-2.0+.
 msgid ""
 msgstr ""
-"Project-Id-Version: Floorplan 360 Viewer 1.7.8\n"
+"Project-Id-Version: Floorplan 360 Viewer 1.8.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-"
 "floorplan-360-1.3\n"
 "POT-Creation-Date: 2026-03-27T09:22:25+00:00\n"

@@ -37,10 +37,9 @@
         let hotspots      = [];
         let isIframeReady = false;
         let pendingImage  = null;
-        // URL currently displayed in the <a-sky>. Lets us short-circuit a
-        // repeat click on the same room: setting sky's src to the same URL
-        // is a no-op in A-Frame (no materialtextureloaded re-fire), which
-        // would otherwise leave the loader stuck forever.
+        // URL currently displayed in the iframe viewer. Short-circuits a
+        // repeat click on the same room so we don't re-decode the panorama
+        // texture (and don't briefly flash the loader for a no-op reload).
         let currentImage  = null;
 
         try {
@@ -54,7 +53,7 @@
         }
 
         // ---------------------------------------------------------------
-        // postMessage channel with the A-Frame iframe
+        // postMessage channel with the panorama iframe
         // ---------------------------------------------------------------
 
         window.addEventListener('message', function (event) {
@@ -118,8 +117,8 @@
             if (fullscreenBtn) fullscreenBtn.style.display = 'flex';
 
             // Same URL already loaded — skip the round-trip and keep the
-            // existing panorama visible. Without this, the loader would
-            // show but never hide (A-Frame swallows no-op src assignments).
+            // existing panorama visible. Avoids re-decoding the texture
+            // and a flash of the loading overlay on no-op reloads.
             if (hs.image360 === currentImage && frame.src && frame.src !== 'about:blank') {
                 return;
             }
