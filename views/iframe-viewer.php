@@ -72,7 +72,7 @@ $autorotate = isset( $_GET['autorotate'] ) && $_GET['autorotate'] === '1';
     <div id="loading"><?php esc_html_e( 'Loading Panorama...', 'wp-floorplan-360' ); ?></div>
 
     <button id="fp360-gyro-btn"
-            aria-label="<?php esc_attr_e( 'Enable tilt to look around', 'wp-floorplan-360' ); ?>"
+            aria-label="<?php esc_attr_e( 'Tilt control', 'wp-floorplan-360' ); ?>"
             aria-pressed="false">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -81,7 +81,7 @@ $autorotate = isset( $_GET['autorotate'] ) && $_GET['autorotate'] === '1';
             <path d="M2.5 22v-6h6"/>
             <path d="M21.5 12A10 10 0 0 1 5.36 18.64L2.5 16"/>
         </svg>
-        <?php esc_html_e( 'Tilt to look', 'wp-floorplan-360' ); ?>
+        <?php esc_html_e( 'Tilt control', 'wp-floorplan-360' ); ?>
     </button>
 
     <noscript>

@@ -277,12 +277,9 @@ msgstr ""
 msgid "Room list"
 msgstr ""
 
-#: views/iframe-viewer.php:50
-msgid "Enable tilt to look around"
-msgstr ""
-
-#: views/iframe-viewer.php:59
-msgid "Tilt to look"
+#: views/iframe-viewer.php:75
+#: views/iframe-viewer.php:84
+msgid "Tilt control"
 msgstr ""
 
 #: views/iframe-viewer.php:42

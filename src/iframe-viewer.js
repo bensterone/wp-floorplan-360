@@ -106,26 +106,48 @@ window.addEventListener('message', (event) => {
 // --- Gyroscope / magic-window button ---
 // Only shown on touch-capable devices exposing DeviceOrientationEvent.
 // iOS 13+ requires an explicit user-gesture permission request; Android does not.
+// After the first permission grant the button toggles gyro on/off freely.
 (function initGyroButton() {
     if (!gyroBtn) return;
     if (!('ontouchstart' in window) || typeof DeviceOrientationEvent === 'undefined') return;
 
     const needsPermission = typeof DeviceOrientationEvent.requestPermission === 'function';
+    let gyroActive        = false;
+    let permissionGranted = !needsPermission; // Android never needs a prompt
     gyroBtn.style.display = 'flex';
 
     function enableGyro() {
         stopAutorotate();
         if (gyroscope) gyroscope.start();
+        gyroActive = true;
         gyroBtn.classList.add('is-active');
         gyroBtn.setAttribute('aria-pressed', 'true');
     }
 
+    function disableGyro() {
+        if (gyroscope) gyroscope.stop();
+        gyroActive = false;
+        gyroBtn.classList.remove('is-active');
+        gyroBtn.setAttribute('aria-pressed', 'false');
+    }
+
     gyroBtn.addEventListener('click', () => {
-        if (needsPermission) {
+        // Toggle off if already active
+        if (gyroActive) {
+            disableGyro();
+            return;
+        }
+
+        // Toggle on — request permission once on iOS, then enable directly
+        if (!permissionGranted) {
             DeviceOrientationEvent.requestPermission()
                 .then((state) => {
-                    if (state === 'granted') enableGyro();
-                    else gyroBtn.style.display = 'none';
+                    if (state === 'granted') {
+                        permissionGranted = true;
+                        enableGyro();
+                    } else {
+                        gyroBtn.style.display = 'none';
+                    }
                 })
                 .catch(() => { gyroBtn.style.display = 'none'; });
         } else {

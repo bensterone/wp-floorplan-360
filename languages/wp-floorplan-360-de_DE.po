@@ -263,13 +263,10 @@ msgstr "360°-Raumviewer"
 msgid "Room list"
 msgstr "Liste der Räume"
 
-#: views/iframe-viewer.php:50
-msgid "Enable tilt to look around"
-msgstr "Neigung aktivieren"
-
-#: views/iframe-viewer.php:59
-msgid "Tilt to look"
-msgstr "Neigung aktivieren"
+#: views/iframe-viewer.php:75
+#: views/iframe-viewer.php:84
+msgid "Tilt control"
+msgstr "Neigungssteuerung"
 
 #: views/iframe-viewer.php:42
 msgid "360° viewing is not supported by your browser or device."
